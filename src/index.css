@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Dark mode base - default theme */
+    --background: 240 6% 7%;
+    --foreground: 240 6% 97%;
+
+    --card: 240 5% 10%;
+    --card-foreground: 240 6% 97%;
+
+    --popover: 240 5% 10%;
+    --popover-foreground: 240 6% 97%;
+
+    /* Purple theme colors */
+    --primary: 270 91% 65%;
+    --primary-foreground: 240 6% 7%;
+    --primary-glow: 270 100% 80%;
+
+    --secondary: 240 4% 15%;
+    --secondary-foreground: 240 6% 97%;
+
+    --muted: 240 4% 15%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 270 91% 65%;
+    --accent-foreground: 240 6% 7%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 240 6% 97%;
+
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
+    --ring: 270 91% 65%;
+
+    --radius: 1rem;
+
+    /* Custom event app colors */
+    --purple-glow: 270 100% 80%;
+    --purple-dark: 270 91% 45%;
+    --surface: 240 5% 12%;
+    --surface-elevated: 240 4% 16%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--purple-glow)));
+    --gradient-glow: linear-gradient(180deg, hsl(var(--background)), hsl(var(--surface)));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--surface-elevated)));
+    
+    /* Shadows with purple glow */
+    --shadow-purple: 0 0 30px hsl(var(--primary) / 0.3);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 12px 40px hsl(0 0% 0% / 0.6);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Custom utility classes */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-glow {
+    background: var(--gradient-glow);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  
+  .shadow-purple {
+    box-shadow: var(--shadow-purple);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+  
+  /* Glow effect for interactive elements */
+  .glow-purple {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+  }
+  
+  .glow-purple-strong {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.6);
+  }
+}
+
+@layer components {
+  /* Event card animations */
+  .event-card {
+    @apply transition-smooth hover:scale-[1.02] hover:shadow-elevated;
+  }
+  
+  .event-card:hover {
+    box-shadow: var(--shadow-elevated), var(--shadow-purple);
+  }
+  
+  /* Instagram-style avatar */
+  .avatar-story {
+    @apply relative;
+  }
+  
+  .avatar-story::before {
+    @apply absolute -inset-0.5 rounded-full gradient-primary opacity-75;
+    content: '';
+    z-index: -1;
+  }
+  
+  /* Floating action button */
+  .fab {
+    @apply fixed bottom-6 right-6 gradient-primary shadow-elevated glow-purple;
+  }
+  
+  /* Purple glow button */
+  .btn-glow {
+    @apply gradient-primary shadow-purple transition-smooth hover:glow-purple-strong hover:scale-105;
+  }
+  
+  /* Hide scrollbar but keep scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
+}

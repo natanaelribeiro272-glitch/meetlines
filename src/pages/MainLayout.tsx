@@ -1,0 +1,132 @@
+import { useState } from "react";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import AuthPage from "./AuthPage";
+import Home from "./Home";
+import EventDetails from "./EventDetails";
+import FindFriends from "./FindFriends";
+import OrganizerPage from "./OrganizerPage";
+import UserProfile from "./UserProfile";
+import LiveEvents from "./LiveEvents";
+import OrganizerProfile from "./OrganizerProfile";
+import CreateEvent from "./CreateEvent";
+import OrdersManagement from "./OrdersManagement";
+import OrganizersList from "./OrganizersList";
+import EventRegistration from "./EventRegistration";
+import EventRegistrations from "./EventRegistrations";
+import OrganizerEvents from "./OrganizerEvents";
+
+export default function MainLayout() {
+  const [activeTab, setActiveTab] = useState("home");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userType, setUserType] = useState<"user" | "organizer">("user");
+  const [currentEventId, setCurrentEventId] = useState<string | null>(null);
+  const [currentOrganizerId, setCurrentOrganizerId] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventRegistrations" | "organizerEvents">("feed");
+
+  const handleLogin = (type: "user" | "organizer") => {
+    setUserType(type);
+    setIsAuthenticated(true);
+  };
+
+  const handleEventClick = (eventId: string) => {
+    if (eventId === "live-events") {
+      setCurrentView("liveEvents");
+    } else if (eventId === "register") {
+      setCurrentView("eventRegistration");
+    } else if (eventId === "registrations") {
+      setCurrentView("eventRegistrations");
+    } else {
+      setCurrentEventId(eventId);
+      setCurrentView("eventDetails");
+    }
+  };
+
+  const handleFindFriends = () => {
+    setCurrentView("findFriends");
+  };
+
+  const handleOrganizerClick = (organizerId: string) => {
+    setCurrentOrganizerId(organizerId);
+    setCurrentView("organizerProfile");
+  };
+
+  const handleShowOrganizers = () => {
+    setCurrentView("organizersList");
+  };
+
+  const handleBackToFeed = () => {
+    setCurrentView("feed");
+    setCurrentEventId(null);
+    setCurrentOrganizerId(null);
+  };
+
+  if (!isAuthenticated) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "home":
+        switch (currentView) {
+          case "eventDetails":
+            return <EventDetails 
+              onBack={handleBackToFeed} 
+              eventId={currentEventId}
+              onRegister={() => {
+                setCurrentView("eventRegistration");
+              }}
+              onFindFriends={handleFindFriends}
+            />;
+          case "findFriends":
+            return <FindFriends onBack={handleBackToFeed} />;
+          case "liveEvents":
+            return <LiveEvents onBack={handleBackToFeed} onEventClick={handleEventClick} />;
+          case "organizerProfile":
+            return <OrganizerProfile onBack={handleBackToFeed} organizerId={currentOrganizerId || undefined} onEventClick={handleEventClick} />;
+          case "organizersList":
+            return <OrganizersList onBack={handleBackToFeed} onOrganizerClick={handleOrganizerClick} />;
+          case "eventRegistration":
+            return <EventRegistration onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
+          case "eventRegistrations":
+            return <EventRegistrations onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
+          default:
+            return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userType} />;
+        }
+      case "create":
+        // Only organizers can create events
+        if (userType === "organizer") {
+          return <CreateEvent onBack={() => setActiveTab("home")} />;
+        } else {
+          // Redirect users back to home
+          setActiveTab("home");
+          return null;
+        }
+      case "friends":
+        return <FindFriends onBack={() => setActiveTab("home")} />;
+      case "profile":
+        // Different profile pages for different user types
+        return userType === "organizer" ? (
+          <OrganizerEvents 
+            onBack={() => setActiveTab("home")} 
+            onCreateEvent={() => setActiveTab("create")}
+            onManageRegistrations={(eventId) => {
+              setCurrentEventId(eventId);
+              setCurrentView("eventRegistrations");
+              setActiveTab("home");
+            }}
+          />
+        ) : (
+          <UserProfile userType={userType} />
+        );
+      default:
+        return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userType} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {renderContent()}
+      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} userType={userType} />
+    </div>
+  );
+}
