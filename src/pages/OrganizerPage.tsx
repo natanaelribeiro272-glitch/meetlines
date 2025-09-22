@@ -1,10 +1,17 @@
-import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
+import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import OrganizerEventsList from "@/components/OrganizerEventsList";
+import OrganizerCustomization from "@/components/OrganizerCustomization";
+import OrganizerSettings from "@/components/OrganizerSettings";
 import event1 from "@/assets/event-1.jpg";
 
 export default function OrganizerPage() {
+  const [activeTab, setActiveTab] = useState("profile");
+  
   const organizer = {
     name: "Electronic Vibes",
     bio: "Criando experiências únicas em música eletrônica desde 2019",
@@ -29,10 +36,11 @@ export default function OrganizerPage() {
     { title: "Galeria de Fotos", color: "muted", icon: "📸" },
   ];
 
-  return (
-    <div className="min-h-screen bg-background">
+  // Profile tab content
+  const ProfileContent = () => (
+    <div className="space-y-6">
       {/* Header */}
-      <header className="relative h-64 bg-gradient-to-b from-surface to-background">
+      <header className="relative h-64 bg-gradient-to-b from-surface to-background rounded-lg overflow-hidden">
         <img
           src={currentEvent.image}
           alt="Cover"
@@ -50,7 +58,7 @@ export default function OrganizerPage() {
       </header>
 
       {/* Profile Section */}
-      <div className="px-4 -mt-16 relative z-10 max-w-md mx-auto">
+      <div className="-mt-16 relative z-10">
         <div className="flex items-end gap-4 mb-4">
           <div className="avatar-story">
             <Avatar className="h-20 w-20 border-4 border-background">
@@ -65,7 +73,7 @@ export default function OrganizerPage() {
             <p className="text-sm text-muted-foreground">{organizer.bio}</p>
           </div>
           
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setActiveTab("customization")}>
             <Edit3 className="h-4 w-4" />
             Editar
           </Button>
@@ -147,7 +155,10 @@ export default function OrganizerPage() {
         {/* Quick Actions Menu */}
         <div className="mb-6">
           <div className="grid grid-cols-3 gap-3">
-            <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer">
+            <div 
+              className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer"
+              onClick={() => setActiveTab("events")}
+            >
               <span className="text-2xl mb-2 block">🎫</span>
               <p className="text-xs font-medium text-foreground">Pedidos</p>
             </div>
@@ -201,6 +212,68 @@ export default function OrganizerPage() {
             </Button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="px-4 py-6 max-w-md mx-auto">
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="flex bg-surface rounded-lg p-1 mb-4">
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                activeTab === "profile"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Home className="h-4 w-4" />
+              Perfil
+            </button>
+            <button
+              onClick={() => setActiveTab("events")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                activeTab === "events"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <List className="h-4 w-4" />
+              Eventos
+            </button>
+            <button
+              onClick={() => setActiveTab("customization")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                activeTab === "customization"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Palette className="h-4 w-4" />
+              Design
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                activeTab === "settings"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Settings className="h-4 w-4" />
+              Config
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "profile" && <ProfileContent />}
+        {activeTab === "events" && <OrganizerEventsList />}
+        {activeTab === "customization" && <OrganizerCustomization />}
+        {activeTab === "settings" && <OrganizerSettings />}
       </div>
     </div>
   );
