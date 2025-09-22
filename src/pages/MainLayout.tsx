@@ -106,15 +106,7 @@ export default function MainLayout() {
       case "profile":
         // Different profile pages for different user types
         return userType === "organizer" ? (
-          <OrganizerEvents 
-            onBack={() => setActiveTab("home")} 
-            onCreateEvent={() => setActiveTab("create")}
-            onManageRegistrations={(eventId) => {
-              setCurrentEventId(eventId);
-              setCurrentView("eventRegistrations");
-              setActiveTab("home");
-            }}
-          />
+          <OrganizerPage />
         ) : (
           <UserProfile userType={userType} />
         );
