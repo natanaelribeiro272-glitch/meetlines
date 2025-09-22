@@ -16,7 +16,9 @@ import {
   MessageCircle,
   Music,
   Link,
-  Plus
+  Plus,
+  LogOut,
+  Trash2
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,17 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
 
 interface UserProfileProps {
   userType: "user" | "organizer";
@@ -449,7 +462,7 @@ export default function UserProfile({ userType }: UserProfileProps) {
               <p className="font-medium">Perfil Público</p>
               <p className="text-sm text-muted-foreground">Outros podem ver seu perfil nos eventos</p>
             </div>
-            <Button variant="outline" size="sm">Ativado</Button>
+            <Switch defaultChecked />
           </div>
           
           <div className="flex items-center justify-between">
@@ -457,7 +470,78 @@ export default function UserProfile({ userType }: UserProfileProps) {
               <p className="font-medium">Mostrar Interesses</p>
               <p className="text-sm text-muted-foreground">Exibir seus interesses para outros usuários</p>
             </div>
-            <Button variant="outline" size="sm">Ativado</Button>
+            <Switch defaultChecked />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Logout */}
+      <Card>
+        <CardContent className="p-6">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="w-full text-orange-600 hover:text-orange-700 hover:bg-orange-50">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair da Conta
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar Logout</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente para acessar.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => console.log("Logout realizado")}>
+                  Sair
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-4 w-4" />
+            Zona de Perigo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <p className="font-medium text-foreground">Excluir Conta</p>
+              <p className="text-sm text-muted-foreground">
+                Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos.
+              </p>
+            </div>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Conta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir Conta Permanentemente</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação é irreversível. Todos os seus dados e participações em eventos serão permanentemente excluídos.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => console.log("Conta excluída")} className="bg-destructive hover:bg-destructive/90">
+                    Excluir Definitivamente
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>

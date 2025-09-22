@@ -139,29 +139,22 @@ export default function OrganizerPage() {
           </div>
         </div>
 
-        {/* Settings */}
+        {/* Event Status */}
         <div className="mb-6 p-4 bg-card rounded-lg">
-          <h3 className="font-semibold text-foreground mb-4">Configurações</h3>
+          <h3 className="font-semibold text-foreground mb-4">Status do Evento</h3>
           
           <div className="flex items-center justify-between py-3">
             <div>
-              <p className="font-medium text-foreground">Área de Pedidos</p>
-              <p className="text-sm text-muted-foreground">Permitir compras no evento</p>
+              <p className="font-medium text-foreground">Evento Ativo</p>
+              <p className="text-sm text-muted-foreground">Evento está sendo exibido publicamente</p>
             </div>
-            <Switch checked={currentEvent.ordersEnabled} />
+            <Switch checked={true} />
           </div>
         </div>
 
         {/* Quick Actions Menu */}
         <div className="mb-6">
-          <div className="grid grid-cols-3 gap-3">
-            <div 
-              className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer"
-              onClick={() => setActiveTab("events")}
-            >
-              <span className="text-2xl mb-2 block">🎫</span>
-              <p className="text-xs font-medium text-foreground">Pedidos</p>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
             <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer">
               <span className="text-2xl mb-2 block">🔗</span>
               <p className="text-xs font-medium text-foreground">Links</p>
