@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { useAuth } from "@/hooks/useAuth";
 import AuthPage from "./AuthPage";
 import Home from "./Home";
 import EventDetails from "./EventDetails";
@@ -17,15 +18,14 @@ import OrganizerEvents from "./OrganizerEvents";
 
 export default function MainLayout() {
   const [activeTab, setActiveTab] = useState("home");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState<"user" | "organizer">("user");
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventRegistrations" | "organizerEvents">("feed");
 
+  const { user, userRole, loading } = useAuth();
+
   const handleLogin = (type: "user" | "organizer") => {
-    setUserType(type);
-    setIsAuthenticated(true);
+    // This is handled by the auth provider now
   };
 
   const handleEventClick = (eventId: string) => {
@@ -60,7 +60,18 @@ export default function MainLayout() {
     setCurrentOrganizerId(null);
   };
 
-  if (!isAuthenticated) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
     return <AuthPage onLogin={handleLogin} />;
   }
 
@@ -90,11 +101,11 @@ export default function MainLayout() {
           case "eventRegistrations":
             return <EventRegistrations onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           default:
-            return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userType} />;
+        return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
         }
       case "create":
         // Only organizers can create events
-        if (userType === "organizer") {
+        if (userRole === "organizer") {
           return <CreateEvent onBack={() => setActiveTab("home")} />;
         } else {
           // Redirect users back to home
@@ -105,20 +116,20 @@ export default function MainLayout() {
         return <FindFriends onBack={() => setActiveTab("home")} />;
       case "profile":
         // Different profile pages for different user types
-        return userType === "organizer" ? (
+        return userRole === "organizer" ? (
           <OrganizerPage />
         ) : (
-          <UserProfile userType={userType} />
+          <UserProfile userType={userRole || "user"} />
         );
       default:
-        return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userType} />;
+        return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
       {renderContent()}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} userType={userType} />
+      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} userType={userRole || "user"} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AuthPageProps {
   onLogin: (userType: "user" | "organizer") => void;
@@ -13,17 +14,34 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<"user" | "organizer">("user");
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { signUp, signIn } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login/register
-    console.log("Auth:", isLogin ? "Login" : "Register", formData, "Type:", userType);
-    onLogin(userType);
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await signIn(formData.email, formData.password);
+        if (!error) {
+          // Auth provider will handle the redirect via the context
+        }
+      } else {
+        const { error } = await signUp(formData.email, formData.password, formData.name, userType);
+        if (!error) {
+          // Success handled by auth provider
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -131,8 +149,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             </div>
           </div>
 
-          <Button type="submit" variant="glow" size="lg" className="w-full">
-            {isLogin ? "Entrar" : "Criar Conta"}
+          <Button type="submit" variant="glow" size="lg" className="w-full" disabled={loading}>
+            {loading ? "Carregando..." : (isLogin ? "Entrar" : "Criar Conta")}
           </Button>
         </form>
 

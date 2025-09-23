@@ -14,11 +14,13 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function OrganizerSettings() {
+  const { signOut } = useAuth();
+
   const handleLogout = () => {
-    // Aqui implementaria a lógica de logout
-    console.log("Logout realizado");
+    signOut();
   };
 
   const handleDeleteAccount = () => {

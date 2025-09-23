@@ -41,6 +41,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UserProfileProps {
   userType: "user" | "organizer";
@@ -77,6 +78,12 @@ export default function UserProfile({ userType }: UserProfileProps) {
   });
 
   const [notes, setNotes] = useState("Sempre nos eventos de house music. Venha conversar se me vir! 🎵");
+
+  const { user, signOut } = useAuth();
+
+  const handleLogout = () => {
+    signOut();
+  };
 
   const toggleInterest = (interestId: string) => {
     setSelectedInterests(prev => 
@@ -494,7 +501,7 @@ export default function UserProfile({ userType }: UserProfileProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => console.log("Logout realizado")}>
+                <AlertDialogAction onClick={handleLogout}>
                   Sair
                 </AlertDialogAction>
               </AlertDialogFooter>

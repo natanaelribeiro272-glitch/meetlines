@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { useOrganizer } from "@/hooks/useOrganizer";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import OrganizerEventsList from "@/components/OrganizerEventsList";
 import OrganizerCustomization from "@/components/OrganizerCustomization";
 import OrganizerSettings from "@/components/OrganizerSettings";
@@ -11,12 +15,25 @@ import event1 from "@/assets/event-1.jpg";
 
 export default function OrganizerPage() {
   const [activeTab, setActiveTab] = useState("profile");
+  const { user } = useAuth();
+  const { organizerData, events, customLinks, loading } = useOrganizer();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
   
   const organizer = {
-    name: "Electronic Vibes",
-    bio: "Criando experiências únicas em música eletrônica desde 2019",
+    name: organizerData?.page_title || "Meu Perfil",
+    bio: organizerData?.page_description || "Organizador de eventos",
     followers: 1250,
-    events: 15,
+    events: events.length,
     pageViews: 8450,
   };
 
