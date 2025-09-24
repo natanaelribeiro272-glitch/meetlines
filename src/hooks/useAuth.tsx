@@ -21,6 +21,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<'user' | 'organizer' | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      
+      setUserRole(profile?.role || 'user');
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole('user');
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -30,20 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (session?.user) {
           // Fetch user role from profiles table
-          setTimeout(async () => {
-            try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('user_id', session.user.id)
-                .single();
-              
-              setUserRole(profile?.role || 'user');
-            } catch (error) {
-              console.error('Error fetching user role:', error);
-              setUserRole('user');
-            }
-          }, 0);
+          fetchUserRole(session.user.id);
         } else {
           setUserRole(null);
         }
@@ -56,6 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      }
+      
       setLoading(false);
     });
 
