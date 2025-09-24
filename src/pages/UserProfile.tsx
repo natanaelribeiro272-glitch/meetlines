@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   User, 
   Lock, 
@@ -18,7 +18,12 @@ import {
   Link,
   Plus,
   LogOut,
-  Trash2
+  Trash2,
+  MapPin,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Youtube
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -42,87 +47,150 @@ import {
   AlertDialogTrigger 
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 interface UserProfileProps {
   userType: "user" | "organizer";
 }
 
-const interestOptions = [
-  { id: "namoro", label: "💕 Namoro", icon: Heart },
-  { id: "amizade", label: "👥 Amizade", icon: Users },
-  { id: "curtir", label: "🎉 Curtir", icon: Calendar },
-  { id: "network", label: "🤝 Network", icon: Briefcase },
-];
-
 const socialPlatforms = [
-  { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, color: "text-green-500", placeholder: "https://wa.me/11999999999" },
-  { id: "instagram", label: "Instagram", icon: Instagram, color: "text-pink-500", placeholder: "https://instagram.com/seuperfil" },
-  { id: "tiktok", label: "TikTok", icon: Music, color: "text-black", placeholder: "https://tiktok.com/@seuperfil" },
-  { id: "linktree", label: "Linktree", icon: Link, color: "text-blue-500", placeholder: "https://linktr.ee/seuperfil" },
+  { 
+    id: "instagram", 
+    label: "Instagram", 
+    icon: Instagram, 
+    color: "text-pink-500", 
+    placeholder: "https://instagram.com/seuperfil",
+    field: "instagram_url" as const
+  },
+  { 
+    id: "facebook", 
+    label: "Facebook", 
+    icon: Facebook, 
+    color: "text-blue-600", 
+    placeholder: "https://facebook.com/seuperfil",
+    field: "facebook_url" as const
+  },
+  { 
+    id: "twitter", 
+    label: "Twitter", 
+    icon: Twitter, 
+    color: "text-sky-500", 
+    placeholder: "https://twitter.com/seuperfil",
+    field: "twitter_url" as const
+  },
+  { 
+    id: "linkedin", 
+    label: "LinkedIn", 
+    icon: Linkedin, 
+    color: "text-blue-700", 
+    placeholder: "https://linkedin.com/in/seuperfil",
+    field: "linkedin_url" as const
+  },
+  { 
+    id: "tiktok", 
+    label: "TikTok", 
+    icon: Music, 
+    color: "text-black", 
+    placeholder: "https://tiktok.com/@seuperfil",
+    field: "tiktok_url" as const
+  },
+  { 
+    id: "youtube", 
+    label: "YouTube", 
+    icon: Youtube, 
+    color: "text-red-500", 
+    placeholder: "https://youtube.com/@seuperfil",
+    field: "youtube_url" as const
+  },
 ];
 
 export default function UserProfile({ userType }: UserProfileProps) {
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedInterests, setSelectedInterests] = useState(["amizade", "curtir"]);
-  const [showAddSocialDialog, setShowAddSocialDialog] = useState(false);
-  const [socialLinks, setSocialLinks] = useState([
-    { id: "1", platform: "instagram", url: "https://instagram.com/joaosilva", isVisible: true },
-    { id: "2", platform: "whatsapp", url: "https://wa.me/11999999999", isVisible: false },
-  ]);
-  const [profileData, setProfileData] = useState({
-    name: "João Silva",
-    bio: "Adoro música eletrônica e encontrar pessoas novas em eventos!",
-    location: "Parauapebas, PA",
-    age: "25",
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    display_name: "",
+    bio: "",
+    location: "",
+    age: "",
+    notes: "",
+    phone: "",
+    website: ""
   });
 
-  const [notes, setNotes] = useState("Sempre nos eventos de house music. Venha conversar se me vir! 🎵");
-
   const { user, signOut } = useAuth();
+  const { profile, loading, saving, updateProfile, uploadAvatar } = useProfile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleLogout = () => {
-    signOut();
+  // Update form data when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        display_name: profile.display_name || "",
+        bio: profile.bio || "",
+        location: profile.location || "",
+        age: profile.age?.toString() || "",
+        notes: profile.notes || "",
+        phone: profile.phone || "",
+        website: profile.website || ""
+      });
+    }
+  }, [profile]);
+
+  const handleSaveField = async (field: keyof typeof formData) => {
+    const value = formData[field];
+    const updateData: any = { [field]: value || null };
+    
+    // Special handling for age field
+    if (field === 'age') {
+      updateData.age = value ? parseInt(value) : null;
+    }
+
+    const success = await updateProfile(updateData);
+    if (success) {
+      setEditingField(null);
+    }
   };
 
-  const toggleInterest = (interestId: string) => {
-    setSelectedInterests(prev => 
-      prev.includes(interestId)
-        ? prev.filter(id => id !== interestId)
-        : [...prev, interestId]
+  const handleSaveSocialLink = async (platform: string, url: string) => {
+    const socialPlatform = socialPlatforms.find(p => p.id === platform);
+    if (!socialPlatform) return;
+
+    await updateProfile({ [socialPlatform.field]: url || null });
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione apenas arquivos de imagem');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    await uploadAvatar(file);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header title="Meu Perfil" />
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando perfil...</p>
+          </div>
+        </div>
+      </div>
     );
-  };
-
-  const toggleSocialVisibility = (socialId: string) => {
-    setSocialLinks(prev => 
-      prev.map(link => 
-        link.id === socialId 
-          ? { ...link, isVisible: !link.isVisible }
-          : link
-      )
-    );
-  };
-
-  const addSocialLink = (platform: string, url: string) => {
-    const newLink = {
-      id: Date.now().toString(),
-      platform,
-      url,
-      isVisible: true
-    };
-    setSocialLinks(prev => [...prev, newLink]);
-    setShowAddSocialDialog(false);
-  };
-
-  const removeSocialLink = (socialId: string) => {
-    setSocialLinks(prev => prev.filter(link => link.id !== socialId));
-  };
-
-  const participatedEvents = [
-    { id: "1", name: "Festival Eletrônico Underground", date: "15 Out 2024", status: "Participei" },
-    { id: "2", name: "Sunset Rooftop Party", date: "08 Out 2024", status: "Confirmado" },
-    { id: "3", name: "Tech House Night", date: "28 Set 2024", status: "Participei" },
-  ];
+  }
 
   const renderProfileTab = () => (
     <div className="space-y-6">
@@ -131,107 +199,144 @@ export default function UserProfile({ userType }: UserProfileProps) {
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="h-8 w-8 text-primary" />
+              <div className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="h-8 w-8 text-primary" />
+                )}
               </div>
               <Button
                 size="icon"
                 variant="outline"
                 className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={saving}
               >
                 <Camera className="h-3 w-3" />
               </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                {isEditing ? (
-                  <Input
-                    value={profileData.name}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-                    className="text-xl font-semibold"
-                  />
-                ) : (
-                  <h2 className="text-xl font-semibold">{profileData.name}</h2>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setIsEditing(!isEditing)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="mb-2">
-                {isEditing ? (
-                  <div className="flex gap-2">
+                {editingField === 'display_name' ? (
+                  <div className="flex gap-2 flex-1">
                     <Input
-                      value={profileData.location}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
-                      placeholder="Localização"
-                      className="text-sm"
+                      value={formData.display_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, display_name: e.target.value }))}
+                      className="text-xl font-semibold"
+                      placeholder="Seu nome"
                     />
-                    <Input
-                      value={profileData.age}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, age: e.target.value }))}
-                      placeholder="Idade"
-                      className="text-sm w-20"
-                    />
+                    <Button size="sm" onClick={() => handleSaveField('display_name')} disabled={saving}>
+                      Salvar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
+                      Cancelar
+                    </Button>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">{profileData.location} • {profileData.age} anos</p>
+                  <>
+                    <h2 className="text-xl font-semibold">{profile?.display_name || 'Seu Nome'}</h2>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingField('display_name')}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </>
                 )}
               </div>
-              {isEditing ? (
+              
+              <div className="mb-2">
+                {editingField === 'location' || editingField === 'age' ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={formData.location}
+                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        placeholder="Localização"
+                        className="text-sm"
+                      />
+                      <Input
+                        value={formData.age}
+                        onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
+                        placeholder="Idade"
+                        type="number"
+                        className="text-sm w-20"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => {
+                        handleSaveField('location');
+                        handleSaveField('age');
+                      }} disabled={saving}>
+                        Salvar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3 inline mr-1" />
+                      {profile?.location || 'Localização'} • {profile?.age ? `${profile.age} anos` : 'Idade não informada'}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingField('location')}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {editingField === 'bio' ? (
                 <div className="space-y-2">
                   <Textarea
-                    value={profileData.bio}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                    value={formData.bio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                     placeholder="Escreva sobre você..."
                     className="text-sm"
                   />
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => setIsEditing(false)}>
+                    <Button size="sm" onClick={() => handleSaveField('bio')} disabled={saving}>
                       Salvar
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+                    <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
                       Cancelar
                     </Button>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm">{profileData.bio}</p>
+                <div className="flex items-start gap-2">
+                  <p className="text-sm flex-1">{profile?.bio || 'Clique para adicionar uma biografia'}</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditingField('bio')}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </div>
               )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Interests */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5" />
-            Meus Interesses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3">
-            {interestOptions.map((interest) => (
-              <button
-                key={interest.id}
-                onClick={() => toggleInterest(interest.id)}
-                className={`p-3 rounded-lg border-2 transition-all text-left ${
-                  selectedInterests.includes(interest.id)
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <interest.icon className="h-4 w-4" />
-                  <span className="text-sm font-medium">{interest.label}</span>
-                </div>
-              </button>
-            ))}
           </div>
         </CardContent>
       </Card>
@@ -239,72 +344,56 @@ export default function UserProfile({ userType }: UserProfileProps) {
       {/* Social Links */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <ExternalLink className="h-5 w-5" />
-              Redes Sociais
-            </CardTitle>
-            <Dialog open={showAddSocialDialog} onOpenChange={setShowAddSocialDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Adicionar
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Adicionar Rede Social</DialogTitle>
-                </DialogHeader>
-                <AddSocialForm onAdd={addSocialLink} />
-              </DialogContent>
-            </Dialog>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <ExternalLink className="h-5 w-5" />
+            Redes Sociais
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {socialLinks.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Nenhuma rede social adicionada ainda
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {socialLinks.map((social) => {
-                const platform = socialPlatforms.find(p => p.id === social.platform);
-                if (!platform) return null;
-                
-                const Icon = platform.icon;
-                return (
-                  <div key={social.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                    <Icon className={`h-5 w-5 ${platform.color}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{platform.label}</p>
-                      <p className="text-xs text-muted-foreground truncate">{social.url}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        {social.isVisible ? (
-                          <Eye className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <Switch
-                          checked={social.isVisible}
-                          onCheckedChange={() => toggleSocialVisibility(social.id)}
+          <div className="space-y-3">
+            {socialPlatforms.map((platform) => {
+              const Icon = platform.icon;
+              const currentUrl = profile?.[platform.field] || "";
+              const isEditing = editingField === platform.field;
+              
+              return (
+                <div key={platform.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <Icon className={`h-5 w-5 ${platform.color}`} />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{platform.label}</p>
+                    {isEditing ? (
+                      <div className="flex gap-2 mt-2">
+                        <Input
+                          defaultValue={currentUrl}
+                          placeholder={platform.placeholder}
+                          className="text-xs"
+                          onBlur={(e) => handleSaveSocialLink(platform.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveSocialLink(platform.id, e.currentTarget.value);
+                              setEditingField(null);
+                            }
+                          }}
+                          autoFocus
                         />
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeSocialLink(social.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        ×
-                      </Button>
-                    </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {currentUrl || 'Não configurado'}
+                      </p>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditingField(isEditing ? null : platform.field)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 
@@ -318,101 +407,38 @@ export default function UserProfile({ userType }: UserProfileProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Escreva algo sobre você que outros possam ver..."
-            className="min-h-[100px]"
-          />
+          {editingField === 'notes' ? (
+            <div className="space-y-2">
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Escreva algo sobre você que outros possam ver..."
+                className="min-h-[100px]"
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => handleSaveField('notes')} disabled={saving}>
+                  Salvar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm">{profile?.notes || 'Clique para adicionar notas públicas'}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditingField('notes')}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar Notas
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
-    </div>
-  );
-
-  const AddSocialForm = ({ onAdd }: { onAdd: (platform: string, url: string) => void }) => {
-    const [selectedPlatform, setSelectedPlatform] = useState("");
-    const [url, setUrl] = useState("");
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (selectedPlatform && url) {
-        onAdd(selectedPlatform, url);
-        setSelectedPlatform("");
-        setUrl("");
-      }
-    };
-
-    const currentPlatform = socialPlatforms.find(p => p.id === selectedPlatform);
-
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label>Rede Social</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {socialPlatforms.map((platform) => {
-              const Icon = platform.icon;
-              return (
-                <button
-                  key={platform.id}
-                  type="button"
-                  onClick={() => setSelectedPlatform(platform.id)}
-                  className={`p-3 border rounded-lg flex items-center gap-2 transition-all ${
-                    selectedPlatform === platform.id
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${platform.color}`} />
-                  <span className="text-sm">{platform.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        
-        {selectedPlatform && (
-          <div className="space-y-2">
-            <Label>URL/Link</Label>
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder={currentPlatform?.placeholder}
-              type="url"
-            />
-          </div>
-        )}
-
-        <Button type="submit" className="w-full" disabled={!selectedPlatform || !url}>
-          Adicionar Link
-        </Button>
-      </form>
-    );
-  };
-
-  const renderEventsTab = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Meus Eventos</h3>
-        <Badge variant="outline">{participatedEvents.length} eventos</Badge>
-      </div>
-      
-      {participatedEvents.map((event) => (
-        <Card key={event.id}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">{event.name}</h4>
-                <p className="text-sm text-muted-foreground">{event.date}</p>
-              </div>
-              <Badge 
-                variant={event.status === "Participei" ? "default" : "secondary"}
-              >
-                {event.status}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
     </div>
   );
 
@@ -421,63 +447,64 @@ export default function UserProfile({ userType }: UserProfileProps) {
       {/* Account Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Configurações da Conta</CardTitle>
+          <CardTitle>Informações Pessoais</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Nome</Label>
-            <Input value={profileData.name} />
+            <Label>Email</Label>
+            <Input value={user?.email || ''} disabled />
           </div>
           
           <div className="space-y-2">
-            <Label>Localização</Label>
-            <Input value={profileData.location} />
+            <Label>Telefone</Label>
+            {editingField === 'phone' ? (
+              <div className="flex gap-2">
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="(11) 99999-9999"
+                />
+                <Button size="sm" onClick={() => handleSaveField('phone')} disabled={saving}>
+                  Salvar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input value={profile?.phone || 'Não informado'} disabled />
+                <Button size="sm" variant="outline" onClick={() => setEditingField('phone')}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
           
           <div className="space-y-2">
-            <Label>Idade</Label>
-            <Input value={profileData.age} />
-          </div>
-          
-          <Separator />
-          
-          <div className="space-y-2">
-            <Label>Nova Senha</Label>
-            <Input type="password" placeholder="Digite sua nova senha" />
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Confirmar Senha</Label>
-            <Input type="password" placeholder="Confirme sua nova senha" />
-          </div>
-          
-          <Button className="w-full">
-            <Lock className="h-4 w-4 mr-2" />
-            Salvar Alterações
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Privacy Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Privacidade</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Perfil Público</p>
-              <p className="text-sm text-muted-foreground">Outros podem ver seu perfil nos eventos</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Mostrar Interesses</p>
-              <p className="text-sm text-muted-foreground">Exibir seus interesses para outros usuários</p>
-            </div>
-            <Switch defaultChecked />
+            <Label>Website</Label>
+            {editingField === 'website' ? (
+              <div className="flex gap-2">
+                <Input
+                  value={formData.website}
+                  onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                  placeholder="https://seusite.com"
+                />
+                <Button size="sm" onClick={() => handleSaveField('website')} disabled={saving}>
+                  Salvar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input value={profile?.website || 'Não informado'} disabled />
+                <Button size="sm" variant="outline" onClick={() => setEditingField('website')}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -496,12 +523,12 @@ export default function UserProfile({ userType }: UserProfileProps) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar Logout</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente para acessar.
+                  Tem certeza que deseja sair da sua conta?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLogout}>
+                <AlertDialogAction onClick={signOut}>
                   Sair
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -509,111 +536,42 @@ export default function UserProfile({ userType }: UserProfileProps) {
           </AlertDialog>
         </CardContent>
       </Card>
-
-      {/* Danger Zone */}
-      <Card className="border-destructive/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
-            <Trash2 className="h-4 w-4" />
-            Zona de Perigo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <p className="font-medium text-foreground">Excluir Conta</p>
-              <p className="text-sm text-muted-foreground">
-                Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos.
-              </p>
-            </div>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir Conta
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir Conta Permanentemente</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação é irreversível. Todos os seus dados e participações em eventos serão permanentemente excluídos.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => console.log("Conta excluída")} className="bg-destructive hover:bg-destructive/90">
-                    Excluir Definitivamente
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header title="Meu Perfil" userType={userType} />
+    <div className="min-h-screen bg-background">
+      <Header title="Meu Perfil" />
       
-      <div className="px-4 py-4 max-w-md mx-auto">
-        {/* Info sobre as abas */}
-        <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-          <p className="text-sm text-muted-foreground text-center">
-            {activeTab === "profile" && "Configure seu perfil, redes sociais e interesses"}
-            {activeTab === "events" && "Veja seus eventos participados e confirmados"}
-            {activeTab === "settings" && "Configurações de conta e privacidade"}
-          </p>
-        </div>
-        {/* Tab Navigation */}
-        <div className="flex bg-surface rounded-lg p-1 mb-6 border border-border">
+      <div className="p-4">
+        {/* Navigation Tabs */}
+        <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-smooth ${
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
               activeTab === "profile"
-                ? "bg-primary text-primary-foreground"
+                ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <div className="flex items-center gap-1 justify-center">
-              <User className="h-4 w-4" />
-              <span>Perfil</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab("events")}
-            className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-smooth ${
-              activeTab === "events"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <div className="flex items-center gap-1 justify-center">
-              <Calendar className="h-4 w-4" />
-              <span>Eventos</span>
-            </div>
+            <User className="h-4 w-4 inline mr-2" />
+            Perfil
           </button>
           <button
             onClick={() => setActiveTab("settings")}
-            className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-smooth ${
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
               activeTab === "settings"
-                ? "bg-primary text-primary-foreground"
+                ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <div className="flex items-center gap-1 justify-center">
-              <Settings className="h-4 w-4" />
-              <span>Config</span>
-            </div>
+            <Settings className="h-4 w-4 inline mr-2" />
+            Configurações
           </button>
         </div>
 
         {/* Tab Content */}
         {activeTab === "profile" && renderProfileTab()}
-        {activeTab === "events" && renderEventsTab()}
         {activeTab === "settings" && renderSettingsTab()}
       </div>
     </div>
