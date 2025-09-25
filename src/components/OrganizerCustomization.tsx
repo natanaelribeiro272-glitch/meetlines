@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Edit3, Upload, Palette, Type, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,18 +7,39 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useOrganizer } from "@/hooks/useOrganizer";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function OrganizerCustomization() {
+  const { organizerData, updateOrganizerProfile, loading } = useOrganizer();
   const [pageSettings, setPageSettings] = useState({
-    title: "Electronic Vibes",
-    subtitle: "Criando experiências únicas em música eletrônica",
-    description: "Somos especializados em eventos de música eletrônica underground com os melhores DJs da cena nacional e internacional.",
+    title: "",
+    subtitle: "",
+    description: "",
     theme: "dark",
     primaryColor: "#8B5CF6",
     showStats: true,
     showEvents: true,
     showContact: true,
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  useEffect(() => {
+    if (organizerData) {
+      setPageSettings({
+        title: organizerData.page_title || "",
+        subtitle: organizerData.page_subtitle || "",
+        description: organizerData.page_description || "",
+        theme: organizerData.theme || "dark",
+        primaryColor: organizerData.primary_color || "#8B5CF6",
+        showStats: organizerData.show_statistics,
+        showEvents: organizerData.show_events,
+        showContact: organizerData.show_contact,
+      });
+    }
+  }, [organizerData]);
 
   const themes = [
     { value: "dark", label: "Escuro" },
@@ -33,6 +54,56 @@ export default function OrganizerCustomization() {
     { name: "Rosa", value: "#EC4899" },
     { name: "Laranja", value: "#F59E0B" },
   ];
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await updateOrganizerProfile({
+        page_title: pageSettings.title,
+        page_subtitle: pageSettings.subtitle,
+        page_description: pageSettings.description,
+        theme: pageSettings.theme,
+        primary_color: pageSettings.primaryColor,
+        show_statistics: pageSettings.showStats,
+        show_events: pageSettings.showEvents,
+        show_contact: pageSettings.showContact,
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !organizerData) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${organizerData.id}/cover.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('user-uploads')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(fileName);
+
+      await updateOrganizerProfile({ cover_image_url: publicUrl });
+      toast.success('Imagem de capa atualizada!');
+    } catch (error) {
+      console.error('Error uploading cover:', error);
+      toast.error('Erro ao fazer upload da imagem');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -134,23 +205,48 @@ export default function OrganizerCustomization() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-4 w-4" />
-            Imagem de Perfil
+            Imagem de Capa
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center">
-              <span className="text-2xl font-bold text-foreground">
-                {pageSettings.title.charAt(0)}
-              </span>
+            <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center overflow-hidden">
+              {organizerData?.cover_image_url ? (
+                <img 
+                  src={organizerData.cover_image_url} 
+                  alt="Cover" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl font-bold text-foreground">
+                  {pageSettings.title.charAt(0) || 'U'}
+                </span>
+              )}
             </div>
             <div className="flex-1">
-              <Button variant="outline" className="w-full">
-                <Upload className="h-4 w-4 mr-2" />
-                Alterar Foto
-              </Button>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                id="avatar-upload"
+              />
+              <label htmlFor="avatar-upload">
+                <Button 
+                  variant="outline" 
+                  className="w-full cursor-pointer"
+                  disabled={isUploadingAvatar}
+                >
+                  {isUploadingAvatar ? (
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  Alterar Foto de Capa
+                </Button>
+              </label>
               <p className="text-xs text-muted-foreground mt-2">
-                Recomendado: 400x400px, máximo 2MB
+                Recomendado: 1200x400px, máximo 5MB
               </p>
             </div>
           </div>
@@ -200,8 +296,19 @@ export default function OrganizerCustomization() {
 
       {/* Save Changes */}
       <div className="flex gap-3">
-        <Button className="flex-1">
-          Salvar Alterações
+        <Button 
+          className="flex-1" 
+          onClick={handleSave}
+          disabled={isSaving || loading}
+        >
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              Salvando...
+            </>
+          ) : (
+            'Salvar Alterações'
+          )}
         </Button>
         <Button variant="outline">
           Visualizar

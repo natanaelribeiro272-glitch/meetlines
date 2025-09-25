@@ -3,45 +3,40 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { useOrganizer } from "@/hooks/useOrganizer";
 import event1 from "@/assets/event-1.jpg";
 import event2 from "@/assets/event-2.jpg";
 
-export default function OrganizerEventsList() {
+interface OrganizerEventsListProps {
+  onCreateEvent: () => void;
+}
+
+export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsListProps) {
+  const { events, loading } = useOrganizer();
+  const upcomingEvents = events.filter(event => event.status === 'upcoming');
+  const completedEvents = events.filter(event => event.status === 'completed');
+  const totalRegistrations = events.reduce((sum, event) => sum + event.current_attendees, 0);
+
   const eventsSummary = {
-    upcoming: 2,
-    registrations: 201,
-    completed: 1,
+    upcoming: upcomingEvents.length,
+    registrations: totalRegistrations,
+    completed: completedEvents.length,
   };
 
-  const events = [
-    {
-      id: 1,
-      title: "Festival Eletrônico 2024",
-      image: event1,
-      date: "14/03/2024 às 22:00",
-      location: "Club Neon, Vila Madalena",
-      registrations: "45/300 cadastros",
-      status: "upcoming",
-      badge: "Próximo"
-    },
-    {
-      id: 2,
-      title: "Rooftop Party Sunset",
-      image: event2,
-      date: "19/03/2024 às 18:00",
-      location: "Terraço Sky Bar, Pinheiros",
-      registrations: "156/200 cadastros",
-      status: "upcoming",
-      badge: "Próximo"
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">Meus Eventos</h2>
-        <Button size="sm">
+        <Button size="sm" onClick={onCreateEvent}>
           + Criar Evento
         </Button>
       </div>
@@ -77,97 +72,158 @@ export default function OrganizerEventsList() {
         </TabsList>
 
         <TabsContent value="upcoming" className="space-y-4">
-          {events.map((event) => (
-            <Card key={event.id} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex gap-3">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-foreground line-clamp-1">
-                          {event.title}
-                        </h3>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>{event.date}</span>
+          {upcomingEvents.length > 0 ? (
+            <>
+              {upcomingEvents.map((event) => (
+                <Card key={event.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex gap-3">
+                      {event.image_url && (
+                        <img
+                          src={event.image_url}
+                          alt={event.title}
+                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <h3 className="font-medium text-foreground line-clamp-1">
+                              {event.title}
+                            </h3>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>{new Date(event.event_date).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              <span className="line-clamp-1">{event.location}</span>
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary">
+                            {event.status === 'upcoming' ? 'Próximo' : event.status}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          <span className="line-clamp-1">{event.location}</span>
+                        
+                        <div className="flex items-center gap-1 text-sm text-emerald-600 mt-2">
+                          <Users className="h-3 w-3" />
+                          <span>{event.current_attendees}/{event.max_attendees || '∞'} participantes</span>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary">
-                        {event.badge}
-                      </Badge>
                     </div>
                     
-                    <div className="flex items-center gap-1 text-sm text-emerald-600 mt-2">
-                      <Users className="h-3 w-3" />
-                      <span>{event.registrations}</span>
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver Cadastros
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Settings className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Eye className="h-4 w-4 mr-1" />
-                    Ver Cadastros
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          
-          <Button variant="outline" className="w-full">
-            + Adicionar Cadastro
-          </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="mb-4">Nenhum evento próximo</p>
+              <Button onClick={onCreateEvent}>
+                Criar Primeiro Evento
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Nenhum evento realizado ainda</p>
-          </div>
+          {completedEvents.length > 0 ? (
+            completedEvents.map((event) => (
+              <Card key={event.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex gap-3">
+                    {event.image_url && (
+                      <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-foreground line-clamp-1">
+                            {event.title}
+                          </h3>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(event.event_date).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600">
+                          Realizado
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum evento realizado ainda</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="all" className="space-y-4">
-          {events.map((event) => (
-            <Card key={event.id} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex gap-3">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-foreground line-clamp-1">
-                          {event.title}
-                        </h3>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>{event.date}</span>
+          {events.length > 0 ? (
+            events.map((event) => (
+              <Card key={event.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex gap-3">
+                    {event.image_url && (
+                      <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-foreground line-clamp-1">
+                            {event.title}
+                          </h3>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(event.event_date).toLocaleDateString('pt-BR')}</span>
+                          </div>
                         </div>
+                        <Badge variant="secondary" className={
+                          event.status === 'completed' 
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-primary/10 text-primary"
+                        }>
+                          {event.status === 'upcoming' ? 'Próximo' : 
+                           event.status === 'completed' ? 'Realizado' : event.status}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary">
-                        {event.badge}
-                      </Badge>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="mb-4">Nenhum evento criado ainda</p>
+              <Button onClick={onCreateEvent}>
+                Criar Primeiro Evento
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

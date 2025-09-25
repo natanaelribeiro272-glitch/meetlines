@@ -7,12 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import FormBuilder, { FormField } from "@/components/FormBuilder";
+import { useOrganizer } from "@/hooks/useOrganizer";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface CreateEventProps {
   onBack: () => void;
 }
 
 export default function CreateEvent({ onBack }: CreateEventProps) {
+  const { createEvent } = useOrganizer();
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
@@ -26,12 +30,15 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
   });
 
   const [eventImage, setEventImage] = useState<string | null>(null);
+  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
   const [requiresRegistration, setRequiresRegistration] = useState(false);
   const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setEventImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setEventImage(e.target?.result as string);
@@ -44,13 +51,58 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
     setEventData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aqui implementaria a lógica de criação do evento
-    console.log("Evento criado:", eventData);
-    console.log("Requer cadastro:", requiresRegistration);
-    console.log("Campos do formulário:", formFields);
-    onBack();
+    
+    if (!eventData.title || !eventData.date || !eventData.time || !eventData.location) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    try {
+      setIsCreating(true);
+      
+      let imageUrl = null;
+      
+      // Upload image if exists
+      if (eventImageFile) {
+        const fileExt = eventImageFile.name.split('.').pop();
+        const fileName = `events/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('user-uploads')
+          .upload(fileName, eventImageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-uploads')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Combine date and time
+      const eventDateTime = new Date(`${eventData.date}T${eventData.time}`);
+
+      await createEvent({
+        title: eventData.title,
+        description: eventData.description,
+        event_date: eventDateTime.toISOString(),
+        location: eventData.location,
+        image_url: imageUrl,
+        max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
+        is_live: false,
+        status: 'upcoming'
+      });
+
+      onBack();
+    } catch (error) {
+      console.error('Error creating event:', error);
+      toast.error('Erro ao criar evento');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -289,8 +341,15 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
 
           {/* Botões de Ação */}
           <div className="space-y-3">
-            <Button type="submit" className="w-full btn-glow">
-              Criar Evento
+            <Button type="submit" className="w-full btn-glow" disabled={isCreating}>
+              {isCreating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Criando Evento...
+                </>
+              ) : (
+                'Criar Evento'
+              )}
             </Button>
             <Button type="button" variant="outline" className="w-full" onClick={onBack}>
               Cancelar
