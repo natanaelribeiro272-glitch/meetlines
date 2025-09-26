@@ -61,6 +61,54 @@ export type Database = {
           },
         ]
       }
+      event_comments: {
+        Row: {
+          content: string
+          created_at: string
+          event_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          event_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      event_likes: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_registrations: {
         Row: {
           created_at: string | null
@@ -204,6 +252,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizer_stats: {
+        Row: {
+          average_rating: number
+          created_at: string
+          events_count: number
+          followers_count: number
+          id: string
+          organizer_id: string
+          total_ratings: number
+          updated_at: string
+        }
+        Insert: {
+          average_rating?: number
+          created_at?: string
+          events_count?: number
+          followers_count?: number
+          id?: string
+          organizer_id: string
+          total_ratings?: number
+          updated_at?: string
+        }
+        Update: {
+          average_rating?: number
+          created_at?: string
+          events_count?: number
+          followers_count?: number
+          id?: string
+          organizer_id?: string
+          total_ratings?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       organizers: {
         Row: {
@@ -366,7 +447,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_organizer_stats: {
+        Args: { org_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       user_role: "user" | "organizer"
