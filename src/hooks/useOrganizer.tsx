@@ -131,6 +131,21 @@ export function useOrganizer() {
 
       if (error) throw error;
 
+      // Criar estatísticas iniciais do organizador
+      try {
+        await supabase
+          .from('organizer_stats')
+          .insert({
+            organizer_id: data.id,
+            followers_count: 0,
+            events_count: 0,
+            average_rating: 0,
+            total_ratings: 0
+          });
+      } catch (statsError) {
+        console.log('Stats already exist or error creating stats:', statsError);
+      }
+
       setOrganizerData(data);
       toast.success('Perfil de organizador criado!');
     } catch (error: any) {

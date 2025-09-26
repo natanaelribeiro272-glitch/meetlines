@@ -1,138 +1,16 @@
-import { useState } from "react";
 import { EventCard } from "./EventCard";
-import event1 from "@/assets/event-1.jpg";
-import event2 from "@/assets/event-2.jpg";
-import event3 from "@/assets/event-3.jpg";
+import { useEvents } from "@/hooks/useEvents";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface Event {
-  id: string;
-  title: string;
-  image: string;
-  organizerName: string;
-  organizerAvatar?: string;
-  date: string;
-  location: string;
-  estimatedAttendees: number;
-  likes: number;
-  comments: number;
-  isLiked: boolean;
-  isLive: boolean;
-  price?: number;
-  category?: string;
-  requiresRegistration?: boolean;
-  isOwnEvent?: boolean;
-}
-
-const mockEvents: Event[] = [
-  // Festas
-  {
-    id: "2", 
-    title: "Rooftop Party - Vista da Cidade",
-    image: event2,
-    organizerName: "Urban Events",
-    date: "Sáb, 19:00",
-    location: "Cobertura Infinity, Vila Madalena",
-    estimatedAttendees: 80,
-    likes: 156,
-    comments: 45,
-    isLiked: true,
-    isLive: false,
-    price: 85,
-    category: "festas"
-  },
-  {
-    id: "4",
-    title: "Festa Tropical no Clube",
-    image: event1,
-    organizerName: "Tropical Nights",
-    date: "Sex, 21:00",
-    location: "Clube Paradise, Moema",
-    estimatedAttendees: 300,
-    likes: 234,
-    comments: 67,
-    isLiked: false,
-    isLive: false,
-    price: 60,
-    category: "festas"
-  },
-  {
-    id: "5",
-    title: "Festa de Formatura UFRJ",
-    image: event3,
-    organizerName: "Formandos 2024",
-    date: "Ter, 20:00",
-    location: "Salão Nobre, Copacabana",
-    estimatedAttendees: 150,
-    likes: 89,
-    comments: 23,
-    isLiked: true,
-    isLive: false,
-    price: 120,
-    category: "festas"
-  },
-  {
-    id: "6",
-    title: "Halloween Party Especial",
-    image: event2,
-    organizerName: "Spooky Events",
-    date: "Qui, 22:00",
-    location: "Casa Assombrada, Centro",
-    estimatedAttendees: 200,
-    likes: 145,
-    comments: 34,
-    isLiked: false,
-    isLive: false,
-    price: 45,
-    category: "festas"
-  },
-  // Encontros
-  {
-    id: "7",
-    title: "Exposição de Arte Contemporânea",
-    image: event3, 
-    organizerName: "Galeria Moderna",
-    date: "Dom, 15:00",
-    location: "Galeria Moderna, Pinheiros",
-    estimatedAttendees: 120,
-    likes: 67,
-    comments: 12,
-    isLiked: false,
-    isLive: false,
-    category: "encontros",
-    requiresRegistration: true,
-    isOwnEvent: false
-  },
-  {
-    id: "8",
-    title: "Networking de Empreendedores",
-    image: event1,
-    organizerName: "StartupSP",
-    date: "Qua, 18:00",
-    location: "Hub de Inovação, Faria Lima",
-    estimatedAttendees: 80,
-    likes: 92,
-    comments: 18,
-    isLiked: true,
-    isLive: false,
-    category: "encontros",
-    requiresRegistration: true,
-    isOwnEvent: false
-  },
-  {
-    id: "9",
-    title: "Clube do Livro - Discussão",
-    image: event2,
-    organizerName: "BookLovers SP",
-    date: "Seg, 19:00",
-    location: "Café Literário, Vila Madalena",
-    estimatedAttendees: 25,
-    likes: 34,
-    comments: 8,
-    isLiked: false,
-    isLive: false,
-    category: "encontros"
-  }
-];
+// Função auxiliar para formatizar data
+const formatEventDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const dayName = days[date.getDay()];
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${dayName}, ${hours}:${minutes}`;
+};
 
 interface EventFeedProps {
   onEventClick: (eventId: string) => void;
@@ -141,47 +19,61 @@ interface EventFeedProps {
 }
 
 export function EventFeed({ onEventClick, onOrganizerClick, userType = "user" }: EventFeedProps) {
-  const [events, setEvents] = useState<Event[]>(mockEvents);
-
-  const handleLike = (eventId: string) => {
-    setEvents(prev => prev.map(event => 
-      event.id === eventId 
-        ? { 
-            ...event, 
-            isLiked: !event.isLiked,
-            likes: event.isLiked ? event.likes - 1 : event.likes + 1
-          }
-        : event
-    ));
-  };
+  const { events, loading, toggleLike } = useEvents();
 
   const handleEventClick = (eventId: string) => {
     onEventClick(eventId);
   };
 
   const categorizeEvents = () => {
-    const festas = events.filter(event => event.category === "festas");
-    const encontros = events.filter(event => event.category === "encontros");
+    // Dividir eventos em categorias baseado na data ou tipo
+    const now = new Date();
+    const upcoming = events.filter(event => new Date(event.event_date) > now);
+    const live = events.filter(event => event.is_live);
     
-    return { festas, encontros };
+    return { upcoming, live };
   };
 
-  const { festas, encontros } = categorizeEvents();
+  const { upcoming, live } = categorizeEvents();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-64 w-full rounded-lg" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
-      {/* Festas */}
-      {festas.length > 0 && (
+      {/* Eventos ao Vivo */}
+      {live.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">🎉 Festas</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">🔴 Ao Vivo</h2>
           <div className="space-y-6">
-            {festas.map((event) => (
+            {live.map((event) => (
               <EventCard
                 key={event.id}
-                {...event}
+                id={event.id}
+                title={event.title}
+                image={event.image_url || '/placeholder.svg'}
+                organizerName={event.organizer?.profile?.display_name || event.organizer?.page_title || 'Organizador'}
+                organizerAvatar={event.organizer?.profile?.avatar_url}
+                date={formatEventDate(event.event_date)}
+                location={event.location}
+                estimatedAttendees={event.current_attendees}
+                likes={event.likes_count || 0}
+                comments={event.comments_count || 0}
+                isLiked={event.is_liked || false}
+                isLive={event.is_live}
                 onClick={() => handleEventClick(event.id)}
-                onLike={() => handleLike(event.id)}
-                onOrganizerClick={() => onOrganizerClick("electronic-vibes")}
+                onLike={() => toggleLike(event.id)}
+                onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
                 onManageRegistrations={() => onEventClick("registrations")}
@@ -191,24 +83,42 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user" }:
         </div>
       )}
 
-      {/* Encontros */}
-      {encontros.length > 0 && (
+      {/* Próximos Eventos */}
+      {upcoming.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">🤝 Encontros</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">📅 Próximos Eventos</h2>
           <div className="space-y-6">
-            {encontros.map((event) => (
+            {upcoming.map((event) => (
               <EventCard
                 key={event.id}
-                {...event}
+                id={event.id}
+                title={event.title}
+                image={event.image_url || '/placeholder.svg'}
+                organizerName={event.organizer?.profile?.display_name || event.organizer?.page_title || 'Organizador'}
+                organizerAvatar={event.organizer?.profile?.avatar_url}
+                date={formatEventDate(event.event_date)}
+                location={event.location}
+                estimatedAttendees={event.current_attendees}
+                likes={event.likes_count || 0}
+                comments={event.comments_count || 0}
+                isLiked={event.is_liked || false}
+                isLive={event.is_live}
                 onClick={() => handleEventClick(event.id)}
-                onLike={() => handleLike(event.id)}
-                onOrganizerClick={() => onOrganizerClick("galeria-moderna")}
+                onLike={() => toggleLike(event.id)}
+                onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
                 onManageRegistrations={() => onEventClick("registrations")}
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Mensagem quando não há eventos */}
+      {events.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Nenhum evento encontrado</p>
         </div>
       )}
     </div>

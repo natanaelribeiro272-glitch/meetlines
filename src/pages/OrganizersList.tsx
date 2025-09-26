@@ -4,18 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganizersList } from "@/hooks/useOrganizersList";
 
-interface Organizer {
-  id: string;
-  name: string;
-  bio: string;
-  followers: number;
-  events: number;
-  rating: number;
-  category: string;
-  avatar?: string;
-  verified: boolean;
-}
+// Interface movida para o hook useOrganizersList
 
 interface OrganizersListProps {
   onBack: () => void;
@@ -25,69 +17,7 @@ interface OrganizersListProps {
 export default function OrganizersList({ onBack, onOrganizerClick }: OrganizersListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
-
-  const organizers: Organizer[] = [
-    {
-      id: "1",
-      name: "Electronic Vibes",
-      bio: "Criando experiências únicas em música eletrônica desde 2019",
-      followers: 1250,
-      events: 15,
-      rating: 4.8,
-      category: "Eletrônica",
-      verified: true,
-    },
-    {
-      id: "2",
-      name: "Rock Nights SP",
-      bio: "As melhores bandas de rock alternativo da cidade",
-      followers: 980,
-      events: 22,
-      rating: 4.6,
-      category: "Rock",
-      verified: true,
-    },
-    {
-      id: "3",
-      name: "Pop Culture Events",
-      bio: "Shows e eventos de pop nacional e internacional",
-      followers: 2100,
-      events: 31,
-      rating: 4.9,
-      category: "Pop",
-      verified: false,
-    },
-    {
-      id: "4",
-      name: "Underground Hip Hop",
-      bio: "Cultura hip hop e rap underground paulistano",
-      followers: 850,
-      events: 18,
-      rating: 4.7,
-      category: "Hip-Hop",
-      verified: true,
-    },
-    {
-      id: "5",
-      name: "Jazz & Blues Collective",
-      bio: "Noites de jazz e blues com os melhores músicos",
-      followers: 650,
-      events: 12,
-      rating: 4.5,
-      category: "Jazz",
-      verified: false,
-    },
-    {
-      id: "6",
-      name: "Sertanejo Premium",
-      bio: "Sertanejo universitário e raiz com qualidade premium",
-      followers: 1800,
-      events: 28,
-      rating: 4.4,
-      category: "Sertanejo",
-      verified: true,
-    },
-  ];
+  const { organizers, loading } = useOrganizersList();
 
   const categories = [
     { id: "todos", label: "Todos" },
@@ -100,9 +30,9 @@ export default function OrganizersList({ onBack, onOrganizerClick }: OrganizersL
   ];
 
   const filteredOrganizers = organizers.filter(organizer => {
-    const matchesSearch = organizer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         organizer.bio.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "todos" || organizer.category === selectedCategory;
+    const matchesSearch = organizer.page_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (organizer.profile?.bio || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "todos" || (organizer.category || '') === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -119,6 +49,36 @@ export default function OrganizersList({ onBack, onOrganizerClick }: OrganizersL
       />
     ));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="flex items-center justify-between p-4 max-w-md mx-auto">
+            <Button variant="ghost" size="icon" onClick={onBack}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg font-semibold text-foreground">Organizadores</h1>
+            <div className="w-10" />
+          </div>
+        </div>
+        <div className="p-4 max-w-md mx-auto pb-20 space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,8 +138,9 @@ export default function OrganizersList({ onBack, onOrganizerClick }: OrganizersL
               <div className="flex items-start gap-3">
                 <div className="avatar-story">
                   <Avatar className="h-12 w-12">
+                    <AvatarImage src={organizer.profile?.avatar_url} />
                     <AvatarFallback className="bg-surface text-lg font-bold">
-                      {organizer.name.charAt(0)}
+                      {organizer.page_title.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -187,7 +148,7 @@ export default function OrganizersList({ onBack, onOrganizerClick }: OrganizersL
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-foreground line-clamp-1">
-                      {organizer.name}
+                      {organizer.profile?.display_name || organizer.page_title}
                     </h3>
                     {organizer.verified && (
                       <Badge variant="secondary" className="text-xs">
@@ -197,27 +158,27 @@ export default function OrganizersList({ onBack, onOrganizerClick }: OrganizersL
                   </div>
                   
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                    {organizer.bio}
+                    {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
                   </p>
                   
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      <span>{organizer.followers.toLocaleString()}</span>
+                      <span>{(organizer.stats?.followers_count || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      <span>{organizer.events} eventos</span>
+                      <span>{organizer.stats?.events_count || 0} eventos</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {renderStars(organizer.rating)}
-                      <span className="ml-1">{organizer.rating}</span>
+                      {renderStars(organizer.stats?.average_rating || 0)}
+                      <span className="ml-1">{(organizer.stats?.average_rating || 0).toFixed(1)}</span>
                     </div>
                   </div>
                   
                   <div className="mt-2">
                     <Badge variant="outline" className="text-xs">
-                      {organizer.category}
+                      {organizer.category || 'Entretenimento'}
                     </Badge>
                   </div>
                 </div>
