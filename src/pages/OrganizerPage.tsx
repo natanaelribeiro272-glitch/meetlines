@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List, Upload, Plus } from "lucide-react";
+import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List, Upload, Plus, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,8 +22,11 @@ export default function OrganizerPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showCreateLink, setShowCreateLink] = useState(false);
+  const [showAddPhotos, setShowAddPhotos] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [linkForm, setLinkForm] = useState({ title: "", url: "", color: "#8b5cf6" });
+  const [profileForm, setProfileForm] = useState({ bio: "", instagram: "", website: "" });
   const { user } = useAuth();
   const { organizerData, events, customLinks, loading, updateOrganizerProfile, addCustomLink } = useOrganizer();
 
@@ -99,6 +103,58 @@ export default function OrganizerPage() {
     const url = `${window.location.origin}/${organizerData?.slug}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copiado para a área de transferência!');
+  };
+
+  const handlePhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !organizerData) return;
+
+    try {
+      setIsUploadingPhotos(true);
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${organizerData.id}/photos/${Date.now()}-${i}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('user-uploads')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+      }
+
+      toast.success('Fotos enviadas com sucesso!');
+      setShowAddPhotos(false);
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error('Erro ao fazer upload das fotos');
+    } finally {
+      setIsUploadingPhotos(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+
+    try {
+      // Atualizar perfil na tabela profiles
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          bio: profileForm.bio,
+          instagram_url: profileForm.instagram,
+          website: profileForm.website
+        })
+        .eq('user_id', user.id);
+
+      if (profileError) throw profileError;
+
+      toast.success('Perfil atualizado com sucesso!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Erro ao atualizar perfil');
+    }
   };
 
   if (showCreateEvent) {
@@ -263,11 +319,13 @@ export default function OrganizerPage() {
         {/* Quick Actions Menu */}
         <div className="mb-6">
           <div className="grid grid-cols-2 gap-3">
-            <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer">
+            <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer"
+                 onClick={() => setShowCreateLink(true)}>
               <span className="text-2xl mb-2 block">🔗</span>
               <p className="text-xs font-medium text-foreground">Links</p>
             </div>
-            <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer">
+            <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer"
+                 onClick={() => setShowAddPhotos(true)}>
               <span className="text-2xl mb-2 block">📸</span>
               <p className="text-xs font-medium text-foreground">Fotos</p>
             </div>
@@ -343,6 +401,91 @@ export default function OrganizerPage() {
                   </Button>
                   <Button variant="outline" onClick={() => setShowCreateLink(false)}>
                     Cancelar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dialog para adicionar fotos */}
+          <Dialog open={showAddPhotos} onOpenChange={setShowAddPhotos}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Fotos</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="photos-upload">Selecionar Fotos</Label>
+                  <Input
+                    id="photos-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotosUpload}
+                    disabled={isUploadingPhotos}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Você pode selecionar várias fotos de uma vez
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowAddPhotos(false)}
+                    className="flex-1"
+                    disabled={isUploadingPhotos}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dialog para editar perfil adicional */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full mb-4">
+                <User className="h-4 w-4 mr-2" />
+                Editar Informações do Perfil
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Informações do Perfil</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
+                    placeholder="Fale um pouco sobre você e seus eventos..."
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    value={profileForm.instagram}
+                    onChange={(e) => setProfileForm({...profileForm, instagram: e.target.value})}
+                    placeholder="https://instagram.com/seuperfil"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    value={profileForm.website}
+                    onChange={(e) => setProfileForm({...profileForm, website: e.target.value})}
+                    placeholder="https://seusite.com"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleUpdateProfile} className="flex-1">
+                    Salvar Alterações
                   </Button>
                 </div>
               </div>

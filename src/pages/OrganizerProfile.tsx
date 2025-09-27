@@ -4,10 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import event1 from "@/assets/event-1.jpg";
-import event2 from "@/assets/event-2.jpg";
-import event3 from "@/assets/event-3.jpg";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganizerDetails } from "@/hooks/useOrganizerDetails";
 
 interface OrganizerProfileProps {
   onBack: () => void;
@@ -15,78 +13,58 @@ interface OrganizerProfileProps {
   onEventClick?: (eventId: string) => void;
 }
 
-export default function OrganizerProfile({ onBack, organizerId = "electronic-vibes", onEventClick }: OrganizerProfileProps) {
+export default function OrganizerProfile({ onBack, organizerId, onEventClick }: OrganizerProfileProps) {
   const [activeTab, setActiveTab] = useState("eventos");
-  const [requestText, setRequestText] = useState("");
+  const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
 
-  // Mock organizer data
-  const organizer = {
-    id: "electronic-vibes",
-    name: "Electronic Vibes",
-    avatar: "",
-    bio: "Produtora de eventos eletrônicos underground em São Paulo. Criando experiências únicas desde 2018.",
-    followers: 12500,
-    following: 156,
-    totalEvents: 47,
-    hasLiveEvent: true,
-    links: [
-      { id: "1", title: "Instagram", url: "https://instagram.com/electronicvibes", icon: "📱" },
-      { id: "2", title: "Spotify Playlist", url: "https://spotify.com/playlist", icon: "🎵" },
-      { id: "3", title: "WhatsApp", url: "https://wa.me/11999999999", icon: "💬" },
-      { id: "4", title: "Site Oficial", url: "https://electronicvibes.com", icon: "🌐" },
-      { id: "5", title: "Grupo do Evento", url: "https://chat.whatsapp.com/grupo-evento", icon: "👥" }
-    ],
-    events: [
-      {
-        id: "1",
-        title: "Festival Eletrônico Underground",
-        image: event1,
-        date: "Hoje, 22:00",
-        location: "Warehouse District",
-        isLive: true,
-        attendees: 250
-      },
-      {
-        id: "2",
-        title: "Techno Night - Próxima Sexta",
-        image: event2,
-        date: "Sex, 23:00",
-        location: "Club XYZ",
-        isLive: false,
-        attendees: 180
-      },
-      {
-        id: "3",
-        title: "Progressive House Session",
-        image: event3,
-        date: "Sáb, 20:00",
-        location: "Rooftop Sky",
-        isLive: false,
-        attendees: 120
-      }
-    ],
-    photos: [
-      { id: "1", url: event1, caption: "Festival Underground 2024" },
-      { id: "2", url: event2, caption: "Noite Techno" },
-      { id: "3", url: event3, caption: "Progressive Session" },
-      { id: "4", url: event1, caption: "Público incrível" },
-      { id: "5", url: event2, caption: "Setup completo" },
-      { id: "6", url: event3, caption: "Energia pura" }
-    ],
-    playlists: [
-      { id: "1", title: "Underground Hits 2024", tracks: 45, cover: event1 },
-      { id: "2", title: "Techno Essentials", tracks: 32, cover: event2 },
-      { id: "3", title: "Progressive Journey", tracks: 28, cover: event3 }
-    ]
+  // Função auxiliar para formatizar data
+  const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const dayName = days[date.getDay()];
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${dayName}, ${hours}:${minutes}`;
   };
 
-  const handleRequestSubmit = () => {
-    if (requestText.trim()) {
-      // Mock submit
-      setRequestText("");
-      // Show success toast or feedback
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="flex items-center gap-4 p-4">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
+        </div>
+        <div className="px-4 pb-6 text-center space-y-4">
+          <Skeleton className="h-24 w-24 rounded-full mx-auto" />
+          <Skeleton className="h-6 w-48 mx-auto" />
+          <Skeleton className="h-4 w-64 mx-auto" />
+          <div className="flex justify-center gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="text-center">
+                <Skeleton className="h-6 w-12 mx-auto mb-1" />
+                <Skeleton className="h-3 w-16 mx-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!organizer) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Organizador não encontrado</p>
+          <Button variant="outline" onClick={onBack}>
+            Voltar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: "eventos", label: "Eventos", icon: Calendar },
@@ -108,28 +86,41 @@ export default function OrganizerProfile({ onBack, organizerId = "electronic-vib
         {/* Profile Header */}
         <div className="px-4 pb-6 text-center">
           <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
-            <AvatarImage src={organizer.avatar} alt={organizer.name} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-              {organizer.name.charAt(0)}
-            </AvatarFallback>
+            {organizer.profile?.avatar_url ? (
+              <AvatarImage src={organizer.profile.avatar_url} alt={organizer.page_title} />
+            ) : (
+              <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                {organizer.page_title.charAt(0)}
+              </AvatarFallback>
+            )}
           </Avatar>
           
-          <h2 className="text-2xl font-bold text-foreground mb-2">{organizer.name}</h2>
-          <p className="text-muted-foreground max-w-sm mx-auto mb-4">{organizer.bio}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            {organizer.profile?.display_name || organizer.page_title}
+          </h2>
+          <p className="text-muted-foreground max-w-sm mx-auto mb-4">
+            {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
+          </p>
           
           {/* Stats */}
           <div className="flex justify-center gap-6 mb-4">
             <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">{organizer.followers.toLocaleString()}</p>
+              <p className="text-lg font-semibold text-foreground">
+                {organizer.stats?.followers_count?.toLocaleString() || '0'}
+              </p>
               <p className="text-sm text-muted-foreground">Seguidores</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">{organizer.totalEvents}</p>
+              <p className="text-lg font-semibold text-foreground">
+                {organizer.stats?.events_count || events.length}
+              </p>
               <p className="text-sm text-muted-foreground">Eventos</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">{organizer.following}</p>
-              <p className="text-sm text-muted-foreground">Seguindo</p>
+              <p className="text-lg font-semibold text-foreground">
+                {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
+              </p>
+              <p className="text-sm text-muted-foreground">Avaliação</p>
             </div>
           </div>
 
@@ -170,75 +161,111 @@ export default function OrganizerProfile({ onBack, organizerId = "electronic-vib
         {/* Eventos Tab */}
         {activeTab === "eventos" && (
           <div className="space-y-4">
-            {organizer.events.map((event) => (
-              <Card 
-                key={event.id} 
-                className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => onEventClick?.(event.id)}
-              >
-                <div className="relative">
-                  <img src={event.image} alt={event.title} className="w-full h-32 object-cover" />
-                  {event.isLive && (
-                    <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
-                      <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
-                      AO VIVO
-                    </Badge>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-foreground mb-1">{event.title}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Calendar className="h-3 w-3" />
-                    <span>{event.date}</span>
+            {events.length > 0 ? (
+              events.map((event) => (
+                <Card 
+                  key={event.id} 
+                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => onEventClick?.(event.id)}
+                >
+                  <div className="relative">
+                    <img 
+                      src={event.image_url || '/placeholder.svg'} 
+                      alt={event.title} 
+                      className="w-full h-32 object-cover" 
+                    />
+                    {event.is_live && (
+                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+                        <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
+                        AO VIVO
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    <span>{event.location}</span>
-                    <Users className="h-3 w-3 ml-auto" />
-                    <span>{event.attendees}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-foreground mb-1">{event.title}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatEventDate(event.event_date)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span>{event.location}</span>
+                      <Users className="h-3 w-3 ml-auto" />
+                      <span>{event.current_attendees}</span>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        <span>{event.likes_count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        <span>{event.comments_count || 0}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhum evento criado ainda.</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Os eventos aparecerão aqui assim que forem criados.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {/* Links Tab */}
         {activeTab === "links" && (
           <div className="space-y-3">
-            {organizer.links.map((link) => (
-              <Card key={link.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{link.icon}</span>
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{link.title}</p>
-                      <p className="text-sm text-muted-foreground truncate">{link.url}</p>
-                    </div>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {customLinks.length > 0 ? (
+              customLinks.map((link) => (
+                <Card key={link.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 w-full"
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                        style={{ backgroundColor: link.color }}
+                      >
+                        {link.icon || link.title.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{link.title}</p>
+                        <p className="text-sm text-muted-foreground truncate">{link.url}</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhum link adicionado ainda.</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Os links personalizados aparecerão aqui quando forem adicionados.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {/* Fotos Tab */}
         {activeTab === "fotos" && (
-          <div className="grid grid-cols-2 gap-3">
-            {organizer.photos.map((photo) => (
-              <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group">
-                <img 
-                  src={photo.url} 
-                  alt={photo.caption} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
-                  <p className="text-white text-xs truncate">{photo.caption}</p>
-                </div>
-              </div>
-            ))}
+          <div className="text-center py-8">
+            <div className="mb-4">
+              <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground">Nenhuma foto adicionada ainda.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                As fotos dos eventos aparecerão aqui quando forem adicionadas pelo organizador.
+              </p>
+            </div>
           </div>
         )}
       </div>
