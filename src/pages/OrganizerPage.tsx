@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List, Upload, Plus, Camera } from "lucide-react";
+import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List, Upload, Plus, Camera, Instagram, Phone, Music, Globe, Type, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
@@ -13,7 +13,6 @@ import { useOrganizer } from "@/hooks/useOrganizer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import OrganizerEventsList from "@/components/OrganizerEventsList";
-import OrganizerCustomization from "@/components/OrganizerCustomization";
 import OrganizerSettings from "@/components/OrganizerSettings";
 import CreateEvent from "@/pages/CreateEvent";
 import event1 from "@/assets/event-1.jpg";
@@ -21,14 +20,42 @@ import event1 from "@/assets/event-1.jpg";
 export default function OrganizerPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showCreateEvent, setShowCreateEvent] = useState(false);
-  const [showCreateLink, setShowCreateLink] = useState(false);
   const [showAddPhotos, setShowAddPhotos] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
-  const [linkForm, setLinkForm] = useState({ title: "", url: "", color: "#8b5cf6" });
   const [profileForm, setProfileForm] = useState({ bio: "", instagram: "", website: "" });
+  const [pageSettings, setPageSettings] = useState({
+    title: "",
+    subtitle: "",
+    description: "",
+    primaryColor: "#8B5CF6",
+    showStats: true,
+    showEvents: true,
+    showContact: true,
+  });
+  const [defaultLinks, setDefaultLinks] = useState({
+    instagram: { url: "", visible: false },
+    whatsapp: { url: "", visible: false },
+    location: { url: "", visible: false },
+    playlist: { url: "", visible: false },
+    website: { url: "", visible: false },
+  });
   const { user } = useAuth();
   const { organizerData, events, customLinks, loading, updateOrganizerProfile, addCustomLink } = useOrganizer();
+
+  useEffect(() => {
+    if (organizerData) {
+      setPageSettings({
+        title: organizerData.page_title || "",
+        subtitle: organizerData.page_subtitle || "",
+        description: organizerData.page_description || "",
+        primaryColor: organizerData.primary_color || "#8B5CF6",
+        showStats: organizerData.show_statistics,
+        showEvents: organizerData.show_events,
+        showContact: organizerData.show_contact,
+      });
+    }
+  }, [organizerData]);
 
   if (loading) {
     return (
@@ -48,9 +75,6 @@ export default function OrganizerPage() {
     events: events.length,
     pageViews: 8450,
   };
-
-  // Get the most recent event
-  const currentEvent = events.length > 0 ? events[0] : null;
 
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -80,23 +104,6 @@ export default function OrganizerPage() {
     } finally {
       setIsUploadingCover(false);
     }
-  };
-
-  const handleCreateLink = async () => {
-    if (!linkForm.title || !linkForm.url) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    await addCustomLink({
-      title: linkForm.title,
-      url: linkForm.url,
-      color: linkForm.color,
-      is_active: true
-    });
-
-    setLinkForm({ title: "", url: "", color: "#8b5cf6" });
-    setShowCreateLink(false);
   };
 
   const handleShareLink = () => {
@@ -166,9 +173,9 @@ export default function OrganizerPage() {
     <div className="space-y-6">
       {/* Header */}
       <header className="relative h-64 bg-gradient-to-b from-surface to-background rounded-lg overflow-hidden">
-        {organizerData?.cover_image_url || currentEvent ? (
+        {organizerData?.cover_image_url ? (
           <img
-            src={organizerData?.cover_image_url || currentEvent?.image_url || event1}
+            src={organizerData?.cover_image_url}
             alt="Cover"
             className="w-full h-full object-cover opacity-30"
           />
@@ -226,350 +233,398 @@ export default function OrganizerPage() {
             <p className="text-sm text-muted-foreground">{organizer.bio}</p>
           </div>
           
-          <Button variant="outline" size="sm" onClick={() => setActiveTab("customization")}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={async () => {
+              await updateOrganizerProfile({
+                page_title: pageSettings.title,
+                page_subtitle: pageSettings.subtitle,
+                page_description: pageSettings.description,
+                primary_color: pageSettings.primaryColor,
+                show_statistics: pageSettings.showStats,
+                show_events: pageSettings.showEvents,
+                show_contact: pageSettings.showContact,
+              });
+              toast.success('Configurações salvas com sucesso!');
+            }}
+          >
             <Edit3 className="h-4 w-4" />
-            Editar
+            Salvar
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="flex items-center justify-around py-4 mb-6 bg-card rounded-lg">
-          <div className="text-center">
-            <p className="text-lg font-bold text-foreground">{organizer.followers}</p>
-            <p className="text-xs text-muted-foreground">Seguidores</p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-foreground">{organizer.events}</p>
-            <p className="text-xs text-muted-foreground">Eventos</p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-foreground">{organizer.pageViews}</p>
-            <p className="text-xs text-muted-foreground">Visualizações</p>
-          </div>
-        </div>
-
-        {/* Current Event */}
-        {currentEvent ? (
-          <div className="mb-6 p-4 bg-card rounded-lg shadow-card">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-foreground">Evento Atual</h2>
-              {currentEvent.is_live && (
-                <div className="flex items-center gap-1 text-destructive">
-                  <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
-                  <span className="text-xs font-medium">AO VIVO</span>
-                </div>
-              )}
+        {pageSettings.showStats && (
+          <div className="flex items-center justify-around py-4 mb-6 bg-card rounded-lg">
+            <div className="text-center">
+              <p className="text-lg font-bold text-foreground">{organizer.followers}</p>
+              <p className="text-xs text-muted-foreground">Seguidores</p>
             </div>
-            
-            <div className="flex gap-3 mb-3">
-              {currentEvent.image_url && (
-                <img
-                  src={currentEvent.image_url}
-                  alt={currentEvent.title}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground line-clamp-1">{currentEvent.title}</h3>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  <span>{new Date(currentEvent.event_date).toLocaleDateString('pt-BR')}</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
-                  <span className="line-clamp-1">{currentEvent.location}</span>
-                </div>
-              </div>
+            <div className="text-center">
+              <p className="text-lg font-bold text-foreground">{organizer.events}</p>
+              <p className="text-xs text-muted-foreground">Eventos</p>
             </div>
-
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                  <Eye className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">{currentEvent.current_attendees}</span>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+            <div className="text-center">
+              <p className="text-lg font-bold text-foreground">{organizer.pageViews}</p>
+              <p className="text-xs text-muted-foreground">Visualizações</p>
             </div>
-          </div>
-        ) : (
-          <div className="mb-6 p-4 bg-card rounded-lg shadow-card text-center">
-            <p className="text-muted-foreground mb-3">Nenhum evento criado ainda</p>
-            <Button onClick={() => setShowCreateEvent(true)} size="sm">
-              Criar Primeiro Evento
-            </Button>
           </div>
         )}
 
-        {/* Event Status */}
-        <div className="mb-6 p-4 bg-card rounded-lg">
-          <h3 className="font-semibold text-foreground mb-4">Status do Evento</h3>
+        {/* Configurações de Página */}
+        <div className="mb-6 space-y-4">
+          <h3 className="font-semibold text-foreground">Configurações da Página</h3>
           
-          <div className="flex items-center justify-between py-3">
+          <div className="p-4 bg-card rounded-lg space-y-4">
             <div>
-              <p className="font-medium text-foreground">Evento Ativo</p>
-              <p className="text-sm text-muted-foreground">Evento está sendo exibido publicamente</p>
+              <label className="text-sm font-medium text-foreground">Título da Página</label>
+              <input
+                type="text"
+                value={pageSettings.title}
+                onChange={(e) => setPageSettings({...pageSettings, title: e.target.value})}
+                className="w-full mt-1 px-3 py-2 bg-background border border-border rounded-lg text-foreground"
+                placeholder="Nome do organizador/empresa"
+              />
             </div>
-            <Switch checked={true} />
+            
+            <div>
+              <label className="text-sm font-medium text-foreground">Subtítulo</label>
+              <input
+                type="text"
+                value={pageSettings.subtitle}
+                onChange={(e) => setPageSettings({...pageSettings, subtitle: e.target.value})}
+                className="w-full mt-1 px-3 py-2 bg-background border border-border rounded-lg text-foreground"
+                placeholder="Descrição curta"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-foreground">Descrição</label>
+              <textarea
+                value={pageSettings.description}
+                onChange={(e) => setPageSettings({...pageSettings, description: e.target.value})}
+                className="w-full mt-1 px-3 py-2 bg-background border border-border rounded-lg text-foreground"
+                placeholder="Descrição detalhada do seu trabalho"
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground">Cor Principal</label>
+              <div className="flex gap-2 mt-2">
+                {["#8B5CF6", "#3B82F6", "#10B981", "#EC4899", "#F59E0B"].map((color) => (
+                  <button
+                    key={color}
+                    className={`w-8 h-8 rounded-full border-2 $${
+                      pageSettings.primaryColor === color ? 'border-foreground' : 'border-border'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setPageSettings({...pageSettings, primaryColor: color})}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground">Seções Visíveis</label>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Estatísticas</span>
+                <Switch 
+                  checked={pageSettings.showStats}
+                  onCheckedChange={(checked) => setPageSettings({...pageSettings, showStats: checked})}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Lista de Eventos</span>
+                <Switch 
+                  checked={pageSettings.showEvents}
+                  onCheckedChange={(checked) => setPageSettings({...pageSettings, showEvents: checked})}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Informações de Contato</span>
+                <Switch 
+                  checked={pageSettings.showContact}
+                  onCheckedChange={(checked) => setPageSettings({...pageSettings, showContact: checked})}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Links Padrão */}
+        <div className="space-y-3 mb-6">
+          <h3 className="font-semibold text-foreground">Links de Contato</h3>
+          
+          <div className="space-y-3">
+            {/* Instagram */}
+            <div className="p-4 bg-card rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Instagram className="h-5 w-5 text-pink-500" />
+                  <span className="font-medium text-foreground">Instagram</span>
+                </div>
+                <Switch 
+                  checked={defaultLinks.instagram.visible}
+                  onCheckedChange={(checked) => setDefaultLinks({
+                    ...defaultLinks,
+                    instagram: { ...defaultLinks.instagram, visible: checked }
+                  })}
+                />
+              </div>
+              <input
+                type="text"
+                value={defaultLinks.instagram.url}
+                onChange={(e) => setDefaultLinks({
+                  ...defaultLinks,
+                  instagram: { ...defaultLinks.instagram, url: e.target.value }
+                })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm"
+                placeholder="@seuusuario ou https://instagram.com/seuusuario"
+              />
+            </div>
+
+            {/* WhatsApp */}
+            <div className="p-4 bg-card rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-green-500" />
+                  <span className="font-medium text-foreground">WhatsApp</span>
+                </div>
+                <Switch 
+                  checked={defaultLinks.whatsapp.visible}
+                  onCheckedChange={(checked) => setDefaultLinks({
+                    ...defaultLinks,
+                    whatsapp: { ...defaultLinks.whatsapp, visible: checked }
+                  })}
+                />
+              </div>
+              <input
+                type="text"
+                value={defaultLinks.whatsapp.url}
+                onChange={(e) => setDefaultLinks({
+                  ...defaultLinks,
+                  whatsapp: { ...defaultLinks.whatsapp, url: e.target.value }
+                })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm"
+                placeholder="https://wa.me/5511999999999"
+              />
+            </div>
+
+            {/* Localização */}
+            <div className="p-4 bg-card rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-red-500" />
+                  <span className="font-medium text-foreground">Localização</span>
+                </div>
+                <Switch 
+                  checked={defaultLinks.location.visible}
+                  onCheckedChange={(checked) => setDefaultLinks({
+                    ...defaultLinks,
+                    location: { ...defaultLinks.location, visible: checked }
+                  })}
+                />
+              </div>
+              <input
+                type="text"
+                value={defaultLinks.location.url}
+                onChange={(e) => setDefaultLinks({
+                  ...defaultLinks,
+                  location: { ...defaultLinks.location, url: e.target.value }
+                })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm"
+                placeholder="https://maps.google.com/..."
+              />
+            </div>
+
+            {/* Playlist */}
+            <div className="p-4 bg-card rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Music className="h-5 w-5 text-purple-500" />
+                  <span className="font-medium text-foreground">Playlist</span>
+                </div>
+                <Switch 
+                  checked={defaultLinks.playlist.visible}
+                  onCheckedChange={(checked) => setDefaultLinks({
+                    ...defaultLinks,
+                    playlist: { ...defaultLinks.playlist, visible: checked }
+                  })}
+                />
+              </div>
+              <input
+                type="text"
+                value={defaultLinks.playlist.url}
+                onChange={(e) => setDefaultLinks({
+                  ...defaultLinks,
+                  playlist: { ...defaultLinks.playlist, url: e.target.value }
+                })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm"
+                placeholder="https://open.spotify.com/playlist/..."
+              />
+            </div>
+
+            {/* Site */}
+            <div className="p-4 bg-card rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-blue-500" />
+                  <span className="font-medium text-foreground">Site</span>
+                </div>
+                <Switch 
+                  checked={defaultLinks.website.visible}
+                  onCheckedChange={(checked) => setDefaultLinks({
+                    ...defaultLinks,
+                    website: { ...defaultLinks.website, visible: checked }
+                  })}
+                />
+              </div>
+              <input
+                type="text"
+                value={defaultLinks.website.url}
+                onChange={(e) => setDefaultLinks({
+                  ...defaultLinks,
+                  website: { ...defaultLinks.website, url: e.target.value }
+                })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm"
+                placeholder="https://seusite.com"
+              />
+            </div>
           </div>
         </div>
 
         {/* Quick Actions Menu */}
         <div className="mb-6">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer"
-                 onClick={() => setShowCreateLink(true)}>
-              <span className="text-2xl mb-2 block">🔗</span>
-              <p className="text-xs font-medium text-foreground">Links</p>
-            </div>
+          <div className="grid grid-cols-1 gap-3">
             <div className="text-center p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer"
                  onClick={() => setShowAddPhotos(true)}>
               <span className="text-2xl mb-2 block">📸</span>
-              <p className="text-xs font-medium text-foreground">Fotos</p>
+              <p className="text-xs font-medium text-foreground">Adicionar Fotos</p>
             </div>
           </div>
         </div>
 
-        {/* Custom Link Buttons */}
-        <div className="space-y-3 mb-8">
-          <h3 className="font-semibold text-foreground">Seus Links</h3>
-          
-          {customLinks.filter(link => link.is_active).map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 bg-card rounded-lg shadow-card transition-smooth hover:shadow-elevated cursor-pointer"
-            >
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                style={{ backgroundColor: link.color }}
-              >
-                {link.icon || link.title.charAt(0)}
+        {/* Dialog para adicionar fotos */}
+        <Dialog open={showAddPhotos} onOpenChange={setShowAddPhotos}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Adicionar Fotos</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="photos-upload">Selecionar Fotos</Label>
+                <Input
+                  id="photos-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotosUpload}
+                  disabled={isUploadingPhotos}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Você pode selecionar várias fotos de uma vez
+                </p>
               </div>
-              <div className="flex-1">
-                <p className="font-medium text-foreground">{link.title}</p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAddPhotos(false)}
+                  className="flex-1"
+                  disabled={isUploadingPhotos}
+                >
+                  Cancelar
+                </Button>
               </div>
-            </a>
-          ))}
-          
-          <Dialog open={showCreateLink} onOpenChange={setShowCreateLink}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Link
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Novo Link</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="link-title">Título</Label>
-                  <Input
-                    id="link-title"
-                    value={linkForm.title}
-                    onChange={(e) => setLinkForm({...linkForm, title: e.target.value})}
-                    placeholder="Ex: Instagram, WhatsApp..."
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="link-url">URL</Label>
-                  <Input
-                    id="link-url"
-                    value={linkForm.url}
-                    onChange={(e) => setLinkForm({...linkForm, url: e.target.value})}
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="link-color">Cor</Label>
-                  <Input
-                    id="link-color"
-                    type="color"
-                    value={linkForm.color}
-                    onChange={(e) => setLinkForm({...linkForm, color: e.target.value})}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleCreateLink} className="flex-1">
-                    Criar Link
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowCreateLink(false)}>
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Dialog para adicionar fotos */}
-          <Dialog open={showAddPhotos} onOpenChange={setShowAddPhotos}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Fotos</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="photos-upload">Selecionar Fotos</Label>
-                  <Input
-                    id="photos-upload"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotosUpload}
-                    disabled={isUploadingPhotos}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Você pode selecionar várias fotos de uma vez
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowAddPhotos(false)}
-                    className="flex-1"
-                    disabled={isUploadingPhotos}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Dialog para editar perfil adicional */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full mb-4">
-                <User className="h-4 w-4 mr-2" />
-                Editar Informações do Perfil
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Informações do Perfil</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profileForm.bio}
-                    onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
-                    placeholder="Fale um pouco sobre você e seus eventos..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="instagram">Instagram</Label>
-                  <Input
-                    id="instagram"
-                    value={profileForm.instagram}
-                    onChange={(e) => setProfileForm({...profileForm, instagram: e.target.value})}
-                    placeholder="https://instagram.com/seuperfil"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    value={profileForm.website}
-                    onChange={(e) => setProfileForm({...profileForm, website: e.target.value})}
-                    placeholder="https://seusite.com"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleUpdateProfile} className="flex-1">
-                    Salvar Alterações
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Share Link */}
-        <div className="mb-8 p-4 bg-surface rounded-lg">
-          <h3 className="font-semibold text-foreground mb-2">Compartilhar Página</h3>
-          <div className="flex gap-2">
-            <div className="flex-1 p-3 bg-card rounded-md">
-              <p className="text-sm font-mono text-muted-foreground">
-                {window.location.origin}/{organizerData?.slug || 'seu-perfil'}
-              </p>
             </div>
-            <Button variant="glow" onClick={handleShareLink}>
-              <Share2 className="h-4 w-4" />
-              Copiar
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para editar perfil adicional */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-full mb-4">
+              <User className="h-4 w-4 mr-2" />
+              Editar Informações do Perfil
             </Button>
-          </div>
-        </div>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Perfil</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="profile-bio">Bio</Label>
+                <Textarea
+                  id="profile-bio"
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
+                  placeholder="Conte um pouco sobre você..."
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label htmlFor="profile-instagram">Instagram</Label>
+                <Input
+                  id="profile-instagram"
+                  value={profileForm.instagram}
+                  onChange={(e) => setProfileForm({...profileForm, instagram: e.target.value})}
+                  placeholder="@seuusuario"
+                />
+              </div>
+              <div>
+                <Label htmlFor="profile-website">Website</Label>
+                <Input
+                  id="profile-website"
+                  value={profileForm.website}
+                  onChange={(e) => setProfileForm({...profileForm, website: e.target.value})}
+                  placeholder="https://seusite.com"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleUpdateProfile} className="flex-1">
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="px-4 py-6 max-w-md mx-auto">
-        {/* Tab Navigation */}
-        <div className="mb-6">
-          <div className="flex bg-surface rounded-lg p-1 mb-4">
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                activeTab === "profile"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Home className="h-4 w-4" />
+      <div className="max-w-md mx-auto bg-background">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
               Perfil
-            </button>
-            <button
-              onClick={() => setActiveTab("events")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                activeTab === "events"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
+            </TabsTrigger>
+            <TabsTrigger value="events" className="flex items-center gap-2">
               <List className="h-4 w-4" />
               Eventos
-            </button>
-            <button
-              onClick={() => setActiveTab("customization")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                activeTab === "customization"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Palette className="h-4 w-4" />
-              Design
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                activeTab === "settings"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Config
-            </button>
-          </div>
-        </div>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Tab Content */}
-        {activeTab === "profile" && <ProfileContent />}
-        {activeTab === "events" && <OrganizerEventsList onCreateEvent={() => setShowCreateEvent(true)} />}
-        {activeTab === "customization" && <OrganizerCustomization />}
-        {activeTab === "settings" && <OrganizerSettings />}
+          <TabsContent value="profile" className="space-y-6">
+            <ProfileContent />
+          </TabsContent>
+
+          <TabsContent value="events" className="space-y-6">
+            <OrganizerEventsList onCreateEvent={() => setShowCreateEvent(true)} />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <OrganizerSettings />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
