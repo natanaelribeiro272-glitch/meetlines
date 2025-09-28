@@ -284,7 +284,15 @@ export type Database = {
           total_ratings?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organizer_stats_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
+            referencedRelation: "organizers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organizers: {
         Row: {
