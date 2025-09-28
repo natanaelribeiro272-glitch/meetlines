@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List, Upload, Plus, Camera, Instagram, Phone, Music, Globe, Type, Layout } from "lucide-react";
+import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List, Upload, Plus, Camera, Instagram, Phone, Music, Globe, Type, Layout, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
@@ -510,7 +510,7 @@ export default function OrganizerPage() {
   return <div className="min-h-screen bg-background">
       <div className="max-w-md mx-auto bg-background">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Perfil
@@ -518,6 +518,10 @@ export default function OrganizerPage() {
             <TabsTrigger value="events" className="flex items-center gap-2">
               <List className="h-4 w-4" />
               Eventos
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Fotos
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -531,6 +535,179 @@ export default function OrganizerPage() {
 
           <TabsContent value="events" className="space-y-6">
             <OrganizerEventsList onCreateEvent={() => setShowCreateEvent(true)} />
+          </TabsContent>
+
+          <TabsContent value="photos" className="space-y-6 p-4">
+            <div className="space-y-6">
+              {/* Header da seção de fotos */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-foreground">Minhas Fotos</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowAddPhotos(true)}>
+                  <Camera className="h-4 w-4 mr-2" />
+                  Adicionar
+                </Button>
+              </div>
+
+              {/* Exemplo de eventos com fotos - Design apenas */}
+              <div className="space-y-6">
+                {/* Evento 1 */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground">Festival de Música 2024</h3>
+                      <p className="text-sm text-muted-foreground">24 fotos • 15 Dez 2024</p>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver todas
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="aspect-square bg-surface rounded-lg overflow-hidden">
+                      <img 
+                        src={event1} 
+                        alt="Foto do evento" 
+                        className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                      />
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg overflow-hidden">
+                      <img 
+                        src={event1} 
+                        alt="Foto do evento" 
+                        className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                      />
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg overflow-hidden">
+                      <img 
+                        src={event1} 
+                        alt="Foto do evento" 
+                        className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                      />
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg overflow-hidden relative">
+                      <img 
+                        src={event1} 
+                        alt="Foto do evento" 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="text-white font-semibold text-lg">+20</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Evento 2 */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground">Workshop de Arte</h3>
+                      <p className="text-sm text-muted-foreground">8 fotos • 10 Dez 2024</p>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver todas
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="aspect-square bg-surface rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">Foto 1</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">Foto 2</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">Foto 3</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg overflow-hidden relative">
+                      <div className="w-full h-full bg-surface flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <Camera className="h-8 w-8 mx-auto mb-2" />
+                          <p className="text-xs">Foto 4</p>
+                        </div>
+                      </div>
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="text-white font-semibold text-lg">+4</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Evento 3 */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground">Palestra Motivacional</h3>
+                      <p className="text-sm text-muted-foreground">12 fotos • 05 Dez 2024</p>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver todas
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="aspect-square bg-surface rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">Foto 1</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">Foto 2</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">Foto 3</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface rounded-lg overflow-hidden relative">
+                      <div className="w-full h-full bg-surface flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <Camera className="h-8 w-8 mx-auto mb-2" />
+                          <p className="text-xs">Foto 4</p>
+                        </div>
+                      </div>
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="text-white font-semibold text-lg">+8</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Estado vazio quando não há fotos */}
+                <div className="text-center py-12 space-y-4">
+                  <div className="w-16 h-16 mx-auto bg-surface rounded-full flex items-center justify-center">
+                    <Camera className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">Nenhuma foto ainda</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Adicione fotos dos seus eventos para mostrar seu trabalho
+                    </p>
+                    <Button variant="outline" onClick={() => setShowAddPhotos(true)}>
+                      <Camera className="h-4 w-4 mr-2" />
+                      Adicionar Primeira Foto
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
