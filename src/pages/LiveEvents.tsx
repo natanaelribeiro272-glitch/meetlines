@@ -1,68 +1,7 @@
-import { useState } from "react";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/EventCard";
-import event1 from "@/assets/event-1.jpg";
-import event2 from "@/assets/event-2.jpg";
-import event3 from "@/assets/event-3.jpg";
-
-interface LiveEvent {
-  id: string;
-  title: string;
-  image: string;
-  organizerName: string;
-  organizerAvatar?: string;
-  date: string;
-  location: string;
-  estimatedAttendees: number;
-  likes: number;
-  comments: number;
-  isLiked: boolean;
-  isLive: boolean;
-  price?: number;
-}
-
-const liveEvents: LiveEvent[] = [
-  {
-    id: "1",
-    title: "Festival Eletrônico Underground",
-    image: event1,
-    organizerName: "Electronic Vibes",
-    date: "Hoje, 22:00",
-    location: "Warehouse District, São Paulo",
-    estimatedAttendees: 250,
-    likes: 89,
-    comments: 23,
-    isLiked: false,
-    isLive: true,
-  },
-  {
-    id: "live-2",
-    title: "Show de Jazz ao Vivo",
-    image: event2,
-    organizerName: "Jazz Club SP",
-    date: "Agora mesmo",
-    location: "Blue Note, Vila Madalena",
-    estimatedAttendees: 120,
-    likes: 156,
-    comments: 45,
-    isLiked: true,
-    isLive: true,
-  },
-  {
-    id: "live-3",
-    title: "Batalha de Rap - Final",
-    image: event3,
-    organizerName: "Rap Battles BR",
-    date: "Iniciando em 15min",
-    location: "Praça Roosevelt, Centro",
-    estimatedAttendees: 300,
-    likes: 234,
-    comments: 67,
-    isLiked: false,
-    isLive: true,
-  }
-];
+import { useEvents } from "@/hooks/useEvents";
 
 interface LiveEventsProps {
   onBack: () => void;
@@ -70,19 +9,29 @@ interface LiveEventsProps {
 }
 
 export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
-  const [events, setEvents] = useState<LiveEvent[]>(liveEvents);
+  const { events, loading, toggleLike } = useEvents();
+  
+  // Filter only live events
+  const liveEvents = events.filter(event => event.is_live);
 
-  const handleLike = (eventId: string) => {
-    setEvents(prev => prev.map(event => 
-      event.id === eventId 
-        ? { 
-            ...event, 
-            isLiked: !event.isLiked,
-            likes: event.isLiked ? event.likes - 1 : event.likes + 1
-          }
-        : event
-    ));
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Eventos ao Vivo</h1>
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center p-8">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -93,21 +42,41 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
         </Button>
         <div>
           <h1 className="text-lg font-semibold text-foreground">Eventos ao Vivo</h1>
-          <p className="text-sm text-muted-foreground">Acontecendo agora</p>
+          <p className="text-sm text-muted-foreground">
+            {liveEvents.length > 0 ? "Acontecendo agora" : "Nenhum evento ao vivo no momento"}
+          </p>
         </div>
       </div>
 
       <main className="px-4 py-6 max-w-md mx-auto">
-        <div className="space-y-6">
-          {events.map((event) => (
-            <EventCard
-              key={event.id}
-              {...event}
-              onClick={() => onEventClick(event.id)}
-              onLike={() => handleLike(event.id)}
-            />
-          ))}
-        </div>
+        {liveEvents.length > 0 ? (
+          <div className="space-y-6">
+            {liveEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                id={event.id}
+                title={event.title}
+                image={event.image_url || ""}
+                organizerName={event.organizer?.page_title || "Organizador"}
+                organizerAvatar={event.organizer?.profile?.avatar_url || ""}
+                date={new Date(event.event_date).toLocaleDateString('pt-BR')}
+                location={event.location}
+                estimatedAttendees={event.current_attendees || 0}
+                likes={event.likes_count || 0}
+                comments={event.comments_count || 0}
+                isLiked={event.is_liked || false}
+                isLive={event.is_live}
+                onClick={() => onEventClick(event.id)}
+                onLike={() => toggleLike(event.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Nenhum evento ao vivo no momento</p>
+            <p className="text-sm text-muted-foreground mt-2">Volte mais tarde para ver eventos acontecendo</p>
+          </div>
+        )}
       </main>
     </div>
   );

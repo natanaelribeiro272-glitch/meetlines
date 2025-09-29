@@ -1,8 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Heart, Users, MessageCircle, Instagram, Phone, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+interface Attendee {
+  id: string;
+  name: string;
+  avatar: string;
+  status: string;
+  note: string;
+  distance: string;
+  instagram: string;
+  hasPhone: boolean;
+}
 
 interface FindFriendsProps {
   onBack: () => void;
@@ -10,48 +23,60 @@ interface FindFriendsProps {
 
 export default function FindFriends({ onBack }: FindFriendsProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const attendees = [
-    {
-      id: "1",
-      name: "Marina Silva",
-      avatar: "",
-      status: "curtição",
-      note: "Amo música eletrônica! 🎵",
-      distance: "15m",
-      instagram: "@marinasilva",
-      hasPhone: true,
-    },
-    {
-      id: "2",
-      name: "João Costa", 
-      avatar: "",
-      status: "amizade",
-      note: "Primeiro festival, alguém pode me guiar?",
-      distance: "32m",
-      instagram: "@joaocostasp",
-      hasPhone: false,
-    },
-    {
-      id: "3",
-      name: "Ana Rodrigues",
-      avatar: "",
-      status: "network",
-      note: "Produtora musical, sempre buscando talentos",
-      distance: "8m",
-      instagram: "@anarodriguesmusic",
-      hasPhone: true,
-    },
-    {
-      id: "4",
-      name: "Pedro Santos",
-      avatar: "",
-      status: "namoro",
-      note: "DJ nas horas vagas 🎧",
-      distance: "45m",
-      instagram: "@pedrosantosdj",
-      hasPhone: false,
-    }
-  ];
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchEventAttendees = async () => {
+      if (!user) return;
+      
+      try {
+        // Get registrations for live events with profile data
+        const { data, error } = await supabase
+          .from('event_registrations')
+          .select(`
+            id,
+            user_name,
+            event_id,
+            profiles!inner(
+              avatar_url,
+              notes,
+              instagram_url
+            ),
+            events!inner(
+              is_live
+            )
+          `)
+          .eq('events.is_live', true)
+          .neq('user_id', user.id); // Exclude current user
+
+        if (error) {
+          console.error('Error fetching attendees:', error);
+          return;
+        }
+
+        const formattedAttendees: Attendee[] = (data || []).map((registration: any, index: number) => ({
+          id: registration.id,
+          name: registration.user_name,
+          avatar: registration.profiles?.avatar_url || "",
+          status: ["curtição", "amizade", "network"][index % 3],
+          note: registration.profiles?.notes || "Participante do evento",
+          distance: `${Math.floor(Math.random() * 100) + 10}m`,
+          instagram: registration.profiles?.instagram_url || "",
+          hasPhone: Math.random() > 0.5
+        }));
+
+        setAttendees(formattedAttendees);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEventAttendees();
+  }, [user]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -118,8 +143,14 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
         </div>
 
         {/* Attendees List */}
-        <div className="space-y-4">
-          {attendees.map((person) => (
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Procurando pessoas...</p>
+          </div>
+        ) : attendees.length > 0 ? (
+          <div className="space-y-4">
+            {attendees.map((person) => (
             <div key={person.id} className="bg-card rounded-lg p-4 shadow-card">
               <div className="flex items-start gap-3">
                 <div className="avatar-story">
@@ -170,8 +201,15 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Nenhuma pessoa encontrada</p>
+            <p className="text-sm text-muted-foreground mt-2">Não há outras pessoas em eventos ao vivo no momento</p>
+          </div>
+        )}
 
         {/* Bottom CTA */}
         <div className="mt-8 p-4 bg-surface rounded-lg text-center">

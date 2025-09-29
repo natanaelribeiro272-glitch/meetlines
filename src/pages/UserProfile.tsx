@@ -63,45 +63,13 @@ const socialPlatforms = [
     field: "instagram_url" as const
   },
   { 
-    id: "facebook", 
-    label: "Facebook", 
-    icon: Facebook, 
-    color: "text-blue-600", 
-    placeholder: "https://facebook.com/seuperfil",
-    field: "facebook_url" as const
-  },
-  { 
-    id: "twitter", 
-    label: "Twitter", 
-    icon: Twitter, 
-    color: "text-sky-500", 
-    placeholder: "https://twitter.com/seuperfil",
-    field: "twitter_url" as const
-  },
-  { 
-    id: "linkedin", 
-    label: "LinkedIn", 
-    icon: Linkedin, 
-    color: "text-blue-700", 
-    placeholder: "https://linkedin.com/in/seuperfil",
-    field: "linkedin_url" as const
-  },
-  { 
-    id: "tiktok", 
-    label: "TikTok", 
-    icon: Music, 
-    color: "text-black", 
-    placeholder: "https://tiktok.com/@seuperfil",
-    field: "tiktok_url" as const
-  },
-  { 
-    id: "youtube", 
-    label: "YouTube", 
-    icon: Youtube, 
-    color: "text-red-500", 
-    placeholder: "https://youtube.com/@seuperfil",
-    field: "youtube_url" as const
-  },
+    id: "whatsapp", 
+    label: "WhatsApp", 
+    icon: MessageCircle, 
+    color: "text-green-500", 
+    placeholder: "https://wa.me/5511999999999",
+    field: "phone" as const
+  }
 ];
 
 export default function UserProfile({ userType }: UserProfileProps) {
