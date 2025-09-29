@@ -99,7 +99,7 @@ export default function MainLayout() {
           case "eventRegistration":
             return <EventRegistration onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           case "eventRegistrations":
-            return <EventRegistrations onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
+            return <EventRegistrations onBack={handleBackToFeed} />;
           default:
         return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
         }

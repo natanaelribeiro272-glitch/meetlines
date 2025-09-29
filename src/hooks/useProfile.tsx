@@ -20,6 +20,7 @@ export interface ProfileData {
   facebook_url: string | null;
   tiktok_url: string | null;
   youtube_url: string | null;
+  interest: "namoro" | "network" | "curtição" | "amizade" | "casual" | null;
   created_at: string;
   updated_at: string;
 }

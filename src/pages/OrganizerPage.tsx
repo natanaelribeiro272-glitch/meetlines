@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Edit3, Share2, MapPin, Calendar, Eye, MoreHorizontal, User, Settings, Palette, Home, List, Upload, Plus, Camera, Instagram, Phone, Music, Globe, Type, Layout, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +22,8 @@ export default function OrganizerPage() {
   const [showAddPhotos, setShowAddPhotos] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
   const [profileForm, setProfileForm] = useState({
     bio: "",
     instagram: "",
@@ -154,7 +156,62 @@ export default function OrganizerPage() {
       setIsUploadingPhotos(false);
     }
   };
-  const handleUpdateProfile = async () => {
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !organizerData || !user) return;
+
+    try {
+      setSaving(true);
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Upload file to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${organizerData.id}/${Date.now()}_${i}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('user-uploads')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('Error uploading file:', uploadError);
+          toast.error(`Erro ao fazer upload da foto ${i + 1}`);
+          continue;
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-uploads')
+          .getPublicUrl(fileName);
+
+        // Save to organizer_photos table
+        const { error: dbError } = await supabase
+          .from('organizer_photos')
+          .insert({
+            organizer_id: organizerData.id,
+            photo_url: publicUrl,
+            caption: `Foto ${i + 1}`
+          });
+
+        if (dbError) {
+          console.error('Error saving photo to database:', dbError);
+          toast.error(`Erro ao salvar foto ${i + 1}`);
+        }
+      }
+      
+      toast.success('Fotos enviadas com sucesso!');
+      // Reset input
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erro ao fazer upload das fotos');
+    } finally {
+      setSaving(false);
+    }
+  };
     if (!user) return;
     try {
       // Atualizar perfil na tabela profiles
@@ -715,5 +772,6 @@ export default function OrganizerPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 }

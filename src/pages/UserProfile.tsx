@@ -83,7 +83,8 @@ export default function UserProfile({ userType }: UserProfileProps) {
     age: "",
     notes: "",
     phone: "",
-    website: ""
+    website: "",
+    interest: "curtição" as "namoro" | "network" | "curtição" | "amizade" | "casual"
   });
 
   const { user, signOut } = useAuth();
@@ -100,7 +101,8 @@ export default function UserProfile({ userType }: UserProfileProps) {
         age: profile.age?.toString() || "",
         notes: profile.notes || "",
         phone: profile.phone || "",
-        website: profile.website || ""
+        website: profile.website || "",
+        interest: (profile.interest as any) || "curtição"
       });
     }
   }, [profile]);
@@ -361,6 +363,43 @@ export default function UserProfile({ userType }: UserProfileProps) {
                 </div>
               );
             })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Interest Options */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="h-5 w-5" />
+            Interesse no Evento
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {["curtição", "namoro", "network", "amizade", "casual"].map((interest) => (
+              <div key={interest} className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  id={interest}
+                  name="interest"
+                  value={interest}
+                  checked={formData.interest === interest}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, interest: e.target.value as any }));
+                    updateProfile({ interest: e.target.value });
+                  }}
+                  className="w-4 h-4 text-primary"
+                />
+                <Label htmlFor={interest} className="flex-1 capitalize cursor-pointer">
+                  {interest === "curtição" ? "💛 Curtição" :
+                   interest === "namoro" ? "💕 Namoro" :
+                   interest === "network" ? "🤝 Network" :
+                   interest === "amizade" ? "🤝 Amizade" :
+                   "😎 Casual"}
+                </Label>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

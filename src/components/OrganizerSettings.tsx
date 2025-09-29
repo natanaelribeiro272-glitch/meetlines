@@ -1,4 +1,4 @@
-import { LogOut, User, Bell, Lock, HelpCircle, Shield, Trash2 } from "lucide-react";
+import { Users, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -189,7 +189,26 @@ export default function OrganizerSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ações Rápidas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => window.open('/registrations', '_blank')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Ver Todos os Cadastros
+              </Button>
+              <Button variant="outline" className="w-full justify-start">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar Dados
+              </Button>
+            </CardContent>
+          </Card>
             <div>
               <p className="font-medium text-foreground">Excluir Conta</p>
               <p className="text-sm text-muted-foreground">

@@ -253,6 +253,42 @@ export type Database = {
           },
         ]
       }
+      organizer_photos: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          event_id: string | null
+          id: string
+          is_active: boolean | null
+          organizer_id: string
+          photo_url: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          organizer_id: string
+          photo_url: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          organizer_id?: string
+          photo_url?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       organizer_stats: {
         Row: {
           average_rating: number
@@ -358,6 +394,7 @@ export type Database = {
           facebook_url: string | null
           id: string
           instagram_url: string | null
+          interest: Database["public"]["Enums"]["user_interest"] | null
           linkedin_url: string | null
           location: string | null
           notes: string | null
@@ -379,6 +416,7 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          interest?: Database["public"]["Enums"]["user_interest"] | null
           linkedin_url?: string | null
           location?: string | null
           notes?: string | null
@@ -400,6 +438,7 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          interest?: Database["public"]["Enums"]["user_interest"] | null
           linkedin_url?: string | null
           location?: string | null
           notes?: string | null
@@ -461,6 +500,7 @@ export type Database = {
       }
     }
     Enums: {
+      user_interest: "namoro" | "network" | "curtição" | "amizade" | "casual"
       user_role: "user" | "organizer"
     }
     CompositeTypes: {
@@ -589,6 +629,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      user_interest: ["namoro", "network", "curtição", "amizade", "casual"],
       user_role: ["user", "organizer"],
     },
   },
