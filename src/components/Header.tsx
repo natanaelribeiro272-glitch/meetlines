@@ -16,7 +16,7 @@ export function Header({
       <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <h1 className="font-bold gradient-primary bg-clip-text text-[147dc8] text-[#1480cd]">
+            <h1 className="gradient-primary bg-clip-text text-[#1480cd] font-bold text-lg">
               {title}
             </h1>
             {userType && <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
