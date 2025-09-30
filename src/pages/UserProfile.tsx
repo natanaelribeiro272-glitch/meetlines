@@ -386,8 +386,9 @@ export default function UserProfile({ userType }: UserProfileProps) {
                   value={interest}
                   checked={formData.interest === interest}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, interest: e.target.value as any }));
-                    updateProfile({ interest: e.target.value });
+                    const newInterest = e.target.value as "namoro" | "network" | "curtição" | "amizade" | "casual";
+                    setFormData(prev => ({ ...prev, interest: newInterest }));
+                    updateProfile({ interest: newInterest });
                   }}
                   className="w-4 h-4 text-primary"
                 />

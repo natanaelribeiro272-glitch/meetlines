@@ -1,4 +1,4 @@
-import { Users, Download } from "lucide-react";
+import { Users, Download, Shield, User, Bell, HelpCircle, LogOut, Trash2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";

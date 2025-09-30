@@ -212,6 +212,8 @@ export default function OrganizerPage() {
       setSaving(false);
     }
   };
+
+  const handleUpdateProfile = async () => {
     if (!user) return;
     try {
       // Atualizar perfil na tabela profiles
@@ -564,7 +566,9 @@ export default function OrganizerPage() {
         </Dialog>
       </div>
     </div>;
-  return <div className="min-h-screen bg-background">
+
+  return (
+    <div className="min-h-screen bg-background">
       <div className="max-w-md mx-auto bg-background">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
