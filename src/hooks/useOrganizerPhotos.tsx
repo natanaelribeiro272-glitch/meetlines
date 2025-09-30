@@ -7,7 +7,7 @@ interface Photo {
   id: string;
   photo_url: string;
   caption: string | null;
-  session_name: string | null;
+  session_name?: string | null;
   created_at: string;
   event_id: string | null;
 }
