@@ -262,6 +262,7 @@ export type Database = {
           is_active: boolean | null
           organizer_id: string
           photo_url: string
+          session_name: string | null
           sort_order: number | null
           updated_at: string | null
         }
@@ -273,6 +274,7 @@ export type Database = {
           is_active?: boolean | null
           organizer_id: string
           photo_url: string
+          session_name?: string | null
           sort_order?: number | null
           updated_at?: string | null
         }
@@ -284,6 +286,7 @@ export type Database = {
           is_active?: boolean | null
           organizer_id?: string
           photo_url?: string
+          session_name?: string | null
           sort_order?: number | null
           updated_at?: string | null
         }
