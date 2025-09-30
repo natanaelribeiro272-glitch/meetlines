@@ -69,9 +69,7 @@ export default function AuthPage({
 
         {/* Logo/Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
-            EventHub
-          </h1>
+          <h1 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">MeetLines</h1>
           <p className="text-muted-foreground">
             {isLogin ? "Entre na sua conta" : "Crie sua conta"}
             {userType === "organizer" && " de organizador"}
