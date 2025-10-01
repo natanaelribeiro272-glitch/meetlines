@@ -30,6 +30,7 @@ interface Event {
   location: string;
   max_attendees?: number;
   current_attendees: number;
+  interests?: string[];
   is_live: boolean;
   status: 'upcoming' | 'live' | 'completed' | 'cancelled';
 }

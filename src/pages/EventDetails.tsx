@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useState } from "react";
 
@@ -159,11 +160,37 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
           </div>
         </div>
 
+        {/* Interests */}
+        {event.interests && event.interests.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-semibold text-foreground mb-3">Meus Interesses</h3>
+            <div className="flex flex-wrap gap-2">
+              {event.interests.map((interest) => (
+                <Badge
+                  key={interest}
+                  variant="default"
+                  className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                >
+                  {interest}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Description */}
         <div className="mb-6">
           <h3 className="font-semibold text-foreground mb-2">Sobre o evento</h3>
           <p className="text-muted-foreground leading-relaxed">{event.description || 'Sem descrição disponível'}</p>
         </div>
+
+        {/* Public Notes from Organizer */}
+        {event.organizer?.profile?.notes && (
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
+            <h3 className="font-semibold text-foreground mb-2">Notas do Organizador</h3>
+            <p className="text-muted-foreground text-sm leading-relaxed">{event.organizer.profile.notes}</p>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="space-y-3 mb-6">

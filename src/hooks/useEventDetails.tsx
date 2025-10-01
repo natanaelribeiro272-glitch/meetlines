@@ -25,6 +25,7 @@ export interface EventDetailsData {
   is_live: boolean;
   status: string;
   organizer_id: string;
+  interests?: string[];
   organizer?: {
     id: string;
     page_title: string;
@@ -32,6 +33,7 @@ export interface EventDetailsData {
     profile?: {
       display_name?: string;
       avatar_url?: string;
+      notes?: string;
     };
   };
   likes_count?: number;
@@ -72,7 +74,7 @@ export function useEventDetails(eventId: string | null) {
       // Buscar perfil do organizador
       const { data: organizerProfile } = await supabase
         .from('profiles')
-        .select('display_name, avatar_url')
+        .select('display_name, avatar_url, notes')
         .eq('user_id', eventData.organizer.user_id)
         .maybeSingle();
 

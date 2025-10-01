@@ -164,6 +164,7 @@ export type Database = {
           event_date: string
           id: string
           image_url: string | null
+          interests: string[] | null
           is_live: boolean | null
           location: string
           max_attendees: number | null
@@ -179,6 +180,7 @@ export type Database = {
           event_date: string
           id?: string
           image_url?: string | null
+          interests?: string[] | null
           is_live?: boolean | null
           location: string
           max_attendees?: number | null
@@ -194,6 +196,7 @@ export type Database = {
           event_date?: string
           id?: string
           image_url?: string | null
+          interests?: string[] | null
           is_live?: boolean | null
           location?: string
           max_attendees?: number | null

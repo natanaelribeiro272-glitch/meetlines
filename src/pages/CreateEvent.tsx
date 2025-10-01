@@ -1,15 +1,29 @@
 import { useState } from "react";
-import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText } from "lucide-react";
+import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import FormBuilder, { FormField } from "@/components/FormBuilder";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const INTEREST_OPTIONS = [
+  "amizade",
+  "curtir",
+  "networking",
+  "diversão",
+  "música",
+  "dança",
+  "arte",
+  "cultura",
+  "festa",
+  "social"
+];
 
 interface CreateEventProps {
   onBack: () => void;
@@ -34,6 +48,15 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
   const [requiresRegistration, setRequiresRegistration] = useState(false);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  const toggleInterest = (interest: string) => {
+    setSelectedInterests(prev => 
+      prev.includes(interest)
+        ? prev.filter(i => i !== interest)
+        : [...prev, interest]
+    );
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,6 +115,7 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
         location: eventData.location,
         image_url: imageUrl,
         max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
+        interests: selectedInterests,
         is_live: false,
         status: 'upcoming'
       });
@@ -198,6 +222,37 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
                   value={eventData.category}
                   onChange={(e) => handleInputChange("category", e.target.value)}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Interesses */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Meus Interesses</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Selecione os interesses que seu evento atende
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {INTEREST_OPTIONS.map((interest) => (
+                  <Badge
+                    key={interest}
+                    variant={selectedInterests.includes(interest) ? "default" : "outline"}
+                    className={`cursor-pointer transition-all hover:scale-105 ${
+                      selectedInterests.includes(interest)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background hover:bg-muted border-border"
+                    }`}
+                    onClick={() => toggleInterest(interest)}
+                  >
+                    {interest}
+                    {selectedInterests.includes(interest) && (
+                      <X className="ml-1 h-3 w-3" />
+                    )}
+                  </Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
