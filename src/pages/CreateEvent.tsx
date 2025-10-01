@@ -231,21 +231,22 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={selectedInterest} onValueChange={setSelectedInterest}>
-                <div className="space-y-3">
-                  {INTEREST_OPTIONS.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-3">
-                      <RadioGroupItem value={option.value} id={option.value} />
-                      <Label 
-                        htmlFor={option.value} 
-                        className="font-normal cursor-pointer flex-1"
-                      >
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </RadioGroup>
+              <div className="flex flex-wrap gap-2">
+                {INTEREST_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSelectedInterest(selectedInterest === option.value ? "" : option.value)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedInterest === option.value
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    }`}
+                  >
+                    {option.emoji} {option.label.replace(/^[^\s]+ /, '')}
+                  </button>
+                ))}
+              </div>
             </CardContent>
           </Card>
 

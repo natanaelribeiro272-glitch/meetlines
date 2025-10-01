@@ -376,30 +376,30 @@ export default function UserProfile({ userType }: UserProfileProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {["curtição", "namoro", "network", "amizade", "casual"].map((interest) => (
-              <div key={interest} className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  id={interest}
-                  name="interest"
-                  value={interest}
-                  checked={formData.interest === interest}
-                  onChange={(e) => {
-                    const newInterest = e.target.value as "namoro" | "network" | "curtição" | "amizade" | "casual";
-                    setFormData(prev => ({ ...prev, interest: newInterest }));
-                    updateProfile({ interest: newInterest });
-                  }}
-                  className="w-4 h-4 text-primary"
-                />
-                <Label htmlFor={interest} className="flex-1 capitalize cursor-pointer">
-                  {interest === "curtição" ? "💛 Curtição" :
-                   interest === "namoro" ? "💕 Namoro" :
-                   interest === "network" ? "🤝 Network" :
-                   interest === "amizade" ? "🤝 Amizade" :
-                   "😎 Casual"}
-                </Label>
-              </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "curtição", label: "Curtição", emoji: "🤙" },
+              { value: "namoro", label: "Namoro", emoji: "💗" },
+              { value: "network", label: "Network", emoji: "🤝" },
+              { value: "amizade", label: "Amizade", emoji: "👥" },
+              { value: "casual", label: "Casual", emoji: "🤪" }
+            ].map((interest) => (
+              <button
+                key={interest.value}
+                type="button"
+                onClick={() => {
+                  const newInterest = interest.value as "namoro" | "network" | "curtição" | "amizade" | "casual";
+                  setFormData(prev => ({ ...prev, interest: newInterest }));
+                  updateProfile({ interest: newInterest });
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  formData.interest === interest.value
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                {interest.emoji} {interest.label}
+              </button>
             ))}
           </div>
         </CardContent>
