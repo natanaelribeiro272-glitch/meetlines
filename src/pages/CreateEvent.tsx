@@ -1,28 +1,24 @@
 import { useState } from "react";
-import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, X } from "lucide-react";
+import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, Heart, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import FormBuilder, { FormField } from "@/components/FormBuilder";
 import { useOrganizer } from "@/hooks/useOrganizer";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const INTEREST_OPTIONS = [
-  "amizade",
-  "curtir",
-  "networking",
-  "diversão",
-  "música",
-  "dança",
-  "arte",
-  "cultura",
-  "festa",
-  "social"
+  { value: "curtição", label: "🤙 Curtição", emoji: "🤙" },
+  { value: "namoro", label: "💗 Namoro", emoji: "💗" },
+  { value: "network", label: "🤝 Network", emoji: "🤝" },
+  { value: "amizade", label: "🤝 Amizade", emoji: "🤝" },
+  { value: "casual", label: "🤪 Casual", emoji: "🤪" }
 ];
 
 interface CreateEventProps {
@@ -31,6 +27,7 @@ interface CreateEventProps {
 
 export default function CreateEvent({ onBack }: CreateEventProps) {
   const { createEvent } = useOrganizer();
+  const { profile, updateProfile } = useProfile();
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
@@ -48,15 +45,9 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
   const [requiresRegistration, setRequiresRegistration] = useState(false);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-
-  const toggleInterest = (interest: string) => {
-    setSelectedInterests(prev => 
-      prev.includes(interest)
-        ? prev.filter(i => i !== interest)
-        : [...prev, interest]
-    );
-  };
+  const [selectedInterest, setSelectedInterest] = useState<string>("");
+  const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
+  const [notesVisible, setNotesVisible] = useState(true);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,6 +99,11 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
       // Combine date and time
       const eventDateTime = new Date(`${eventData.date}T${eventData.time}`);
 
+      // Update public notes if changed
+      if (publicNotes !== profile?.notes) {
+        await updateProfile({ notes: publicNotes });
+      }
+
       await createEvent({
         title: eventData.title,
         description: eventData.description,
@@ -115,7 +111,7 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
         location: eventData.location,
         image_url: imageUrl,
         max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
-        interests: selectedInterests,
+        interests: selectedInterest ? [selectedInterest] : [],
         is_live: false,
         status: 'upcoming'
       });
@@ -227,33 +223,56 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
           </Card>
 
           {/* Interesses */}
-          <Card>
+          <Card className="bg-surface/50 border-border">
             <CardHeader>
-              <CardTitle className="text-sm">Meus Interesses</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Selecione os interesses que seu evento atende
-              </p>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                Interesse no Evento
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {INTEREST_OPTIONS.map((interest) => (
-                  <Badge
-                    key={interest}
-                    variant={selectedInterests.includes(interest) ? "default" : "outline"}
-                    className={`cursor-pointer transition-all hover:scale-105 ${
-                      selectedInterests.includes(interest)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background hover:bg-muted border-border"
-                    }`}
-                    onClick={() => toggleInterest(interest)}
-                  >
-                    {interest}
-                    {selectedInterests.includes(interest) && (
-                      <X className="ml-1 h-3 w-3" />
-                    )}
-                  </Badge>
-                ))}
+              <RadioGroup value={selectedInterest} onValueChange={setSelectedInterest}>
+                <div className="space-y-3">
+                  {INTEREST_OPTIONS.map((option) => (
+                    <div key={option.value} className="flex items-center space-x-3">
+                      <RadioGroupItem value={option.value} id={option.value} />
+                      <Label 
+                        htmlFor={option.value} 
+                        className="font-normal cursor-pointer flex-1"
+                      >
+                        {option.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            </CardContent>
+          </Card>
+
+          {/* Notas Públicas */}
+          <Card className="bg-surface/50 border-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Notas Públicas
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  Visível para outros
+                </span>
               </div>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                placeholder="Clique para adicionar notas públicas"
+                value={publicNotes}
+                onChange={(e) => setPublicNotes(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Essas notas serão visíveis para todos que visualizarem seus eventos
+              </p>
             </CardContent>
           </Card>
 
