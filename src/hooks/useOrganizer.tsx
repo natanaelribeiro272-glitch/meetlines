@@ -19,6 +19,16 @@ interface OrganizerData {
   is_page_active: boolean;
   created_at: string;
   updated_at: string;
+  whatsapp_url?: string;
+  instagram_url?: string;
+  playlist_url?: string;
+  location_url?: string;
+  website_url?: string;
+  show_whatsapp?: boolean;
+  show_instagram?: boolean;
+  show_playlist?: boolean;
+  show_location?: boolean;
+  show_website?: boolean;
 }
 
 interface Event {

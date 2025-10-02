@@ -341,52 +341,82 @@ export type Database = {
           cover_image_url: string | null
           created_at: string | null
           id: string
+          instagram_url: string | null
           is_page_active: boolean | null
+          location_url: string | null
           page_description: string | null
           page_subtitle: string | null
           page_title: string
+          playlist_url: string | null
           primary_color: string | null
           show_contact: boolean | null
           show_events: boolean | null
+          show_instagram: boolean | null
+          show_location: boolean | null
+          show_playlist: boolean | null
           show_statistics: boolean | null
+          show_website: boolean | null
+          show_whatsapp: boolean | null
           slug: string
           theme: string | null
           updated_at: string | null
           user_id: string
+          website_url: string | null
+          whatsapp_url: string | null
         }
         Insert: {
           cover_image_url?: string | null
           created_at?: string | null
           id?: string
+          instagram_url?: string | null
           is_page_active?: boolean | null
+          location_url?: string | null
           page_description?: string | null
           page_subtitle?: string | null
           page_title: string
+          playlist_url?: string | null
           primary_color?: string | null
           show_contact?: boolean | null
           show_events?: boolean | null
+          show_instagram?: boolean | null
+          show_location?: boolean | null
+          show_playlist?: boolean | null
           show_statistics?: boolean | null
+          show_website?: boolean | null
+          show_whatsapp?: boolean | null
           slug: string
           theme?: string | null
           updated_at?: string | null
           user_id: string
+          website_url?: string | null
+          whatsapp_url?: string | null
         }
         Update: {
           cover_image_url?: string | null
           created_at?: string | null
           id?: string
+          instagram_url?: string | null
           is_page_active?: boolean | null
+          location_url?: string | null
           page_description?: string | null
           page_subtitle?: string | null
           page_title?: string
+          playlist_url?: string | null
           primary_color?: string | null
           show_contact?: boolean | null
           show_events?: boolean | null
+          show_instagram?: boolean | null
+          show_location?: boolean | null
+          show_playlist?: boolean | null
           show_statistics?: boolean | null
+          show_website?: boolean | null
+          show_whatsapp?: boolean | null
           slug?: string
           theme?: string | null
           updated_at?: string | null
           user_id?: string
+          website_url?: string | null
+          whatsapp_url?: string | null
         }
         Relationships: []
       }

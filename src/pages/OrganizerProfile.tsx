@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart } from "lucide-react";
+import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -220,36 +220,150 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         {/* Links Tab */}
         {activeTab === "links" && (
           <div className="space-y-3">
-            {customLinks.length > 0 ? (
-              customLinks.map((link) => (
-                <Card key={link.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 w-full"
+            {/* Social Links */}
+            {organizer.show_whatsapp && organizer.whatsapp_url && (
+              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <a
+                    href={organizer.whatsapp_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full"
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500 text-white">
+                      <MessageCircle className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">WhatsApp</p>
+                      <p className="text-sm text-muted-foreground">Entre em contato</p>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+
+            {organizer.show_instagram && organizer.instagram_url && (
+              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <a
+                    href={organizer.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full"
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white">
+                      <Instagram className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">Instagram</p>
+                      <p className="text-sm text-muted-foreground">Siga no Instagram</p>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+
+            {organizer.show_playlist && organizer.playlist_url && (
+              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <a
+                    href={organizer.playlist_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full"
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-600 text-white">
+                      <Music className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">Playlist</p>
+                      <p className="text-sm text-muted-foreground">Ouça nossa playlist</p>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+
+            {organizer.show_location && organizer.location_url && (
+              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <a
+                    href={organizer.location_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full"
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500 text-white">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">Localização</p>
+                      <p className="text-sm text-muted-foreground">Veja no mapa</p>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+
+            {organizer.show_website && organizer.website_url && (
+              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <a
+                    href={organizer.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full"
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-600 text-white">
+                      <Globe className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">Site</p>
+                      <p className="text-sm text-muted-foreground">Visite nosso site</p>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Custom Links */}
+            {customLinks.length > 0 && customLinks.map((link) => (
+              <Card key={link.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full"
+                  >
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: link.color }}
                     >
-                      <div 
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                        style={{ backgroundColor: link.color }}
-                      >
-                        {link.icon || link.title.charAt(0)}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{link.title}</p>
-                        <p className="text-sm text-muted-foreground truncate">{link.url}</p>
-                      </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    </a>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
+                      {link.icon || link.title.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">{link.title}</p>
+                      <p className="text-sm text-muted-foreground truncate">{link.url}</p>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Empty state */}
+            {!organizer.show_whatsapp && !organizer.show_instagram && !organizer.show_playlist && 
+             !organizer.show_location && !organizer.show_website && customLinks.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Nenhum link adicionado ainda.</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Os links personalizados aparecerão aqui quando forem adicionados.
+                  Os links aparecerão aqui quando forem adicionados.
                 </p>
               </div>
             )}
