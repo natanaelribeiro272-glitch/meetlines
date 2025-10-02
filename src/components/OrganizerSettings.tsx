@@ -1,8 +1,13 @@
-import { Users, Download, Shield, User, Bell, HelpCircle, LogOut, Trash2, Lock } from "lucide-react";
+import { Users, Download, Shield, User, Bell, HelpCircle, LogOut, Trash2, Lock, Link as LinkIcon, MessageCircle, Instagram, Music, MapPin, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState, useEffect } from "react";
+import { useOrganizer } from "@/hooks/useOrganizer";
+import { toast } from "sonner";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -18,6 +23,38 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function OrganizerSettings() {
   const { signOut } = useAuth();
+  const { organizerData, updateOrganizerProfile } = useOrganizer();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [socialLinks, setSocialLinks] = useState({
+    whatsapp_url: "",
+    instagram_url: "",
+    playlist_url: "",
+    location_url: "",
+    website_url: "",
+    show_whatsapp: false,
+    show_instagram: false,
+    show_playlist: false,
+    show_location: false,
+    show_website: false,
+  });
+
+  useEffect(() => {
+    if (organizerData) {
+      setSocialLinks({
+        whatsapp_url: organizerData.whatsapp_url || "",
+        instagram_url: organizerData.instagram_url || "",
+        playlist_url: organizerData.playlist_url || "",
+        location_url: organizerData.location_url || "",
+        website_url: organizerData.website_url || "",
+        show_whatsapp: organizerData.show_whatsapp || false,
+        show_instagram: organizerData.show_instagram || false,
+        show_playlist: organizerData.show_playlist || false,
+        show_location: organizerData.show_location || false,
+        show_website: organizerData.show_website || false,
+      });
+    }
+  }, [organizerData]);
 
   const handleLogout = () => {
     signOut();
@@ -26,6 +63,17 @@ export default function OrganizerSettings() {
   const handleDeleteAccount = () => {
     // Aqui implementaria a lógica de exclusão de conta
     console.log("Conta excluída");
+  };
+
+  const handleSaveLinks = async () => {
+    try {
+      setIsSaving(true);
+      await updateOrganizerProfile(socialLinks);
+    } catch (error) {
+      console.error('Error saving links:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -101,6 +149,147 @@ export default function OrganizerSettings() {
             </div>
             <Switch />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Social Links */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LinkIcon className="h-4 w-4" />
+            Links Sociais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* WhatsApp */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="whatsapp" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-green-500" />
+                WhatsApp
+              </Label>
+              <Switch 
+                checked={socialLinks.show_whatsapp}
+                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_whatsapp: checked})}
+              />
+            </div>
+            <Input
+              id="whatsapp"
+              value={socialLinks.whatsapp_url}
+              onChange={(e) => setSocialLinks({...socialLinks, whatsapp_url: e.target.value})}
+              placeholder="https://wa.me/5511999999999"
+              disabled={!socialLinks.show_whatsapp}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Instagram */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="instagram" className="flex items-center gap-2">
+                <Instagram className="h-4 w-4 text-pink-500" />
+                Instagram
+              </Label>
+              <Switch 
+                checked={socialLinks.show_instagram}
+                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_instagram: checked})}
+              />
+            </div>
+            <Input
+              id="instagram"
+              value={socialLinks.instagram_url}
+              onChange={(e) => setSocialLinks({...socialLinks, instagram_url: e.target.value})}
+              placeholder="https://instagram.com/seu_perfil"
+              disabled={!socialLinks.show_instagram}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Playlist */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="playlist" className="flex items-center gap-2">
+                <Music className="h-4 w-4 text-purple-500" />
+                Playlist
+              </Label>
+              <Switch 
+                checked={socialLinks.show_playlist}
+                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_playlist: checked})}
+              />
+            </div>
+            <Input
+              id="playlist"
+              value={socialLinks.playlist_url}
+              onChange={(e) => setSocialLinks({...socialLinks, playlist_url: e.target.value})}
+              placeholder="https://open.spotify.com/playlist/..."
+              disabled={!socialLinks.show_playlist}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Localização */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="location" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-red-500" />
+                Localização
+              </Label>
+              <Switch 
+                checked={socialLinks.show_location}
+                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_location: checked})}
+              />
+            </div>
+            <Input
+              id="location"
+              value={socialLinks.location_url}
+              onChange={(e) => setSocialLinks({...socialLinks, location_url: e.target.value})}
+              placeholder="https://maps.google.com/..."
+              disabled={!socialLinks.show_location}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Site */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="website" className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-blue-500" />
+                Site
+              </Label>
+              <Switch 
+                checked={socialLinks.show_website}
+                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_website: checked})}
+              />
+            </div>
+            <Input
+              id="website"
+              value={socialLinks.website_url}
+              onChange={(e) => setSocialLinks({...socialLinks, website_url: e.target.value})}
+              placeholder="https://seusite.com.br"
+              disabled={!socialLinks.show_website}
+            />
+          </div>
+
+          <Separator />
+
+          <Button 
+            onClick={handleSaveLinks} 
+            disabled={isSaving}
+            className="w-full"
+          >
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Salvando...
+              </>
+            ) : (
+              'Salvar Links'
+            )}
+          </Button>
         </CardContent>
       </Card>
 
