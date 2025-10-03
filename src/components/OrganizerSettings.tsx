@@ -8,24 +8,17 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { toast } from "sonner";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
-
 export default function OrganizerSettings() {
-  const { signOut } = useAuth();
-  const { organizerData, updateOrganizerProfile } = useOrganizer();
+  const {
+    signOut
+  } = useAuth();
+  const {
+    organizerData,
+    updateOrganizerProfile
+  } = useOrganizer();
   const [isSaving, setIsSaving] = useState(false);
-  
   const [socialLinks, setSocialLinks] = useState({
     whatsapp_url: "",
     instagram_url: "",
@@ -36,9 +29,8 @@ export default function OrganizerSettings() {
     show_instagram: false,
     show_playlist: false,
     show_location: false,
-    show_website: false,
+    show_website: false
   });
-
   useEffect(() => {
     if (organizerData) {
       setSocialLinks({
@@ -51,20 +43,17 @@ export default function OrganizerSettings() {
         show_instagram: organizerData.show_instagram || false,
         show_playlist: organizerData.show_playlist || false,
         show_location: organizerData.show_location || false,
-        show_website: organizerData.show_website || false,
+        show_website: organizerData.show_website || false
       });
     }
   }, [organizerData]);
-
   const handleLogout = () => {
     signOut();
   };
-
   const handleDeleteAccount = () => {
     // Aqui implementaria a lógica de exclusão de conta
     console.log("Conta excluída");
   };
-
   const handleSaveLinks = async () => {
     try {
       setIsSaving(true);
@@ -75,9 +64,7 @@ export default function OrganizerSettings() {
       setIsSaving(false);
     }
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Shield className="h-5 w-5 text-primary" />
         <h2 className="text-xl font-bold text-foreground">Configurações</h2>
@@ -153,145 +140,7 @@ export default function OrganizerSettings() {
       </Card>
 
       {/* Social Links */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <LinkIcon className="h-4 w-4" />
-            Links Sociais
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* WhatsApp */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="whatsapp" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-green-500" />
-                WhatsApp
-              </Label>
-              <Switch 
-                checked={socialLinks.show_whatsapp}
-                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_whatsapp: checked})}
-              />
-            </div>
-            <Input
-              id="whatsapp"
-              value={socialLinks.whatsapp_url}
-              onChange={(e) => setSocialLinks({...socialLinks, whatsapp_url: e.target.value})}
-              placeholder="https://wa.me/5511999999999"
-              disabled={!socialLinks.show_whatsapp}
-            />
-          </div>
-
-          <Separator />
-
-          {/* Instagram */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="instagram" className="flex items-center gap-2">
-                <Instagram className="h-4 w-4 text-pink-500" />
-                Instagram
-              </Label>
-              <Switch 
-                checked={socialLinks.show_instagram}
-                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_instagram: checked})}
-              />
-            </div>
-            <Input
-              id="instagram"
-              value={socialLinks.instagram_url}
-              onChange={(e) => setSocialLinks({...socialLinks, instagram_url: e.target.value})}
-              placeholder="https://instagram.com/seu_perfil"
-              disabled={!socialLinks.show_instagram}
-            />
-          </div>
-
-          <Separator />
-
-          {/* Playlist */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="playlist" className="flex items-center gap-2">
-                <Music className="h-4 w-4 text-purple-500" />
-                Playlist
-              </Label>
-              <Switch 
-                checked={socialLinks.show_playlist}
-                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_playlist: checked})}
-              />
-            </div>
-            <Input
-              id="playlist"
-              value={socialLinks.playlist_url}
-              onChange={(e) => setSocialLinks({...socialLinks, playlist_url: e.target.value})}
-              placeholder="https://open.spotify.com/playlist/..."
-              disabled={!socialLinks.show_playlist}
-            />
-          </div>
-
-          <Separator />
-
-          {/* Localização */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="location" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-red-500" />
-                Localização
-              </Label>
-              <Switch 
-                checked={socialLinks.show_location}
-                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_location: checked})}
-              />
-            </div>
-            <Input
-              id="location"
-              value={socialLinks.location_url}
-              onChange={(e) => setSocialLinks({...socialLinks, location_url: e.target.value})}
-              placeholder="https://maps.google.com/..."
-              disabled={!socialLinks.show_location}
-            />
-          </div>
-
-          <Separator />
-
-          {/* Site */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="website" className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-blue-500" />
-                Site
-              </Label>
-              <Switch 
-                checked={socialLinks.show_website}
-                onCheckedChange={(checked) => setSocialLinks({...socialLinks, show_website: checked})}
-              />
-            </div>
-            <Input
-              id="website"
-              value={socialLinks.website_url}
-              onChange={(e) => setSocialLinks({...socialLinks, website_url: e.target.value})}
-              placeholder="https://seusite.com.br"
-              disabled={!socialLinks.show_website}
-            />
-          </div>
-
-          <Separator />
-
-          <Button 
-            onClick={handleSaveLinks} 
-            disabled={isSaving}
-            className="w-full"
-          >
-            {isSaving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Salvando...
-              </>
-            ) : (
-              'Salvar Links'
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+      
 
       {/* Privacy */}
       <Card>
@@ -384,11 +233,7 @@ export default function OrganizerSettings() {
               <CardTitle>Ações Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => window.open('/registrations', '_blank')}
-              >
+              <Button variant="outline" className="w-full justify-start" onClick={() => window.open('/registrations', '_blank')}>
                 <Users className="h-4 w-4 mr-2" />
                 Ver Todos os Cadastros
               </Button>
@@ -431,6 +276,5 @@ export default function OrganizerSettings() {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
