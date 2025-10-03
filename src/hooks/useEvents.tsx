@@ -19,6 +19,7 @@ export interface EventData {
     id: string;
     page_title: string;
     user_id: string;
+    avatar_url?: string;
     profile?: {
       display_name?: string;
       avatar_url?: string;
@@ -54,7 +55,8 @@ export function useEvents(categoryFilter?: string) {
             organizer:organizers!inner(
               id,
               page_title,
-              user_id
+              user_id,
+              avatar_url
             )
           `)
           .eq('status', 'upcoming')
@@ -73,7 +75,8 @@ export function useEvents(categoryFilter?: string) {
             organizer:organizers!inner(
               id,
               page_title,
-              user_id
+              user_id,
+              avatar_url
             )
           `)
           .eq('status', 'upcoming')
@@ -124,7 +127,10 @@ export function useEvents(categoryFilter?: string) {
             ...event,
             organizer: {
               ...event.organizer,
-              profile: organizerProfile
+              profile: {
+                display_name: organizerProfile?.display_name,
+                avatar_url: event.organizer.avatar_url || organizerProfile?.avatar_url
+              }
             },
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,

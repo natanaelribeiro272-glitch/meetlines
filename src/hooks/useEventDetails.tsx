@@ -31,6 +31,7 @@ export interface EventDetailsData {
     id: string;
     page_title: string;
     user_id: string;
+    avatar_url?: string;
     profile?: {
       display_name?: string;
       avatar_url?: string;
@@ -63,7 +64,8 @@ export function useEventDetails(eventId: string | null) {
           organizer:organizers!inner(
             id,
             page_title,
-            user_id
+            user_id,
+            avatar_url
           )
         `)
         .eq('id', eventId)
@@ -137,7 +139,10 @@ export function useEventDetails(eventId: string | null) {
         ...eventData,
         organizer: {
           ...eventData.organizer,
-          profile: organizerProfile
+          profile: {
+            ...organizerProfile,
+            avatar_url: eventData.organizer.avatar_url || organizerProfile?.avatar_url
+          }
         },
         likes_count: likesCount || 0,
         comments_count: commentsCount || 0,
