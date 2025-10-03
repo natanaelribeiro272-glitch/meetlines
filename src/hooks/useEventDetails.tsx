@@ -246,6 +246,59 @@ export function useEventDetails(eventId: string | null) {
     fetchEventDetails();
   }, [eventId, user]);
 
+  // Realtime updates for organizer profile/name/avatar changes on details page
+  useEffect(() => {
+    if (!event) return;
+
+    const channel = supabase
+      .channel('realtime-organizer-profile-eventdetails')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles',
+        filter: `user_id=eq.${event.organizer?.user_id}`
+      }, (payload) => {
+        const p = payload.new as any;
+        setEvent(prev => prev ? {
+          ...prev,
+          organizer: {
+            ...prev.organizer!,
+            profile: {
+              ...(prev.organizer?.profile || {}),
+              display_name: p.display_name ?? prev.organizer?.profile?.display_name,
+              avatar_url: p.avatar_url ?? prev.organizer?.profile?.avatar_url,
+              notes: prev.organizer?.profile?.notes,
+            }
+          }
+        } : prev);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'organizers',
+        filter: `id=eq.${event.organizer?.id}`
+      }, (payload) => {
+        const o = payload.new as any;
+        setEvent(prev => prev ? {
+          ...prev,
+          organizer: {
+            ...prev.organizer!,
+            page_title: o.page_title ?? prev.organizer?.page_title,
+            avatar_url: o.avatar_url ?? prev.organizer?.avatar_url,
+            profile: {
+              ...(prev.organizer?.profile || {}),
+              avatar_url: o.avatar_url ?? prev.organizer?.profile?.avatar_url,
+            }
+          }
+        } : prev);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [event?.organizer?.user_id, event?.organizer?.id]);
+
   return {
     event,
     loading,

@@ -173,6 +173,51 @@ export function useOrganizerDetails(organizerId: string | null) {
     fetchOrganizerDetails();
   }, [organizerId]);
 
+  // Realtime updates for organizer profile and organizer table
+  useEffect(() => {
+    if (!organizer) return;
+
+    const channel = supabase
+      .channel('realtime-organizer-profile-details')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles',
+        filter: `user_id=eq.${organizer.user_id}`
+      }, (payload) => {
+        const p = payload.new as any;
+        setOrganizer(prev => prev ? {
+          ...prev,
+          profile: {
+            ...(prev.profile || {}),
+            display_name: p.display_name ?? prev.profile?.display_name,
+            avatar_url: p.avatar_url ?? prev.profile?.avatar_url,
+            bio: p.bio ?? prev.profile?.bio,
+          }
+        } : prev);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'organizers',
+        filter: `id=eq.${organizer.id}`
+      }, (payload) => {
+        const o = payload.new as any;
+        setOrganizer(prev => prev ? {
+          ...prev,
+          page_title: o.page_title ?? prev.page_title,
+          avatar_url: o.avatar_url ?? prev.avatar_url,
+          page_description: o.page_description ?? prev.page_description,
+          updated_at: o.updated_at ?? prev.updated_at
+        } : prev);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [organizer?.id, organizer?.user_id]);
+
   return {
     organizer,
     events,

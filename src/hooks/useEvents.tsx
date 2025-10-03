@@ -197,6 +197,56 @@ export function useEvents(categoryFilter?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, categoryFilter]);
 
+  // Realtime updates for organizer profile/name/avatar changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-organizer-profile-events')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+        const p = payload.new as any;
+        setEvents(prev => prev.map(ev => {
+          if (ev.organizer?.user_id === p.user_id) {
+            return {
+              ...ev,
+              organizer: {
+                ...ev.organizer,
+                profile: {
+                  ...(ev.organizer.profile || {}),
+                  display_name: p.display_name ?? ev.organizer.profile?.display_name,
+                  avatar_url: p.avatar_url ?? ev.organizer.profile?.avatar_url,
+                },
+              },
+            };
+          }
+          return ev;
+        }));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'organizers' }, (payload) => {
+        const o = payload.new as any;
+        setEvents(prev => prev.map(ev => {
+          if (ev.organizer?.id === o.id) {
+            return {
+              ...ev,
+              organizer: {
+                ...ev.organizer,
+                page_title: o.page_title ?? ev.organizer.page_title,
+                avatar_url: o.avatar_url ?? ev.organizer.avatar_url,
+                profile: {
+                  ...(ev.organizer.profile || {}),
+                  avatar_url: o.avatar_url ?? ev.organizer.profile?.avatar_url,
+                },
+              },
+            };
+          }
+          return ev;
+        }));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     events,
     loading,

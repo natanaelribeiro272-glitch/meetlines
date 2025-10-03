@@ -9,6 +9,8 @@ export interface OrganizerListData {
   slug: string;
   primary_color: string;
   cover_image_url?: string;
+  avatar_url?: string;
+  updated_at?: string;
   user_id: string;
   profile?: {
     display_name?: string;
@@ -84,6 +86,44 @@ export function useOrganizersList() {
 
   useEffect(() => {
     fetchOrganizers();
+  }, []);
+
+  // Realtime updates to reflect profile/organizer changes instantly in the list
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-organizer-list')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+        const p = payload.new as any;
+        setOrganizers(prev => prev.map(org => {
+          if (org.user_id === p.user_id) {
+            return {
+              ...org,
+              profile: {
+                ...(org.profile || {}),
+                display_name: p.display_name ?? org.profile?.display_name,
+                avatar_url: p.avatar_url ?? org.profile?.avatar_url,
+                bio: p.bio ?? org.profile?.bio,
+              }
+            };
+          }
+          return org;
+        }));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'organizers' }, (payload) => {
+        const o = payload.new as any;
+        setOrganizers(prev => prev.map(org => org.id === o.id ? {
+          ...org,
+          page_title: o.page_title ?? org.page_title,
+          avatar_url: o.avatar_url ?? org.avatar_url,
+          page_description: o.page_description ?? org.page_description,
+          updated_at: o.updated_at ?? org.updated_at
+        } : org));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {
