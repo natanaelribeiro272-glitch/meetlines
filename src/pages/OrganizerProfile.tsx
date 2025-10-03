@@ -271,19 +271,12 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         className="relative min-h-[380px] overflow-hidden"
         style={{
           backgroundImage: organizer.cover_image_url 
-            ? `url(${organizer.cover_image_url})`
+            ? `linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.9) 30%, transparent 100%), url(${organizer.cover_image_url})`
             : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        {/* Overlay gradiente apenas na parte inferior - como background */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-32 z-0"
-          style={{
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.9) 30%, transparent 100%)'
-          }}
-        />
         
         <div className="flex items-center justify-between p-4 relative z-10">
           <Button variant="ghost" size="icon" onClick={onBack} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
