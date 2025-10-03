@@ -277,11 +277,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           backgroundPosition: 'center',
         }}
       >
-        {/* Overlay gradiente de baixo para cima usando a cor do sistema */}
+        {/* Overlay gradiente apenas na parte inferior */}
         <div 
           className="absolute inset-0 z-0"
           style={{
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 10%, hsl(var(--background) / 0.7) 30%, hsl(var(--background) / 0.3) 60%, transparent 100%)'
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 10%, hsl(var(--background) / 0.7) 25%, hsl(var(--background) / 0.3) 40%, transparent 55%)'
           }}
         />
         
