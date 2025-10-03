@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-
 interface Attendee {
   id: string;
   name: string;
@@ -16,26 +15,27 @@ interface Attendee {
   instagram: string;
   hasPhone: boolean;
 }
-
 interface FindFriendsProps {
   onBack: () => void;
 }
-
-export default function FindFriends({ onBack }: FindFriendsProps) {
+export default function FindFriends({
+  onBack
+}: FindFriendsProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-
+  const {
+    user
+  } = useAuth();
   useEffect(() => {
     const fetchEventAttendees = async () => {
       if (!user) return;
-      
       try {
         // Get registrations for live events with profile data
-        const { data, error } = await supabase
-          .from('event_registrations')
-          .select(`
+        const {
+          data,
+          error
+        } = await supabase.from('event_registrations').select(`
             id,
             user_name,
             event_id,
@@ -47,15 +47,12 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
             events!inner(
               is_live
             )
-          `)
-          .eq('events.is_live', true)
-          .neq('user_id', user.id); // Exclude current user
+          `).eq('events.is_live', true).neq('user_id', user.id); // Exclude current user
 
         if (error) {
           console.error('Error fetching attendees:', error);
           return;
         }
-
         const formattedAttendees: Attendee[] = (data || []).map((registration: any, index: number) => ({
           id: registration.id,
           name: registration.user_name,
@@ -66,7 +63,6 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
           instagram: registration.profiles?.instagram_url || "",
           hasPhone: Math.random() > 0.5
         }));
-
         setAttendees(formattedAttendees);
       } catch (error) {
         console.error('Error:', error);
@@ -74,29 +70,34 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
         setLoading(false);
       }
     };
-
     fetchEventAttendees();
   }, [user]);
-
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      curtição: { color: "bg-yellow-500/20 text-yellow-400", icon: "💛" },
-      namoro: { color: "bg-red-500/20 text-red-400", icon: "💕" },
-      amizade: { color: "bg-blue-500/20 text-blue-400", icon: "🤝" },
-      network: { color: "bg-green-500/20 text-green-400", icon: "🤝" },
+      curtição: {
+        color: "bg-yellow-500/20 text-yellow-400",
+        icon: "💛"
+      },
+      namoro: {
+        color: "bg-red-500/20 text-red-400",
+        icon: "💕"
+      },
+      amizade: {
+        color: "bg-blue-500/20 text-blue-400",
+        icon: "🤝"
+      },
+      network: {
+        color: "bg-green-500/20 text-green-400",
+        icon: "🤝"
+      }
     };
-    
     const config = statusConfig[status as keyof typeof statusConfig];
-    return (
-      <Badge className={`${config.color} border-0`}>
+    return <Badge className={`${config.color} border-0`}>
         <span className="mr-1">{config.icon}</span>
         {status}
-      </Badge>
-    );
+      </Badge>;
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3 max-w-md mx-auto">
@@ -105,14 +106,10 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
           </Button>
           <div className="flex-1">
             <h1 className="font-bold text-foreground">Encontrar Amigos</h1>
-            <p className="text-sm text-muted-foreground">Festival Eletrônico Underground</p>
+            
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant={isVisible ? "glow" : "outline"} 
-              size="sm"
-              onClick={() => setIsVisible(!isVisible)}
-            >
+            <Button variant={isVisible ? "glow" : "outline"} size="sm" onClick={() => setIsVisible(!isVisible)}>
               <Eye className="h-4 w-4 mr-1" />
               {isVisible ? "Visível" : "Ser Visto"}
             </Button>
@@ -135,23 +132,16 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            {isVisible 
-              ? "Outras pessoas no evento podem te encontrar. Toque em 'Ser Visto' novamente para ficar invisível."
-              : "Conecte-se com pessoas que estão no evento agora. Sua localização é usada apenas durante eventos ao vivo."
-            }
+            {isVisible ? "Outras pessoas no evento podem te encontrar. Toque em 'Ser Visto' novamente para ficar invisível." : "Conecte-se com pessoas que estão no evento agora. Sua localização é usada apenas durante eventos ao vivo."}
           </p>
         </div>
 
         {/* Attendees List */}
-        {loading ? (
-          <div className="text-center py-8">
+        {loading ? <div className="text-center py-8">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-muted-foreground">Procurando pessoas...</p>
-          </div>
-        ) : attendees.length > 0 ? (
-          <div className="space-y-4">
-            {attendees.map((person) => (
-            <div key={person.id} className="bg-card rounded-lg p-4 shadow-card">
+          </div> : attendees.length > 0 ? <div className="space-y-4">
+            {attendees.map(person => <div key={person.id} className="bg-card rounded-lg p-4 shadow-card">
               <div className="flex items-start gap-3">
                 <div className="avatar-story">
                   <Avatar className="h-12 w-12">
@@ -181,12 +171,10 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
                       <span>{person.instagram}</span>
                     </button>
                     
-                    {person.hasPhone && (
-                      <button className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth">
+                    {person.hasPhone && <button className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth">
                         <Phone className="h-4 w-4" />
                         <span>WhatsApp</span>
-                      </button>
-                    )}
+                      </button>}
                   </div>
                 </div>
 
@@ -200,16 +188,12 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
                   </Button>
                 </div>
               </div>
-            </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
+            </div>)}
+          </div> : <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">Nenhuma pessoa encontrada</p>
             <p className="text-sm text-muted-foreground mt-2">Não há outras pessoas em eventos ao vivo no momento</p>
-          </div>
-        )}
+          </div>}
 
         {/* Bottom CTA */}
         <div className="mt-8 p-4 bg-surface rounded-lg text-center">
@@ -221,6 +205,5 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
           </Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
