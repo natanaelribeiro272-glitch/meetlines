@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import MainLayout from "./pages/MainLayout";
 import PublicOrganizerProfile from "./pages/PublicOrganizerProfile";
+import EventPublicPage from "./pages/EventPublicPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -22,7 +23,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<MainLayout />} />
               <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
-              <Route path="/:slug" element={<PublicOrganizerProfile />} />
+              {/* Public event share route: domain.com/organizer-slug/event-slug */}
+              <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
+              <Route path= "/:slug" element={<PublicOrganizerProfile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
