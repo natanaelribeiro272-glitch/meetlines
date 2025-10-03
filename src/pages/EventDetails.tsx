@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 interface EventDetailsProps {
   onBack: () => void;
@@ -19,9 +21,21 @@ interface EventDetailsProps {
 export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit }: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [newComment, setNewComment] = useState("");
   
   const isOrganizer = user && event?.organizer?.user_id === user.id;
+
+  const requireAuth = (action: () => void, actionName: string) => {
+    if (!user) {
+      const currentPath = location.pathname;
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      toast.info(`Faça login para ${actionName}`);
+      return;
+    }
+    action();
+  };
 
   // Função auxiliar para formatizar data
   const formatEventDate = (dateString: string) => {
@@ -48,8 +62,29 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     
-    await addComment(newComment);
-    setNewComment("");
+    requireAuth(async () => {
+      await addComment(newComment);
+      setNewComment("");
+    }, 'comentar');
+  };
+
+  const handleLike = () => {
+    requireAuth(() => {
+      toggleLike();
+    }, 'curtir este evento');
+  };
+
+  const handleConfirmPresence = () => {
+    requireAuth(() => {
+      toast.success('Presença confirmada!');
+      // Aqui você adicionaria a lógica real de confirmar presença
+    }, 'confirmar presença');
+  };
+
+  const handleFindFriendsClick = () => {
+    requireAuth(() => {
+      if (onFindFriends) onFindFriends();
+    }, 'encontrar amigos');
   };
 
   if (loading) {
@@ -212,7 +247,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         {/* Action Buttons */}
         <div className="space-y-3 mb-6">
           <div className="flex gap-3">
-            <Button variant="glow" className="flex-1" size="lg">
+            <Button variant="glow" className="flex-1" size="lg" onClick={handleConfirmPresence}>
               Confirmar Presença
             </Button>
             {event.is_live ? (
@@ -256,7 +291,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
               variant="live" 
               className="w-full" 
               size="lg"
-              onClick={onFindFriends}
+              onClick={handleFindFriendsClick}
             >
               <Users className="h-4 w-4 mr-2" />
               Encontrar Amigos no Evento
@@ -269,7 +304,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
           <div className="flex items-center gap-6">
             <button 
               className="flex items-center gap-2 transition-smooth hover:scale-110"
-              onClick={toggleLike}
+              onClick={handleLike}
             >
               <Heart className={`h-5 w-5 ${event.is_liked ? 'text-destructive fill-current' : 'text-muted-foreground'}`} />
               <span className="text-sm text-muted-foreground">{event.likes_count || 0}</span>

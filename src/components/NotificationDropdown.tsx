@@ -56,12 +56,24 @@ const mockNotifications: Notification[] = [
   }
 ];
 
-export function NotificationDropdown() {
+interface NotificationDropdownProps {
+  onUnauthorizedClick?: () => void;
+}
+
+export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdownProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const newNotificationsCount = notifications.filter(n => n.isNew).length;
+
+  const handleClick = () => {
+    if (onUnauthorizedClick) {
+      onUnauthorizedClick();
+    } else {
+      setIsOpen(!isOpen);
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -115,7 +127,7 @@ export function NotificationDropdown() {
         variant="ghost" 
         size="icon" 
         className="relative hover:bg-primary/10"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleClick}
       >
         <Bell className="h-5 w-5" />
         {newNotificationsCount > 0 && (

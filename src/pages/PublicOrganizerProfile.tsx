@@ -103,13 +103,9 @@ export default function PublicOrganizerProfile() {
         }
 
         // Verificar se é o próprio perfil
-        console.log('User ID:', user?.id);
-        console.log('Organizer User ID:', organizerData.user_id);
         if (user && organizerData.user_id === user.id) {
-          console.log('É o próprio perfil!');
           setIsOwnProfile(true);
         } else {
-          console.log('Não é o próprio perfil');
           setIsOwnProfile(false);
         }
 

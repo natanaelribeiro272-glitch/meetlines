@@ -1,5 +1,7 @@
 import { Home, Search, Users, User, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -8,6 +10,23 @@ interface BottomNavigationProps {
 }
 
 export function BottomNavigation({ activeTab, onTabChange, userType }: BottomNavigationProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleTabChange = (tab: string) => {
+    // Tabs que exigem autenticação
+    const protectedTabs = ['friends', 'profile'];
+    
+    if (protectedTabs.includes(tab) && !user) {
+      const currentPath = location.pathname;
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+    
+    onTabChange(tab);
+  };
+
   // Different navigation items for each user type
   const userNavItems = [
     { id: "home", icon: Home, label: "Início" },
@@ -30,7 +49,7 @@ export function BottomNavigation({ activeTab, onTabChange, userType }: BottomNav
           return (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => handleTabChange(item.id)}
               className={cn(
                 "flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-smooth",
                 isActive 

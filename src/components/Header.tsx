@@ -1,5 +1,8 @@
 import { MapPin } from "lucide-react";
 import { NotificationDropdown } from "./NotificationDropdown";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 interface HeaderProps {
   title?: string;
   showLocation?: boolean;
@@ -12,6 +15,18 @@ export function Header({
   showNotifications = true,
   userType
 }: HeaderProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNotificationClick = () => {
+    if (!user) {
+      const currentPath = location.pathname;
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      toast.info('Faça login para ver suas notificações');
+    }
+  };
+
   return <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
         <div className="flex items-center gap-2">
@@ -29,7 +44,7 @@ export function Header({
             </div>}
         </div>
 
-        {showNotifications && <NotificationDropdown />}
+        {showNotifications && <NotificationDropdown onUnauthorizedClick={handleNotificationClick} />}
       </div>
     </header>;
 }

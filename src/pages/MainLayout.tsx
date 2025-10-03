@@ -71,10 +71,6 @@ export default function MainLayout() {
     );
   }
 
-  if (!user) {
-    return <AuthPage onLogin={handleLogin} />;
-  }
-
   const renderContent = () => {
     switch (activeTab) {
       case "home":
