@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useOrganizerPhotos } from "@/hooks/useOrganizerPhotos";
@@ -24,7 +25,7 @@ export default function OrganizerPage() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [sessionName, setSessionName] = useState("");
+  const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [stats, setStats] = useState({
     followers_count: 0,
     events_count: 0,
@@ -198,11 +199,16 @@ export default function OrganizerPage() {
   const handlePhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    
+    if (!selectedEventId) {
+      toast.error('Selecione um evento para associar as fotos');
+      return;
+    }
 
-    const success = await uploadPhotos(files, sessionName);
+    const success = await uploadPhotos(files, selectedEventId);
     if (success) {
       setShowAddPhotos(false);
-      setSessionName("");
+      setSelectedEventId("");
       if (photoInputRef.current) {
         photoInputRef.current.value = '';
       }
@@ -648,7 +654,7 @@ export default function OrganizerPage() {
                     <div key={index} className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-foreground">{session.sessionName}</h3>
+                          <h3 className="font-semibold text-foreground">{session.eventName || 'Sem evento'}</h3>
                           <p className="text-sm text-muted-foreground">
                             {session.photos.length} foto{session.photos.length !== 1 ? 's' : ''} • {session.date}
                           </p>
@@ -718,23 +724,35 @@ export default function OrganizerPage() {
         <Dialog open={showAddPhotos} onOpenChange={setShowAddPhotos}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Adicionar Fotos</DialogTitle>
+              <DialogTitle>Adicionar Fotos do Evento</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="session-name">Nome da Sessão</Label>
-                <Input 
-                  id="session-name" 
-                  value={sessionName}
-                  onChange={(e) => setSessionName(e.target.value)}
-                  placeholder="Ex: Festival de Música 2024"
-                />
+                <Label htmlFor="event-select">Evento *</Label>
+                <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um evento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        Nenhum evento cadastrado
+                      </SelectItem>
+                    ) : (
+                      events.map((event) => (
+                        <SelectItem key={event.id} value={event.id}>
+                          {event.title}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Nome para agrupar as fotos
+                  As fotos serão associadas a este evento
                 </p>
               </div>
               <div>
-                <Label htmlFor="photos-upload">Selecionar Fotos</Label>
+                <Label htmlFor="photos-upload">Selecionar Fotos *</Label>
                 <Input 
                   ref={photoInputRef}
                   id="photos-upload" 
@@ -750,7 +768,7 @@ export default function OrganizerPage() {
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => {
                   setShowAddPhotos(false);
-                  setSessionName("");
+                  setSelectedEventId("");
                 }} className="flex-1">
                   Cancelar
                 </Button>

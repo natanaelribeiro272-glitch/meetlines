@@ -14,6 +14,7 @@ interface Photo {
 
 interface PhotoSession {
   sessionName: string;
+  eventName?: string;
   photos: Photo[];
   date: string;
   eventId: string | null;
@@ -61,7 +62,7 @@ export function useOrganizerPhotos() {
       if (photosError) throw photosError;
 
       setPhotos(photosData || []);
-      groupPhotosBySessions(photosData || []);
+      await groupPhotosBySessions(photosData || []);
     } catch (error) {
       console.error('Error fetching photos:', error);
     } finally {
@@ -69,15 +70,33 @@ export function useOrganizerPhotos() {
     }
   };
 
-  const groupPhotosBySessions = (photosData: Photo[]) => {
+  const groupPhotosBySessions = async (photosData: Photo[]) => {
     const sessions: { [key: string]: PhotoSession } = {};
 
+    // Buscar nomes dos eventos para todas as fotos
+    const eventIds = [...new Set(photosData.map(p => p.event_id).filter(Boolean))];
+    const eventsMap: { [key: string]: string } = {};
+    
+    if (eventIds.length > 0) {
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('id, title')
+        .in('id', eventIds);
+      
+      if (eventsData) {
+        eventsData.forEach(event => {
+          eventsMap[event.id] = event.title;
+        });
+      }
+    }
+
     photosData.forEach((photo) => {
-      const sessionKey = photo.session_name || 'Sem sessão';
+      const sessionKey = photo.event_id || 'no-event';
       
       if (!sessions[sessionKey]) {
         sessions[sessionKey] = {
-          sessionName: sessionKey,
+          sessionName: photo.session_name || 'Sem sessão',
+          eventName: photo.event_id ? eventsMap[photo.event_id] || 'Evento' : 'Sem evento',
           photos: [],
           date: new Date(photo.created_at).toLocaleDateString('pt-BR'),
           eventId: photo.event_id,
@@ -90,7 +109,7 @@ export function useOrganizerPhotos() {
     setPhotoSessions(Object.values(sessions));
   };
 
-  const uploadPhotos = async (files: FileList, sessionName: string) => {
+  const uploadPhotos = async (files: FileList, eventId: string) => {
     if (!organizerId || !user) {
       toast.error('Organizador não encontrado');
       return false;
@@ -126,7 +145,7 @@ export function useOrganizerPhotos() {
             organizer_id: organizerId,
             photo_url: publicUrl,
             caption: file.name,
-            session_name: sessionName || null,
+            event_id: eventId,
           });
 
         if (dbError) {
