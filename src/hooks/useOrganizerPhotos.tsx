@@ -102,11 +102,11 @@ export function useOrganizerPhotos() {
         
         // Upload file to Supabase Storage
         const fileExt = file.name.split('.').pop();
-        const fileName = `${organizerId}/${Date.now()}_${i}.${fileExt}`;
+        const fileName = `${user.id}/photos/${Date.now()}_${i}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('user-uploads')
-          .upload(fileName, file);
+          .upload(fileName, file, { upsert: true });
 
         if (uploadError) {
           console.error('Error uploading file:', uploadError);
