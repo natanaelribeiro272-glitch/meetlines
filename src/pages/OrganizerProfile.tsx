@@ -86,8 +86,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         {/* Profile Header */}
         <div className="px-4 pb-6 text-center">
           <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
-            {organizer.profile?.avatar_url ? (
-              <AvatarImage src={organizer.profile.avatar_url} alt={organizer.page_title} />
+            {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
+              <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
             ) : (
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                 {organizer.page_title.charAt(0)}

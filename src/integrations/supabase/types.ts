@@ -341,6 +341,7 @@ export type Database = {
       }
       organizers: {
         Row: {
+          avatar_url: string | null
           cover_image_url: string | null
           created_at: string | null
           id: string
@@ -368,6 +369,7 @@ export type Database = {
           whatsapp_url: string | null
         }
         Insert: {
+          avatar_url?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           id?: string
@@ -395,6 +397,7 @@ export type Database = {
           whatsapp_url?: string | null
         }
         Update: {
+          avatar_url?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           id?: string

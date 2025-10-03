@@ -11,6 +11,7 @@ export interface OrganizerDetailsData {
   theme: string;
   primary_color: string;
   cover_image_url?: string;
+  avatar_url?: string;
   show_statistics: boolean;
   show_events: boolean;
   show_contact: boolean;
