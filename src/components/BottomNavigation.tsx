@@ -2,6 +2,8 @@ import { Home, Search, Users, User, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -13,6 +15,7 @@ export function BottomNavigation({ activeTab, onTabChange, userType }: BottomNav
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const unreadMessagesCount = useUnreadMessages();
 
   const handleTabChange = (tab: string) => {
     // Tabs que exigem autenticação
@@ -51,7 +54,7 @@ export function BottomNavigation({ activeTab, onTabChange, userType }: BottomNav
               key={item.id}
               onClick={() => handleTabChange(item.id)}
               className={cn(
-                "flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-smooth",
+                "flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-smooth relative",
                 isActive 
                   ? "text-primary glow-purple" 
                   : "text-muted-foreground hover:text-foreground"
@@ -64,6 +67,16 @@ export function BottomNavigation({ activeTab, onTabChange, userType }: BottomNav
                 )} 
               />
               <span className="text-xs font-medium">{item.label}</span>
+              
+              {/* Badge for unread messages on Friends tab */}
+              {item.id === 'friends' && unreadMessagesCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-0 -right-0 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full animate-pulse"
+                >
+                  {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                </Badge>
+              )}
             </button>
           );
         })}

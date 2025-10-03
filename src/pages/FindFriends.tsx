@@ -21,6 +21,7 @@ interface Attendee {
   phone: string | null;
   event_name: string;
   relationship_status: string;
+  unreadMessages?: number;
 }
 
 interface FindFriendsProps {
@@ -34,6 +35,7 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
   const [likedUsers, setLikedUsers] = useState<Set<string>>(new Set());
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState<Attendee | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -203,11 +205,30 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
 
         setAttendees(formattedAttendees);
 
-        // Subscribe to realtime updates for profiles
+        // Load unread messages count for each user
+        const userIdsForMessages = formattedAttendees.map(a => a.user_id);
+        if (userIdsForMessages.length > 0) {
+          const { data: messagesData } = await supabase
+            .from('user_messages')
+            .select('from_user_id')
+            .eq('to_user_id', user.id)
+            .in('from_user_id', userIdsForMessages)
+            .eq('read', false);
+
+          if (messagesData) {
+            const unreadMap = new Map<string, number>();
+            messagesData.forEach((msg) => {
+              unreadMap.set(msg.from_user_id, (unreadMap.get(msg.from_user_id) || 0) + 1);
+            });
+            setUnreadMessages(unreadMap);
+          }
+        }
+
+        // Subscribe to realtime updates for profiles and messages
         const userIdsForRealtime = formattedAttendees.map(a => a.user_id);
         
         channel = supabase
-          .channel('profiles-updates')
+          .channel('profiles-and-messages-updates')
           .on(
             'postgres_changes',
             {
@@ -236,8 +257,63 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
               }
             }
           )
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'user_messages'
+            },
+            (payload) => {
+              const newMessage = payload.new as any;
+              
+              // If we receive a message from one of our attendees
+              if (newMessage.to_user_id === user.id && userIdsForRealtime.includes(newMessage.from_user_id)) {
+                console.log('Nova mensagem recebida de:', newMessage.from_user_id);
+                setUnreadMessages((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.set(newMessage.from_user_id, (newMap.get(newMessage.from_user_id) || 0) + 1);
+                  return newMap;
+                });
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'user_messages'
+            },
+            (payload) => {
+              const updatedMessage = payload.new as any;
+              
+              // If message was marked as read
+              if (updatedMessage.read && updatedMessage.to_user_id === user.id) {
+                console.log('Mensagem marcada como lida de:', updatedMessage.from_user_id);
+                // Reload unread count for this user
+                supabase
+                  .from('user_messages')
+                  .select('id')
+                  .eq('to_user_id', user.id)
+                  .eq('from_user_id', updatedMessage.from_user_id)
+                  .eq('read', false)
+                  .then(({ data }) => {
+                    setUnreadMessages((prev) => {
+                      const newMap = new Map(prev);
+                      if (data && data.length > 0) {
+                        newMap.set(updatedMessage.from_user_id, data.length);
+                      } else {
+                        newMap.delete(updatedMessage.from_user_id);
+                      }
+                      return newMap;
+                    });
+                  });
+              }
+            }
+          )
           .subscribe((status) => {
-            console.log('Status da inscrição de profiles:', status);
+            console.log('Status da inscrição de profiles e mensagens:', status);
           });
       } catch (error) {
         console.error('Error:', error);
@@ -301,9 +377,16 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
     }
   };
 
-  const handleMessage = (person: Attendee) => {
+  const handleMessage = async (person: Attendee) => {
     setSelectedChat(person);
     setChatOpen(true);
+    
+    // Clear unread messages for this user when opening chat
+    setUnreadMessages((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(person.user_id);
+      return newMap;
+    });
   };
   
   const getStatusBadge = (status: string) => {
@@ -474,8 +557,17 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleMessage(person)}
+                      className="relative"
                     >
                       <MessageCircle className="h-4 w-4" />
+                      {unreadMessages.get(person.user_id) && unreadMessages.get(person.user_id)! > 0 && (
+                        <Badge 
+                          variant="destructive" 
+                          className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full"
+                        >
+                          {unreadMessages.get(person.user_id)}
+                        </Badge>
+                      )}
                     </Button>
                   </div>
                 </div>

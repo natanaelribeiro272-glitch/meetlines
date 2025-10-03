@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface NotificationDropdownProps {
   onUnauthorizedClick?: () => void;
@@ -70,7 +71,12 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
 
   const handleNotificationClick = (notification: any) => {
     markAsRead(notification.id);
-    if (notification.event_id) {
+    
+    if (notification.type === 'user_message') {
+      // Para mensagens, apenas fechar o dropdown - o usuário pode ir para a aba Amigos
+      setIsOpen(false);
+      toast.info('Vá para a aba "Amigos" para ver a mensagem');
+    } else if (notification.event_id) {
       navigate(`/event/${notification.event_id}`);
       setIsOpen(false);
     }
