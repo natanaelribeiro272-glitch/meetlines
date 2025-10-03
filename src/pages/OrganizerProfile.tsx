@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganizerDetails } from "@/hooks/useOrganizerDetails";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
+import { useAuth } from "@/hooks/useAuth";
 
 interface OrganizerProfileProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ interface OrganizerProfileProps {
 export default function OrganizerProfile({ onBack, organizerId, onEventClick }: OrganizerProfileProps) {
   const [activeTab, setActiveTab] = useState("eventos");
   const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
+  const { user } = useAuth();
 
   const handleShare = () => {
     if (!organizer) return;
@@ -146,15 +148,24 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           </div>
 
           {/* Follow button */}
-          <div className="flex justify-center gap-3">
-            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
-              Seguir
-            </Button>
-            <Button variant="outline" size="lg" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Compartilhar
-            </Button>
-          </div>
+          {!user || (organizer.user_id !== user.id) ? (
+            <div className="flex justify-center gap-3">
+              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
+                Seguir
+              </Button>
+              <Button variant="outline" size="lg" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Compartilhar
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <Button variant="outline" size="lg" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Compartilhar minha página
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
