@@ -65,6 +65,7 @@ export default function CreateEvent({
   const [selectedInterest, setSelectedInterest] = useState<string>("");
   const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
   const [notesVisible, setNotesVisible] = useState(true);
+  const [eventType, setEventType] = useState<"presencial" | "live">("presencial");
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -125,7 +126,7 @@ export default function CreateEvent({
         image_url: imageUrl,
         max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
         interests: selectedInterest ? [selectedInterest] : [],
-        is_live: false,
+        is_live: eventType === "live",
         status: 'upcoming',
         requires_registration: requiresRegistration
       });
@@ -197,11 +198,28 @@ export default function CreateEvent({
             </CardContent>
           </Card>
 
-          {/* Interesses */}
-          
-
-          {/* Notas Públicas */}
-          
+          {/* Tipo de Evento */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Tipo de Evento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup value={eventType} onValueChange={(value) => setEventType(value as "presencial" | "live")}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="presencial" id="presencial" />
+                  <Label htmlFor="presencial" className="cursor-pointer">
+                    📍 Evento Presencial
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="live" id="live" />
+                  <Label htmlFor="live" className="cursor-pointer">
+                    🔴 Evento Live (Online)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </CardContent>
+          </Card>
 
           {/* Data e Hora */}
           <Card>
