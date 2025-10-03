@@ -29,6 +29,13 @@ export default function MainLayout() {
 
   const { user, userRole, loading } = useAuth();
 
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   // Verificar se organizador completou onboarding
   useEffect(() => {
     const checkOrganizerOnboarding = async () => {
