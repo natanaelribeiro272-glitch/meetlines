@@ -95,7 +95,10 @@ export default function UserChatDialog({
             (newMsg.from_user_id === recipientId && newMsg.to_user_id === user.id)
           ) {
             console.log('Nova mensagem recebida:', newMsg);
-            setMessages((prev) => [...prev, newMsg]);
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
             
             // Mark as read if it's from the recipient
             if (newMsg.from_user_id === recipientId && newMsg.to_user_id === user.id) {
@@ -129,15 +132,21 @@ export default function UserChatDialog({
 
     setSending(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('user_messages')
         .insert({
           from_user_id: user.id,
           to_user_id: recipientId,
           content: newMessage.trim()
-        });
+        })
+        .select('*')
+        .single();
 
       if (error) throw error;
+
+      if (data) {
+        setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
+      }
       setNewMessage("");
     } catch (error) {
       console.error('Error sending message:', error);
