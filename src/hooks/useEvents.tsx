@@ -30,6 +30,8 @@ export interface EventData {
   is_liked?: boolean;
   price?: number;
   category?: string;
+  registrations_count?: number;
+  confirmed_attendees_count?: number;
 }
 
 export function useEvents(categoryFilter?: string, searchQuery?: string) {
@@ -110,6 +112,19 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
             .select('*', { count: 'exact', head: true })
             .eq('event_id', event.id);
 
+          // Contar cadastros totais
+          const { count: registrationsCount } = await supabase
+            .from('event_registrations')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.id);
+
+          // Contar presenças confirmadas
+          const { count: confirmedAttendeesCount } = await supabase
+            .from('event_registrations')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.id)
+            .eq('attendance_confirmed', true);
+
           // Verificar se o usuário curtiu (se logado)
           let isLiked = false;
           if (user) {
@@ -135,6 +150,8 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
             is_liked: isLiked,
+            registrations_count: registrationsCount || 0,
+            confirmed_attendees_count: confirmedAttendeesCount || 0,
           };
         })
       );

@@ -42,6 +42,8 @@ export interface EventDetailsData {
   comments_count?: number;
   is_liked?: boolean;
   comments?: EventComment[];
+  registrations_count?: number;
+  confirmed_attendees_count?: number;
 }
 
 export function useEventDetails(eventId: string | null) {
@@ -92,6 +94,19 @@ export function useEventDetails(eventId: string | null) {
         .from('event_comments')
         .select('*', { count: 'exact', head: true })
         .eq('event_id', eventId);
+
+      // Contar cadastros totais
+      const { count: registrationsCount } = await supabase
+        .from('event_registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId);
+
+      // Contar presenças confirmadas
+      const { count: confirmedAttendeesCount } = await supabase
+        .from('event_registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .eq('attendance_confirmed', true);
 
       // Verificar se o usuário curtiu
       let isLiked = false;
@@ -147,7 +162,9 @@ export function useEventDetails(eventId: string | null) {
         likes_count: likesCount || 0,
         comments_count: commentsCount || 0,
         is_liked: isLiked,
-        comments: commentsWithProfiles
+        comments: commentsWithProfiles,
+        registrations_count: registrationsCount || 0,
+        confirmed_attendees_count: confirmedAttendeesCount || 0,
       };
 
       setEvent(eventWithStats);
