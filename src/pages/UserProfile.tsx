@@ -685,7 +685,7 @@ export default function UserProfile({ userType }: UserProfileProps) {
     <div className="min-h-screen bg-background">
       <Header title="Meu Perfil" />
       
-      <div className="p-4">
+      <div className="p-4 pb-24">
         {/* Navigation Tabs */}
         <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg">
           <button
