@@ -48,6 +48,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface UserProfileProps {
   userType: "user" | "organizer";
@@ -90,6 +92,37 @@ export default function UserProfile({ userType }: UserProfileProps) {
   const { user, signOut } = useAuth();
   const { profile, loading, saving, updateProfile, uploadAvatar } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDeleteAccount = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Você precisa estar logado para deletar sua conta');
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('delete-user', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        console.error('Error deleting account:', error);
+        toast.error('Erro ao deletar conta. Tente novamente.');
+        return;
+      }
+
+      toast.success('Conta deletada com sucesso!');
+      
+      // Sign out and redirect to auth page
+      await supabase.auth.signOut();
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erro ao deletar conta. Tente novamente.');
+    }
+  };
 
   // Update form data when profile changes
   useEffect(() => {
@@ -542,6 +575,50 @@ export default function UserProfile({ userType }: UserProfileProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-4 w-4" />
+            Zona de Perigo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <p className="font-medium text-foreground">Excluir Conta</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos.
+              </p>
+            </div>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Conta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir Conta Permanentemente</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação é irreversível. Todos os seus dados serão permanentemente excluídos.
+                    Você poderá criar uma nova conta a qualquer momento com o mesmo email.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90">
+                    Excluir Definitivamente
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
     </div>

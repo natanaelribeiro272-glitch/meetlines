@@ -10,6 +10,7 @@ import { useOrganizer } from "@/hooks/useOrganizer";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 export default function OrganizerSettings() {
   const {
     signOut
@@ -50,9 +51,35 @@ export default function OrganizerSettings() {
   const handleLogout = () => {
     signOut();
   };
-  const handleDeleteAccount = () => {
-    // Aqui implementaria a lógica de exclusão de conta
-    console.log("Conta excluída");
+  const handleDeleteAccount = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Você precisa estar logado para deletar sua conta');
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('delete-user', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        console.error('Error deleting account:', error);
+        toast.error('Erro ao deletar conta. Tente novamente.');
+        return;
+      }
+
+      toast.success('Conta deletada com sucesso!');
+      
+      // Sign out and redirect to auth page
+      await supabase.auth.signOut();
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erro ao deletar conta. Tente novamente.');
+    }
   };
   const handleSaveLinks = async () => {
     try {
@@ -262,7 +289,7 @@ export default function OrganizerSettings() {
                   <AlertDialogTitle>Excluir Conta Permanentemente</AlertDialogTitle>
                   <AlertDialogDescription>
                     Esta ação é irreversível. Todos os seus eventos, cadastros e dados serão permanentemente excluídos.
-                    Digite "EXCLUIR" para confirmar.
+                    Você poderá criar uma nova conta a qualquer momento com o mesmo email.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
