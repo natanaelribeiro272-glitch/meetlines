@@ -316,6 +316,67 @@ export function useEventDetails(eventId: string | null) {
     };
   }, [event?.organizer?.user_id, event?.organizer?.id]);
 
+  // Realtime updates for event registrations on details page
+  useEffect(() => {
+    if (!eventId) return;
+
+    const channel = supabase
+      .channel('realtime-event-registrations-details')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'event_registrations',
+        filter: `event_id=eq.${eventId}`
+      }, async () => {
+        // Recarregar contagens para este evento
+        const { count: registrationsCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId);
+
+        const { count: confirmedAttendeesCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('attendance_confirmed', true);
+
+        setEvent(prev => prev ? {
+          ...prev,
+          registrations_count: registrationsCount || 0,
+          confirmed_attendees_count: confirmedAttendeesCount || 0,
+        } : prev);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'event_registrations',
+        filter: `event_id=eq.${eventId}`
+      }, async () => {
+        // Recarregar contagens para este evento
+        const { count: registrationsCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId);
+
+        const { count: confirmedAttendeesCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('attendance_confirmed', true);
+
+        setEvent(prev => prev ? {
+          ...prev,
+          registrations_count: registrationsCount || 0,
+          confirmed_attendees_count: confirmedAttendeesCount || 0,
+        } : prev);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [eventId]);
+
   return {
     event,
     loading,

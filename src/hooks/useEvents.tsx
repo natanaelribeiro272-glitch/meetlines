@@ -280,6 +280,69 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
     };
   }, []);
 
+  // Realtime updates for event registrations
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-event-registrations')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'event_registrations' }, async (payload) => {
+        const registration = payload.new as any;
+        const eventId = registration.event_id;
+        
+        // Recarregar contagens para este evento
+        const { count: registrationsCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId);
+
+        const { count: confirmedAttendeesCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('attendance_confirmed', true);
+
+        setEvents(prev => prev.map(ev => 
+          ev.id === eventId 
+            ? { 
+                ...ev, 
+                registrations_count: registrationsCount || 0,
+                confirmed_attendees_count: confirmedAttendeesCount || 0,
+              }
+            : ev
+        ));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'event_registrations' }, async (payload) => {
+        const registration = payload.new as any;
+        const eventId = registration.event_id;
+        
+        // Recarregar contagens para este evento
+        const { count: registrationsCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId);
+
+        const { count: confirmedAttendeesCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('attendance_confirmed', true);
+
+        setEvents(prev => prev.map(ev => 
+          ev.id === eventId 
+            ? { 
+                ...ev, 
+                registrations_count: registrationsCount || 0,
+                confirmed_attendees_count: confirmedAttendeesCount || 0,
+              }
+            : ev
+        ));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     events,
     loading,
