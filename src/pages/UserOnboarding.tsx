@@ -141,7 +141,7 @@ export default function UserOnboarding() {
     setLoading(true);
 
     try {
-      // 1. Sign up the user
+      // 1. Try to sign up the user
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -154,8 +154,17 @@ export default function UserOnboarding() {
         }
       });
 
-      if (signUpError) throw signUpError;
-      if (!authData.user) throw new Error('User creation failed');
+      // Handle "user already exists" error
+      if (signUpError) {
+        if (signUpError.message?.includes('already registered') || signUpError.message?.includes('User already registered')) {
+          toast.error('Esta conta já existe. Faça login para continuar.');
+          navigate('/auth');
+          return;
+        }
+        throw signUpError;
+      }
+
+      if (!authData.user) throw new Error('Falha ao criar usuário');
 
       // 2. Try to sign in (in case email confirmation is disabled)
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -169,6 +178,9 @@ export default function UserOnboarding() {
         navigate('/auth');
         return;
       }
+
+      // Wait a bit for the session to be established
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // 3. Upload avatar if provided
       let avatarUrl = '';
@@ -190,7 +202,7 @@ export default function UserOnboarding() {
         }
       }
 
-      // 4. Update profile with all information
+      // 4. Update profile with all collected information
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -198,7 +210,8 @@ export default function UserOnboarding() {
           username: username,
           avatar_url: avatarUrl || null,
           instagram_url: instagramUrl || null,
-          notes: selectedInterests.join(','), // Store interests in notes field temporarily
+          phone: whatsappUrl || null,
+          notes: `Interesses: ${selectedInterests.join(', ')}`,
         })
         .eq('user_id', authData.user.id);
 
