@@ -479,20 +479,17 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             {isOrganizer ? 'Ver Cadastros no Evento' : 'Fazer Cadastro no Evento'}
           </Button>
           
-          {/* Find Friends button for live events */}
-          {event.is_live && !isOrganizer && event.category?.toLowerCase() !== 'live' && (
-            <>
-              {console.log('Event category:', event.category, 'is_live:', event.is_live)}
-              <Button 
-                variant="live" 
-                className="w-full" 
-                size="lg"
-                onClick={handleFindFriendsClick}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Encontrar Amigos no Evento
-              </Button>
-            </>
+          {/* Find Friends button (apenas para eventos presenciais, não live) */}
+          {!event.is_live && !isOrganizer && event.category?.toLowerCase() !== 'live' && (
+            <Button 
+              variant="live" 
+              className="w-full" 
+              size="lg"
+              onClick={handleFindFriendsClick}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Encontrar Amigos no Evento
+            </Button>
           )}
         </div>
 
