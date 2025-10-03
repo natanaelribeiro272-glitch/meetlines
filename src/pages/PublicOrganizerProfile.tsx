@@ -78,6 +78,8 @@ export default function PublicOrganizerProfile() {
   const [events, setEvents] = useState<EventData[]>([]);
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     const fetchOrganizerData = async () => {
@@ -98,6 +100,23 @@ export default function PublicOrganizerProfile() {
         if (!organizerData) {
           navigate('/404');
           return;
+        }
+
+        // Verificar se é o próprio perfil
+        if (user && organizerData.user_id === user.id) {
+          setIsOwnProfile(true);
+        }
+
+        // Verificar se já está seguindo
+        if (user) {
+          const { data: followData } = await supabase
+            .from('followers')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('organizer_id', organizerData.id)
+            .maybeSingle();
+          
+          setIsFollowing(!!followData);
         }
 
         // Buscar perfil do usuário
@@ -169,18 +188,49 @@ export default function PublicOrganizerProfile() {
     };
 
     fetchOrganizerData();
-  }, [slug, navigate]);
+  }, [slug, navigate, user]);
 
-  const handleFollow = () => {
+  const handleFollow = async () => {
     if (!user) {
       // Redirect to login with current page as return url
       const currentPath = location.pathname;
       navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
-    
-    // TODO: Implement follow functionality
-    toast.success('Você está seguindo este organizador!');
+
+    if (!organizer) return;
+
+    try {
+      if (isFollowing) {
+        // Deixar de seguir
+        const { error } = await supabase
+          .from('followers')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('organizer_id', organizer.id);
+
+        if (error) throw error;
+
+        setIsFollowing(false);
+        toast.success('Você deixou de seguir este organizador');
+      } else {
+        // Seguir
+        const { error } = await supabase
+          .from('followers')
+          .insert({
+            user_id: user.id,
+            organizer_id: organizer.id
+          });
+
+        if (error) throw error;
+
+        setIsFollowing(true);
+        toast.success('Você está seguindo este organizador!');
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing:', error);
+      toast.error('Erro ao processar sua solicitação');
+    }
   };
 
   const handleShare = () => {
@@ -297,15 +347,26 @@ export default function PublicOrganizerProfile() {
           )}
 
           {/* Follow & Share buttons */}
-          <div className="flex justify-center gap-3">
-            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={handleFollow}>
-              Seguir
-            </Button>
-            <Button variant="outline" size="lg" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Compartilhar
-            </Button>
-          </div>
+          {!isOwnProfile && (
+            <div className="flex justify-center gap-3">
+              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={handleFollow}>
+                {isFollowing ? 'Seguindo' : 'Seguir'}
+              </Button>
+              <Button variant="outline" size="lg" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Compartilhar
+              </Button>
+            </div>
+          )}
+          
+          {isOwnProfile && (
+            <div className="flex justify-center">
+              <Button variant="outline" size="lg" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Compartilhar minha página
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
