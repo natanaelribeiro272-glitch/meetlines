@@ -143,6 +143,7 @@ export default function EventPublicPage() {
       onBack={() => navigate("/")}
       eventId={eventId}
       onRegister={() => navigate("/")}
+      onManageRegistrations={() => navigate("/")}
       onFindFriends={() => navigate("/")}
     />
   );

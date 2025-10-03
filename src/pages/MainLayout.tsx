@@ -89,6 +89,9 @@ export default function MainLayout() {
               onRegister={() => {
                 setCurrentView("eventRegistration");
               }}
+              onManageRegistrations={() => {
+                setCurrentView("eventRegistrations");
+              }}
               onFindFriends={handleFindFriends}
               onEdit={handleEditEvent}
             />;
@@ -105,7 +108,7 @@ export default function MainLayout() {
           case "eventRegistration":
             return <EventRegistration onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           case "eventRegistrations":
-            return <EventRegistrations onBack={handleBackToFeed} />;
+            return <EventRegistrations onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           default:
         return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
         }

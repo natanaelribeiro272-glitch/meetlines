@@ -16,9 +16,10 @@ interface EventDetailsProps {
   onRegister?: () => void;
   onFindFriends?: () => void;
   onEdit?: (eventId: string) => void;
+  onManageRegistrations?: () => void;
 }
 
-export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit }: EventDetailsProps) {
+export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit, onManageRegistrations }: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -332,8 +333,13 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         {/* Action Buttons */}
         <div className="space-y-3 mb-6">
           <div className="flex gap-3">
-            <Button variant="glow" className="flex-1" size="lg" onClick={handleConfirmPresence}>
-              Confirmar Presença
+            <Button 
+              variant="glow" 
+              className="flex-1" 
+              size="lg" 
+              onClick={isOrganizer && onManageRegistrations ? onManageRegistrations : handleConfirmPresence}
+            >
+              {isOrganizer ? 'Ver Presenças Confirmadas' : 'Confirmar Presença'}
             </Button>
             {event.is_live ? (
               event.location_link && (
@@ -359,7 +365,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             )}
           </div>
           
-          {/* Registration button - sempre disponível */}
+          {/* Registration button */}
           <Button 
             variant="secondary" 
             className="w-full" 
@@ -367,11 +373,11 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             onClick={onRegister}
           >
             <Users className="h-4 w-4 mr-2" />
-            Fazer Cadastro no Evento
+            {isOrganizer ? 'Ver Cadastros no Evento' : 'Fazer Cadastro no Evento'}
           </Button>
           
           {/* Find Friends button for live events */}
-          {event.is_live && (
+          {event.is_live && !isOrganizer && (
             <Button 
               variant="live" 
               className="w-full" 

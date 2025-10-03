@@ -25,9 +25,10 @@ interface Registration {
 
 interface EventRegistrationsProps {
   onBack: () => void;
+  eventId?: string;
 }
 
-export default function EventRegistrations({ onBack }: EventRegistrationsProps) {
+export default function EventRegistrations({ onBack, eventId }: EventRegistrationsProps) {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,8 +41,8 @@ export default function EventRegistrations({ onBack }: EventRegistrationsProps) 
       try {
         setLoading(true);
         
-        // Get all registrations for events created by this organizer
-        const { data, error } = await supabase
+        // Get registrations for events created by this organizer
+        let query = supabase
           .from('event_registrations')
           .select(`
             id,
@@ -60,8 +61,14 @@ export default function EventRegistrations({ onBack }: EventRegistrationsProps) 
               )
             )
           `)
-          .eq('event.organizer.user_id', user.id)
-          .order('created_at', { ascending: false });
+          .eq('event.organizer.user_id', user.id);
+        
+        // If eventId is provided, filter by that specific event
+        if (eventId) {
+          query = query.eq('event_id', eventId);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching registrations:', error);
@@ -79,7 +86,7 @@ export default function EventRegistrations({ onBack }: EventRegistrationsProps) 
     };
 
     fetchRegistrations();
-  }, [user]);
+  }, [user, eventId]);
 
   const filteredRegistrations = registrations.filter(
     (registration) =>
