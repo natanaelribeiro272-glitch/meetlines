@@ -76,6 +76,24 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
     }
   };
 
+  // Load user likes
+  useEffect(() => {
+    const loadLikes = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_likes')
+        .select('to_user_id')
+        .eq('from_user_id', user.id);
+
+      if (data && !error) {
+        setLikedUsers(new Set(data.map(like => like.to_user_id)));
+      }
+    };
+
+    loadLikes();
+  }, [user]);
+
   useEffect(() => {
     const fetchEventAttendees = async () => {
       if (!user) {
@@ -186,24 +204,6 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
 
     fetchEventAttendees();
   }, [user, isVisible]); // Reload when visibility changes
-
-  // Load liked users
-  useEffect(() => {
-    const loadLikedUsers = async () => {
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('user_likes')
-        .select('to_user_id')
-        .eq('from_user_id', user.id);
-      
-      if (data && !error) {
-        setLikedUsers(new Set(data.map(like => like.to_user_id)));
-      }
-    };
-    
-    loadLikedUsers();
-  }, [user]);
 
   const handleLike = async (userId: string) => {
     if (!user) {
