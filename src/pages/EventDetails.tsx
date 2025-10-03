@@ -1,10 +1,11 @@
-import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useEventDetails } from "@/hooks/useEventDetails";
+import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 
 interface EventDetailsProps {
@@ -12,11 +13,15 @@ interface EventDetailsProps {
   eventId: string | null;
   onRegister?: () => void;
   onFindFriends?: () => void;
+  onEdit?: (eventId: string) => void;
 }
 
-export default function EventDetails({ onBack, eventId, onRegister, onFindFriends }: EventDetailsProps) {
+export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit }: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
+  const { user } = useAuth();
   const [newComment, setNewComment] = useState("");
+  
+  const isOrganizer = user && event?.organizer?.user_id === user.id;
 
   // Função auxiliar para formatizar data
   const formatEventDate = (dateString: string) => {
@@ -96,14 +101,26 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
           <ArrowLeft className="h-5 w-5" />
         </Button>
 
-        {/* Share button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 bg-surface/80 backdrop-blur-sm hover:bg-surface"
-        >
-          <Share2 className="h-5 w-5" />
-        </Button>
+        {/* Action buttons */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          {isOrganizer && onEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
+              onClick={() => onEdit(eventId!)}
+            >
+              <Edit className="h-5 w-5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
+        </div>
 
         {/* Live indicator */}
         {event.is_live && (
