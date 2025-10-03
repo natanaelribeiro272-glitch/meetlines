@@ -277,7 +277,16 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           backgroundPosition: 'center',
         }}
       >
-        {/* Gradiente suave de transição na parte inferior - NÃO escurece, só faz transição */}
+        {/* Overlay escuro sobre toda a capa para dar contraste */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'rgba(0, 0, 0, 0.4)',
+            zIndex: 0
+          }}
+        />
+        
+        {/* Gradiente suave de transição na parte inferior */}
         <div 
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
           style={{
