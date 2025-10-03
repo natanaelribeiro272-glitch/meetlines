@@ -53,26 +53,29 @@ export default function OrganizerSettings() {
   };
   const handleDeleteAccount = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Você precisa estar logado para deletar sua conta');
         return;
       }
-
-      const { error } = await supabase.functions.invoke('delete-user', {
+      const {
+        error
+      } = await supabase.functions.invoke('delete-user', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
       });
-
       if (error) {
         console.error('Error deleting account:', error);
         toast.error('Erro ao deletar conta. Tente novamente.');
         return;
       }
-
       toast.success('Conta deletada com sucesso!');
-      
+
       // Sign out and redirect to auth page
       await supabase.auth.signOut();
       window.location.href = '/auth';
@@ -156,13 +159,7 @@ export default function OrganizerSettings() {
             <Switch defaultChecked />
           </div>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-foreground">Email Marketing</p>
-              <p className="text-sm text-muted-foreground">Receber dicas e novidades</p>
-            </div>
-            <Switch />
-          </div>
+          
         </CardContent>
       </Card>
 
