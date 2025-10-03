@@ -180,7 +180,7 @@ export default function UserOnboarding() {
       }
 
       // Wait a bit for the session to be established
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // 3. Upload avatar if provided
       let avatarUrl = '';
@@ -215,13 +215,26 @@ export default function UserOnboarding() {
         })
         .eq('user_id', authData.user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw new Error(`Erro ao atualizar perfil: ${profileError.message}`);
+      }
 
       toast.success('Perfil criado com sucesso!');
       navigate('/');
     } catch (error: any) {
       console.error('Error creating profile:', error);
-      toast.error(error.message || 'Erro ao criar perfil');
+      
+      // Mostrar erro específico sem limpar os dados do formulário
+      if (error.message?.includes('Username cannot be changed')) {
+        toast.error('Erro: Username já foi definido. Tente fazer login.');
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Erro ao criar perfil. Tente novamente.');
+      }
+      
+      // NÃO limpar os dados do formulário para permitir correção
     } finally {
       setLoading(false);
     }
