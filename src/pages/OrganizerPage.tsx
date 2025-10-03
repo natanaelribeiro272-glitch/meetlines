@@ -23,6 +23,7 @@ export default function OrganizerPage() {
   const [showAddPhotos, setShowAddPhotos] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [sessionName, setSessionName] = useState("");
   const [stats, setStats] = useState({
     followers_count: 0,
@@ -322,28 +323,42 @@ export default function OrganizerPage() {
           <TabsContent value="profile" className="space-y-6">
             <div className="space-y-6">
               {/* Header */}
-              <header className="relative h-64 bg-gradient-to-b from-surface to-background rounded-lg overflow-hidden group cursor-pointer">
-                <input type="file" accept="image/*" onChange={handleCoverImageUpload} className="hidden" id="cover-upload" />
-                <label htmlFor="cover-upload" className="absolute inset-0 cursor-pointer">
-                  {organizerData?.cover_image_url ? (
-                    <img src={organizerData?.cover_image_url} alt="Cover" className="w-full h-full object-cover opacity-30" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
-                  
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {isUploadingCover ? (
-                      <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <div className="text-white text-center">
-                        <Camera className="h-12 w-12 mx-auto mb-2" />
-                        <p className="text-sm font-medium">Clique para alterar a capa</p>
+              <header className={`relative h-64 bg-gradient-to-b from-surface to-background rounded-lg overflow-hidden ${isEditing ? 'group cursor-pointer' : ''}`}>
+                {isEditing && (
+                  <>
+                    <input type="file" accept="image/*" onChange={handleCoverImageUpload} className="hidden" id="cover-upload" />
+                    <label htmlFor="cover-upload" className="absolute inset-0 cursor-pointer">
+                      {organizerData?.cover_image_url ? (
+                        <img src={organizerData?.cover_image_url} alt="Cover" className="w-full h-full object-cover opacity-30" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+                      
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isUploadingCover ? (
+                          <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <div className="text-white text-center">
+                            <Camera className="h-12 w-12 mx-auto mb-2" />
+                            <p className="text-sm font-medium">Clique para alterar a capa</p>
+                          </div>
+                        )}
                       </div>
+                    </label>
+                  </>
+                )}
+                {!isEditing && (
+                  <>
+                    {organizerData?.cover_image_url ? (
+                      <img src={organizerData?.cover_image_url} alt="Cover" className="w-full h-full object-cover opacity-30" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
                     )}
-                  </div>
-                </label>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+                  </>
+                )}
                 
                 <div className="absolute top-4 right-4 flex gap-2 z-10">
                   <Button variant="ghost" size="icon" className="bg-surface/80 backdrop-blur-sm" onClick={handleShareLink}>
@@ -365,54 +380,88 @@ export default function OrganizerPage() {
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      ref={avatarInputRef}
-                      onChange={handleAvatarUpload} 
-                      className="hidden" 
-                      id="avatar-upload" 
-                    />
-                    <label 
-                      htmlFor="avatar-upload"
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      {isUploadingAvatar ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Upload className="h-5 w-5 text-white" />
-                      )}
-                    </label>
+                    {isEditing && (
+                      <>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          ref={avatarInputRef}
+                          onChange={handleAvatarUpload} 
+                          className="hidden" 
+                          id="avatar-upload" 
+                        />
+                        <label 
+                          htmlFor="avatar-upload"
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                          {isUploadingAvatar ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Upload className="h-5 w-5 text-white" />
+                          )}
+                        </label>
+                      </>
+                    )}
                   </div>
                   
                   <div className="flex-1 pb-2 space-y-2">
-                    <Input
-                      value={editableProfile.title}
-                      onChange={(e) => setEditableProfile(prev => ({ ...prev, title: e.target.value }))}
-                      className="text-xl font-bold bg-transparent border-border"
-                      placeholder="Nome do perfil"
-                    />
-                    {organizerData?.username && (
-                      <p className="text-sm text-muted-foreground">@{organizerData.username}</p>
+                    {isEditing ? (
+                      <>
+                        <Input
+                          value={editableProfile.title}
+                          onChange={(e) => setEditableProfile(prev => ({ ...prev, title: e.target.value }))}
+                          className="text-xl font-bold bg-transparent border-border"
+                          placeholder="Nome do perfil"
+                        />
+                        {organizerData?.username && (
+                          <p className="text-sm text-muted-foreground">@{organizerData.username}</p>
+                        )}
+                        <Textarea
+                          value={editableProfile.description}
+                          onChange={(e) => setEditableProfile(prev => ({ ...prev, description: e.target.value }))}
+                          className="text-sm bg-transparent border-border min-h-[60px]"
+                          placeholder="Descrição"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <h1 className="text-xl font-bold text-foreground">{editableProfile.title || 'Seu Nome'}</h1>
+                        {organizerData?.username && (
+                          <p className="text-sm text-muted-foreground">@{organizerData.username}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground">{editableProfile.description || 'Sua descrição'}</p>
+                      </>
                     )}
-                    <Input
-                      value={editableProfile.description}
-                      onChange={(e) => setEditableProfile(prev => ({ ...prev, description: e.target.value }))}
-                      className="text-sm bg-transparent border-border"
-                      placeholder="Descrição"
-                    />
                   </div>
                   
-                  <Button variant="outline" size="sm" onClick={async () => {
-                    await updateOrganizerProfile({
-                      page_title: editableProfile.title,
-                      page_description: editableProfile.description
-                    });
-                    toast.success('Perfil atualizado com sucesso!');
-                  }}>
-                    <Edit3 className="h-4 w-4" />
-                    Salvar
-                  </Button>
+                  {!isEditing ? (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit3 className="h-4 w-4" />
+                      Editar
+                    </Button>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Button variant="default" size="sm" onClick={async () => {
+                        await updateOrganizerProfile({
+                          page_title: editableProfile.title,
+                          page_description: editableProfile.description
+                        });
+                        setIsEditing(false);
+                        toast.success('Perfil atualizado com sucesso!');
+                      }}>
+                        Salvar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setEditableProfile({
+                          title: organizerData?.page_title || "",
+                          description: organizerData?.page_description || ""
+                        });
+                        setIsEditing(false);
+                      }}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Stats */}
