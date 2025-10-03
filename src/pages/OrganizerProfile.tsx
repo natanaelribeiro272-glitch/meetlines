@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganizerDetails, OrganizerEvent } from "@/hooks/useOrganizerDetails";
+import { useOrganizer } from "@/hooks/useOrganizer";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
@@ -128,7 +129,10 @@ interface OrganizerProfileProps {
 export default function OrganizerProfile({ onBack, organizerId, onEventClick }: OrganizerProfileProps) {
   const [activeTab, setActiveTab] = useState("eventos");
   const [allEvents, setAllEvents] = useState<OrganizerEvent[]>([]);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
+  const { updateOrganizerProfile } = useOrganizer();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -166,6 +170,43 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     }).catch(() => {
       toast.error('Erro ao copiar link');
     });
+  };
+
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      setUploadingCover(true);
+
+      // Upload para o Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/cover.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('user-uploads')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(fileName);
+
+      // Atualizar perfil do organizador
+      await updateOrganizerProfile({ cover_image_url: publicUrl });
+      
+      toast.success('Capa atualizada com sucesso!');
+      
+      // Recarregar dados
+      window.location.reload();
+    } catch (error) {
+      console.error('Error uploading cover:', error);
+      toast.error('Erro ao atualizar capa');
+    } finally {
+      setUploadingCover(false);
+    }
   };
 
   // Função auxiliar para formatizar data
@@ -225,17 +266,52 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="relative bg-gradient-to-b from-primary/20 to-background">
+      {/* Header com capa de fundo */}
+      <div 
+        className="relative bg-gradient-to-b from-primary/20 to-background"
+        style={{
+          backgroundImage: organizer.cover_image_url 
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${organizer.cover_image_url})`
+            : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <div className="flex items-center justify-between p-4 relative z-10">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={onBack} className="bg-black/30 hover:bg-black/50 text-white">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
+          <h1 className="text-lg font-semibold text-white">Organizador</h1>
+          <Button variant="ghost" size="icon" onClick={handleShare} className="bg-black/30 hover:bg-black/50 text-white">
             <Share2 className="h-5 w-5" />
           </Button>
         </div>
+
+        {/* Botão para alterar capa (visível apenas para o próprio organizador) */}
+        {user && organizer.user_id === user.id && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCoverUpload}
+              className="hidden"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingCover}
+              className="absolute top-4 right-16 bg-black/30 hover:bg-black/50 text-white z-10"
+            >
+              {uploadingCover ? (
+                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Upload className="h-5 w-5" />
+              )}
+            </Button>
+          </>
+        )}
 
         {/* Profile Header */}
         <div className="px-4 pb-6 text-center">
