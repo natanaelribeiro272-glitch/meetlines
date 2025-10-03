@@ -23,8 +23,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<MainLayout />} />
               <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
-              {/* Public event share route: domain.com/organizer-slug/event-slug */}
+              {/* Public event share route: domain.com/@username/event-slug */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
+              {/* Public organizer profile: domain.com/@username */}
               <Route path= "/:slug" element={<PublicOrganizerProfile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

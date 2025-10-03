@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface OrganizerDetailsData {
   id: string;
   user_id: string;
-  slug: string;
+  username: string;
   page_title: string;
   page_subtitle?: string;
   page_description?: string;

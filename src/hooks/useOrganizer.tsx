@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 interface OrganizerData {
   id: string;
   user_id: string;
-  slug: string;
+  username: string;
   page_title: string;
   page_subtitle?: string;
   page_description?: string;
@@ -131,12 +131,12 @@ export function useOrganizer() {
     if (!user) return;
 
     try {
-      const slug = user.email?.split('@')[0] || 'organizer';
+      const username = user.email?.split('@')[0] || 'organizer';
       const { data, error } = await supabase
         .from('organizers')
         .insert({
           user_id: user.id,
-          slug: slug,
+          username: username,
           page_title: user.user_metadata?.display_name || 'Meu Perfil',
           page_subtitle: 'Organizador de Eventos',
           page_description: 'Criando experiências únicas'

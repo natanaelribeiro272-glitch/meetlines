@@ -6,7 +6,7 @@ export interface OrganizerListData {
   page_title: string;
   page_subtitle?: string;
   page_description?: string;
-  slug: string;
+  username: string;
   primary_color: string;
   cover_image_url?: string;
   avatar_url?: string;

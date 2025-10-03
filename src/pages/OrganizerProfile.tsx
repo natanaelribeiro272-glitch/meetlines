@@ -27,8 +27,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
   const handleShare = () => {
     if (!organizer) return;
     
-    // Gerar URL pública usando apenas o slug
-    const publicUrl = `${getPublicBaseUrl()}/${organizer.slug}`;
+    // Gerar URL pública usando apenas o username
+    const publicUrl = `${getPublicBaseUrl()}/${organizer.username}`;
     
     // Copiar para clipboard
     navigator.clipboard.writeText(publicUrl).then(() => {

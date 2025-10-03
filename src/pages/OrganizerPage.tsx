@@ -182,7 +182,7 @@ export default function OrganizerPage() {
   };
 
   const handleShareLink = () => {
-    const url = `${window.location.origin}/${organizerData?.slug}`;
+    const url = `${window.location.origin}/${organizerData?.username}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copiado para a área de transferência!');
   };

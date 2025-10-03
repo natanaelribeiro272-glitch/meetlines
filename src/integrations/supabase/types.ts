@@ -388,10 +388,10 @@ export type Database = {
           show_statistics: boolean | null
           show_website: boolean | null
           show_whatsapp: boolean | null
-          slug: string
           theme: string | null
           updated_at: string | null
           user_id: string
+          username: string
           website_url: string | null
           whatsapp_url: string | null
         }
@@ -416,10 +416,10 @@ export type Database = {
           show_statistics?: boolean | null
           show_website?: boolean | null
           show_whatsapp?: boolean | null
-          slug: string
           theme?: string | null
           updated_at?: string | null
           user_id: string
+          username: string
           website_url?: string | null
           whatsapp_url?: string | null
         }
@@ -444,10 +444,10 @@ export type Database = {
           show_statistics?: boolean | null
           show_website?: boolean | null
           show_whatsapp?: boolean | null
-          slug?: string
           theme?: string | null
           updated_at?: string | null
           user_id?: string
+          username?: string
           website_url?: string | null
           whatsapp_url?: string | null
         }

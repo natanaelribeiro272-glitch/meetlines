@@ -14,7 +14,7 @@ import { getPublicBaseUrl } from "@/config/site";
 interface OrganizerData {
   id: string;
   user_id: string;
-  slug: string;
+  username: string;
   page_title: string;
   page_subtitle?: string;
   page_description?: string;
@@ -88,11 +88,11 @@ export default function PublicOrganizerProfile() {
       try {
         setLoading(true);
 
-        // Buscar organizador pelo slug
+        // Buscar organizador pelo username
         const { data: organizerData, error: organizerError } = await supabase
           .from('organizers')
           .select('*')
-          .eq('slug', slug)
+          .eq('username', slug)
           .eq('is_page_active', true)
           .maybeSingle();
 
@@ -238,7 +238,7 @@ export default function PublicOrganizerProfile() {
   const handleShare = () => {
     if (!organizer) return;
     
-    const publicUrl = `${getPublicBaseUrl()}/${organizer.slug}`;
+    const publicUrl = `${getPublicBaseUrl()}/${organizer.username}`;
     
     navigator.clipboard.writeText(publicUrl).then(() => {
       toast.success('Link copiado!', {

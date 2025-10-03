@@ -36,15 +36,15 @@ export default function EventPublicPage() {
         let organizerId: string | null = null;
         const deSlug = organizerSlug.replace(/-/g, ' ');
 
-        // 1) Exact match by organizers.slug
-        const { data: orgBySlug, error: orgError } = await supabase
+        // 1) Exact match by organizers.username
+        const { data: orgByUsername, error: orgError } = await supabase
           .from("organizers")
           .select("id, page_title, user_id")
-          .eq("slug", organizerSlug)
+          .eq("username", organizerSlug)
           .maybeSingle();
         if (orgError) throw orgError;
-        if (orgBySlug) {
-          organizerId = orgBySlug.id;
+        if (orgByUsername) {
+          organizerId = orgByUsername.id;
         }
 
         // 2) Match by profiles.display_name (user-friendly name used in share)
