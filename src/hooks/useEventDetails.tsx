@@ -20,6 +20,7 @@ export interface EventDetailsData {
   image_url?: string;
   event_date: string;
   location: string;
+  location_link?: string;
   max_attendees?: number;
   current_attendees: number;
   is_live: boolean;

@@ -215,10 +215,28 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             <Button variant="glow" className="flex-1" size="lg">
               Confirmar Presença
             </Button>
-            <Button variant="outline" size="lg">
-              <MapPin className="h-4 w-4" />
-              Mapa
-            </Button>
+            {event.is_live ? (
+              event.location_link && (
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => window.open(event.location_link, '_blank')}
+                >
+                  Link da Live
+                </Button>
+              )
+            ) : (
+              event.location_link && (
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => window.open(event.location_link, '_blank')}
+                >
+                  <MapPin className="h-4 w-4" />
+                  Mapa
+                </Button>
+              )
+            )}
           </div>
           
           {/* Registration button - sempre disponível */}
