@@ -370,7 +370,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             variant="secondary" 
             className="w-full" 
             size="lg"
-            onClick={onRegister}
+            onClick={isOrganizer && onManageRegistrations ? onManageRegistrations : onRegister}
           >
             <Users className="h-4 w-4 mr-2" />
             {isOrganizer ? 'Ver Cadastros no Evento' : 'Fazer Cadastro no Evento'}
