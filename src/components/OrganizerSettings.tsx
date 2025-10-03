@@ -11,7 +11,10 @@ import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 export default function OrganizerSettings() {
+  const navigate = useNavigate();
   const {
     signOut
   } = useAuth();
@@ -32,6 +35,17 @@ export default function OrganizerSettings() {
     show_location: false,
     show_website: false
   });
+  
+  const [settings, setSettings] = useState({
+    notify_new_registrations: true,
+    notify_event_reminders: true,
+    public_page_visible: true,
+    show_statistics: true
+  });
+
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   useEffect(() => {
     if (organizerData) {
       setSocialLinks({
@@ -45,6 +59,13 @@ export default function OrganizerSettings() {
         show_playlist: organizerData.show_playlist || false,
         show_location: organizerData.show_location || false,
         show_website: organizerData.show_website || false
+      });
+      
+      setSettings({
+        notify_new_registrations: organizerData.notify_new_registrations ?? true,
+        notify_event_reminders: organizerData.notify_event_reminders ?? true,
+        public_page_visible: organizerData.public_page_visible ?? true,
+        show_statistics: organizerData.show_statistics ?? true
       });
     }
   }, [organizerData]);
@@ -94,6 +115,48 @@ export default function OrganizerSettings() {
       setIsSaving(false);
     }
   };
+
+  const handleSettingChange = async (key: keyof typeof settings, value: boolean) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    
+    try {
+      await updateOrganizerProfile({ [key]: value });
+      toast.success('Configuração atualizada!');
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      toast.error('Erro ao atualizar configuração');
+      setSettings(settings);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast.success('Senha alterada com sucesso!');
+      setPasswordDialogOpen(false);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('Erro ao alterar senha');
+    }
+  };
   return <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Shield className="h-5 w-5 text-primary" />
@@ -114,7 +177,7 @@ export default function OrganizerSettings() {
               <p className="font-medium text-foreground">Editar Perfil</p>
               <p className="text-sm text-muted-foreground">Alterar informações pessoais</p>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => navigate('/organizer-profile')}>
               Editar
             </Button>
           </div>
@@ -126,10 +189,52 @@ export default function OrganizerSettings() {
               <p className="font-medium text-foreground">Alterar Senha</p>
               <p className="text-sm text-muted-foreground">Atualizar sua senha de acesso</p>
             </div>
-            <Button variant="outline" size="sm">
-              <Lock className="h-4 w-4 mr-1" />
-              Alterar
-            </Button>
+            <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Lock className="h-4 w-4 mr-1" />
+                  Alterar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Alterar Senha</DialogTitle>
+                  <DialogDescription>
+                    Digite sua nova senha. Ela deve ter pelo menos 6 caracteres.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="new-password">Nova Senha</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Digite a nova senha"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirme a nova senha"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handlePasswordChange}>
+                    Salvar Nova Senha
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>
@@ -148,7 +253,10 @@ export default function OrganizerSettings() {
               <p className="font-medium text-foreground">Novos Cadastros</p>
               <p className="text-sm text-muted-foreground">Receber quando alguém se cadastrar</p>
             </div>
-            <Switch defaultChecked />
+            <Switch 
+              checked={settings.notify_new_registrations}
+              onCheckedChange={(checked) => handleSettingChange('notify_new_registrations', checked)}
+            />
           </div>
           
           <div className="flex items-center justify-between">
@@ -156,7 +264,10 @@ export default function OrganizerSettings() {
               <p className="font-medium text-foreground">Lembrete de Eventos</p>
               <p className="text-sm text-muted-foreground">Notificar 1 hora antes do evento</p>
             </div>
-            <Switch defaultChecked />
+            <Switch 
+              checked={settings.notify_event_reminders}
+              onCheckedChange={(checked) => handleSettingChange('notify_event_reminders', checked)}
+            />
           </div>
           
           
@@ -180,7 +291,10 @@ export default function OrganizerSettings() {
               <p className="font-medium text-foreground">Página Pública</p>
               <p className="text-sm text-muted-foreground">Permitir que outros vejam sua página</p>
             </div>
-            <Switch defaultChecked />
+            <Switch 
+              checked={settings.public_page_visible}
+              onCheckedChange={(checked) => handleSettingChange('public_page_visible', checked)}
+            />
           </div>
           
           <div className="flex items-center justify-between">
@@ -188,7 +302,10 @@ export default function OrganizerSettings() {
               <p className="font-medium text-foreground">Mostrar Estatísticas</p>
               <p className="text-sm text-muted-foreground">Exibir número de seguidores e eventos</p>
             </div>
-            <Switch defaultChecked />
+            <Switch 
+              checked={settings.show_statistics}
+              onCheckedChange={(checked) => handleSettingChange('show_statistics', checked)}
+            />
           </div>
         </CardContent>
       </Card>
