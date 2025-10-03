@@ -131,6 +131,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
   const [activeTab, setActiveTab] = useState("eventos");
   const [allEvents, setAllEvents] = useState<OrganizerEvent[]>([]);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [removingCover, setRemovingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
   const { updateOrganizerProfile } = useOrganizer();
@@ -230,6 +231,27 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
       toast.error('Erro ao atualizar capa');
     } finally {
       setUploadingCover(false);
+    }
+  };
+
+  const handleRemoveCover = async () => {
+    if (!user) return;
+
+    try {
+      setRemovingCover(true);
+      
+      // Remover URL da capa do perfil
+      await updateOrganizerProfile({ cover_image_url: null });
+      
+      toast.success('Capa removida com sucesso!');
+      
+      // Recarregar dados
+      window.location.reload();
+    } catch (error) {
+      console.error('Error removing cover:', error);
+      toast.error('Erro ao remover capa');
+    } finally {
+      setRemovingCover(false);
     }
   };
 
@@ -340,20 +362,38 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
               onChange={handleCoverUpload}
               className="hidden"
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingCover}
-              className="absolute top-4 right-16 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white"
-              style={{ zIndex: 10 }}
-            >
-              {uploadingCover ? (
-                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Upload className="h-5 w-5" />
+            <div className="absolute top-4 right-4 flex gap-2" style={{ zIndex: 10 }}>
+              {organizer.cover_image_url && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRemoveCover}
+                  disabled={removingCover}
+                  className="bg-red-500/80 hover:bg-red-600/90 backdrop-blur-sm text-white"
+                  title="Remover capa"
+                >
+                  {removingCover ? (
+                    <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Camera className="h-5 w-5" />
+                  )}
+                </Button>
               )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingCover}
+                className="bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white"
+                title={organizer.cover_image_url ? "Alterar capa" : "Adicionar capa"}
+              >
+                {uploadingCover ? (
+                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
           </>
         )}
 
