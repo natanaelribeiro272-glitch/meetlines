@@ -1,8 +1,15 @@
-import { Calendar, MapPin, Eye, Users, Settings } from "lucide-react";
+import { useState } from "react";
+import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import event1 from "@/assets/event-1.jpg";
 import event2 from "@/assets/event-2.jpg";
@@ -12,7 +19,17 @@ interface OrganizerEventsListProps {
 }
 
 export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsListProps) {
-  const { events, loading } = useOrganizer();
+  const { events, loading, updateEvent, deleteEvent } = useOrganizer();
+  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    location: "",
+    event_date: "",
+    max_attendees: 0
+  });
+  
   const upcomingEvents = events.filter(event => event.status === 'upcoming');
   const completedEvents = events.filter(event => event.status === 'completed');
   const totalRegistrations = events.reduce((sum, event) => sum + event.current_attendees, 0);
@@ -21,6 +38,34 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
     upcoming: upcomingEvents.length,
     registrations: totalRegistrations,
     completed: completedEvents.length,
+  };
+
+  const handleEditEvent = (event: any) => {
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title,
+      description: event.description || "",
+      location: event.location,
+      event_date: new Date(event.event_date).toISOString().slice(0, 16),
+      max_attendees: event.max_attendees || 0
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEvent) return;
+    
+    await updateEvent(editingEvent.id, {
+      ...editForm,
+      event_date: new Date(editForm.event_date).toISOString()
+    });
+    
+    setEditingEvent(null);
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!deletingEventId) return;
+    await deleteEvent(deletingEventId);
+    setDeletingEventId(null);
   };
 
   if (loading) {
@@ -122,9 +167,26 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Cadastros
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <Settings className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setDeletingEventId(event.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
@@ -164,12 +226,40 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                             <Calendar className="h-3 w-3" />
                             <span>{new Date(event.event_date).toLocaleDateString('pt-BR')}</span>
                           </div>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span className="line-clamp-1">{event.location}</span>
+                          </div>
                         </div>
                         <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600">
                           Realizado
                         </Badge>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Gerenciar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setDeletingEventId(event.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardContent>
               </Card>
@@ -205,6 +295,10 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                             <Calendar className="h-3 w-3" />
                             <span>{new Date(event.event_date).toLocaleDateString('pt-BR')}</span>
                           </div>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span className="line-clamp-1">{event.location}</span>
+                          </div>
                         </div>
                         <Badge variant="secondary" className={
                           event.status === 'completed' 
@@ -216,6 +310,30 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                         </Badge>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Gerenciar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setDeletingEventId(event.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardContent>
               </Card>
@@ -231,6 +349,85 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de Edição */}
+      <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Evento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-title">Título</Label>
+              <Input
+                id="edit-title"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Descrição</Label>
+              <Textarea
+                id="edit-description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-location">Local</Label>
+              <Input
+                id="edit-location"
+                value={editForm.location}
+                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-date">Data e Hora</Label>
+              <Input
+                id="edit-date"
+                type="datetime-local"
+                value={editForm.event_date}
+                onChange={(e) => setEditForm({ ...editForm, event_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-max">Máximo de Participantes</Label>
+              <Input
+                id="edit-max"
+                type="number"
+                value={editForm.max_attendees}
+                onChange={(e) => setEditForm({ ...editForm, max_attendees: parseInt(e.target.value) })}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditingEvent(null)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveEdit} className="flex-1">
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <AlertDialog open={!!deletingEventId} onOpenChange={(open) => !open && setDeletingEventId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O evento será permanentemente excluído.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
