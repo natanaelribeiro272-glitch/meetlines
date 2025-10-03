@@ -51,17 +51,18 @@ export default function AuthPage({
           navigate(redirectTo);
         }
       } else {
-        const {
-          error
-        } = await signUp(formData.email, formData.password, formData.name, userType);
-        if (!error) {
-          // Aguardar um pouco para o perfil ser criado no banco
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Redirecionar organizadores para onboarding
-          if (userType === "organizer") {
-            navigate('/organizer-onboarding');
-          } else {
+        if (userType === "organizer") {
+          // Fluxo de organizador: coletar dados no onboarding antes de criar a conta
+          navigate('/organizer-onboarding', {
+            state: {
+              email: formData.email,
+              password: formData.password,
+              name: formData.name,
+            }
+          });
+        } else {
+          const { error } = await signUp(formData.email, formData.password, formData.name, userType);
+          if (!error) {
             const redirectTo = searchParams.get('redirect') || '/';
             navigate(redirectTo);
           }

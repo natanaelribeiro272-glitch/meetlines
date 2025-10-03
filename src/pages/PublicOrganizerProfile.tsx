@@ -135,11 +135,12 @@ export default function PublicOrganizerProfile() {
           .eq('organizer_id', organizerData.id)
           .maybeSingle();
 
-        setOrganizer({
+        const organizerObj = {
           ...organizerData,
           profile: profileData || undefined,
           stats: statsData || { followers_count: 0, events_count: 0, average_rating: 0 }
-        });
+        } as any;
+        setOrganizer(organizerObj);
 
         // Buscar eventos públicos
         const { data: eventsData } = await supabase
