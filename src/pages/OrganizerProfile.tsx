@@ -9,6 +9,7 @@ import { useOrganizerDetails } from "@/hooks/useOrganizerDetails";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface OrganizerProfileProps {
   onBack: () => void;
@@ -20,6 +21,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
   const [activeTab, setActiveTab] = useState("eventos");
   const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleShare = () => {
     if (!organizer) return;
@@ -150,7 +153,14 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           {/* Follow button */}
           {!user || (organizer.user_id !== user.id) ? (
             <div className="flex justify-center gap-3">
-              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
+              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={() => {
+                if (!user) {
+                  const currentPath = location.pathname;
+                  navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+                } else {
+                  toast.success('Você está seguindo este organizador!');
+                }
+              }}>
                 Seguir
               </Button>
               <Button variant="outline" size="lg" onClick={handleShare}>
