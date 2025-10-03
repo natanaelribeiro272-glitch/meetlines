@@ -29,6 +29,7 @@ export interface EventDetailsData {
   interests?: string[];
   category?: string;
   requires_registration?: boolean;
+  ticket_link?: string;
   organizer?: {
     id: string;
     page_title: string;

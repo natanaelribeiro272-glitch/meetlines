@@ -180,6 +180,7 @@ export type Database = {
           organizer_id: string
           requires_registration: boolean | null
           status: string | null
+          ticket_link: string | null
           title: string
           updated_at: string | null
         }
@@ -200,6 +201,7 @@ export type Database = {
           organizer_id: string
           requires_registration?: boolean | null
           status?: string | null
+          ticket_link?: string | null
           title: string
           updated_at?: string | null
         }
@@ -220,6 +222,7 @@ export type Database = {
           organizer_id?: string
           requires_registration?: boolean | null
           status?: string | null
+          ticket_link?: string | null
           title?: string
           updated_at?: string | null
         }

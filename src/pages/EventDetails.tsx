@@ -434,6 +434,18 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
         {/* Action Buttons */}
         <div className="space-y-3 mb-6">
+          {/* Botão de Comprar Ingresso - Só aparece se tiver link e for pago */}
+          {event.ticket_link && (
+            <Button 
+              variant="default" 
+              className="w-full bg-green-600 hover:bg-green-700 text-white" 
+              size="lg" 
+              onClick={() => window.open(event.ticket_link, '_blank')}
+            >
+              💳 Comprar Ingresso
+            </Button>
+          )}
+          
           <div className="flex gap-3">
             <Button 
               variant="glow" 

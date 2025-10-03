@@ -245,7 +245,8 @@ export default function CreateEvent({
           status: 'upcoming',
           requires_registration: requiresRegistration,
           category: eventData.category || null,
-          form_fields: requiresRegistration ? formFields : []
+          form_fields: requiresRegistration ? formFields : [],
+          ticket_link: eventData.ticketLink || null
         });
         toast.success('Evento criado com sucesso!');
       }

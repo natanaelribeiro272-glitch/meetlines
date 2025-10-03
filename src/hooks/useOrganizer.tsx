@@ -51,6 +51,7 @@ interface Event {
   requires_registration: boolean;
   category?: string;
   form_fields?: any[];
+  ticket_link?: string;
 }
 
 interface CustomLink {
