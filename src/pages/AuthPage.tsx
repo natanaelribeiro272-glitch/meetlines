@@ -222,6 +222,12 @@ export default function AuthPage({
 
         {/* Demo Login */}
         
+        {/* Footer */}
+        <div className="text-center pt-6 pb-4">
+          <p className="text-xs text-muted-foreground">
+            Esse site foi desenvolvido pela Flat Company
+          </p>
+        </div>
       </div>
     </div>;
 }

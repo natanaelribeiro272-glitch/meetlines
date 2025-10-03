@@ -777,6 +777,13 @@ export default function OrganizerPage() {
           </DialogContent>
         </Dialog>
       </div>
+      
+      {/* Footer */}
+      <footer className="mt-8 pb-6 text-center border-t border-border pt-6">
+        <p className="text-xs text-muted-foreground">
+          Esse site foi desenvolvido pela Flat Company
+        </p>
+      </footer>
     </div>
   );
 }
