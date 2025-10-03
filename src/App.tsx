@@ -8,6 +8,7 @@ import MainLayout from "./pages/MainLayout";
 import PublicOrganizerProfile from "./pages/PublicOrganizerProfile";
 import EventPublicPage from "./pages/EventPublicPage";
 import AuthPage from "./pages/AuthPage";
+import OrganizerOnboarding from "./pages/OrganizerOnboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<MainLayout />} />
               <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
+              <Route path="/organizer-onboarding" element={<OrganizerOnboarding />} />
               {/* Public event share route: domain.com/@username/event-slug */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
               {/* Public organizer profile: domain.com/@username */}

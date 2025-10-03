@@ -54,9 +54,13 @@ export default function AuthPage({
           error
         } = await signUp(formData.email, formData.password, formData.name, userType);
         if (!error) {
-          // Success handled by auth provider
-          const redirectTo = searchParams.get('redirect') || '/';
-          navigate(redirectTo);
+          // Redirecionar organizadores para onboarding
+          if (userType === "organizer") {
+            navigate('/organizer-onboarding');
+          } else {
+            const redirectTo = searchParams.get('redirect') || '/';
+            navigate(redirectTo);
+          }
         }
       }
     } finally {

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import AuthPage from "./AuthPage";
 import Home from "./Home";
 import EventDetails from "./EventDetails";
@@ -16,7 +18,9 @@ import EventRegistration from "./EventRegistration";
 import EventRegistrations from "./EventRegistrations";
 import OrganizerEvents from "./OrganizerEvents";
 import EventAttendances from "./EventAttendances";
+
 export default function MainLayout() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | null>(null);
@@ -24,6 +28,26 @@ export default function MainLayout() {
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const { user, userRole, loading } = useAuth();
+
+  // Verificar se organizador completou onboarding
+  useEffect(() => {
+    const checkOrganizerOnboarding = async () => {
+      if (!user || userRole !== "organizer" || loading) return;
+
+      const { data: organizer } = await supabase
+        .from("organizers")
+        .select("id, username")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!organizer || !organizer.username) {
+        // Redirecionar para onboarding
+        navigate("/organizer-onboarding");
+      }
+    };
+
+    checkOrganizerOnboarding();
+  }, [user, userRole, loading, navigate]);
 
   const handleLogin = (type: "user" | "organizer") => {
     // This is handled by the auth provider now

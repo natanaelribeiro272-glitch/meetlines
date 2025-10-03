@@ -83,15 +83,16 @@ export function useOrganizer() {
         .from('organizers')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (organizerError && organizerError.code !== 'PGRST116') {
         throw organizerError;
       }
 
       if (!organizer) {
-        // Create initial organizer profile
-        await createInitialOrganizerProfile();
+        // Não criar perfil automaticamente mais
+        // O usuário será direcionado para onboarding
+        setLoading(false);
         return;
       }
 
@@ -124,48 +125,6 @@ export function useOrganizer() {
       toast.error('Erro ao carregar dados do organizador');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const createInitialOrganizerProfile = async () => {
-    if (!user) return;
-
-    try {
-      const username = user.email?.split('@')[0] || 'organizer';
-      const { data, error } = await supabase
-        .from('organizers')
-        .insert({
-          user_id: user.id,
-          username: username,
-          page_title: user.user_metadata?.display_name || 'Meu Perfil',
-          page_subtitle: 'Organizador de Eventos',
-          page_description: 'Criando experiências únicas'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Criar estatísticas iniciais do organizador
-      try {
-        await supabase
-          .from('organizer_stats')
-          .insert({
-            organizer_id: data.id,
-            followers_count: 0,
-            events_count: 0,
-            average_rating: 0,
-            total_ratings: 0
-          });
-      } catch (statsError) {
-        console.log('Stats already exist or error creating stats:', statsError);
-      }
-
-      setOrganizerData(data);
-      toast.success('Perfil de organizador criado!');
-    } catch (error: any) {
-      console.error('Error creating organizer profile:', error);
-      toast.error('Erro ao criar perfil de organizador');
     }
   };
 
