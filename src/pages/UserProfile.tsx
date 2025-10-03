@@ -479,8 +479,10 @@ export default function UserProfile({ userType }: UserProfileProps) {
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Escreva algo sobre você que outros possam ver nos eventos..."
-                  className="min-h-[100px]"
+                  placeholder="Escreva o que você está achando dos eventos que participa..."
+                  className="min-h-[120px]"
+                  autoFocus
+                  aria-label="Editar notas públicas"
                 />
                 <div className="flex gap-2">
                   <Button size="sm" onClick={() => handleSaveField('notes')} disabled={saving}>
@@ -493,7 +495,13 @@ export default function UserProfile({ userType }: UserProfileProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm whitespace-pre-wrap">{profile?.notes || 'Clique em "Editar Notas" para escrever o que você está achando dos eventos que participa'}</p>
+                <p 
+                  className="text-sm whitespace-pre-wrap cursor-text hover:bg-muted/50 rounded px-2 py-1 transition-smooth"
+                  onClick={() => setEditingField('notes')}
+                  title="Clique para editar suas notas"
+                >
+                  {profile?.notes || 'Clique para escrever o que você está achando dos eventos que participa'}
+                </p>
                 <Button
                   size="sm"
                   variant="outline"
