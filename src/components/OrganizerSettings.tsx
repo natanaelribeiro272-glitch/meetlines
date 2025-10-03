@@ -48,8 +48,8 @@ export default function OrganizerSettings() {
       });
     }
   }, [organizerData]);
-  const handleLogout = () => {
-    signOut();
+  const handleLogout = async () => {
+    await signOut();
   };
   const handleDeleteAccount = async () => {
     try {
