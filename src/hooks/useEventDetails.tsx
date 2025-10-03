@@ -27,6 +27,7 @@ export interface EventDetailsData {
   status: string;
   organizer_id: string;
   interests?: string[];
+  category?: string;
   organizer?: {
     id: string;
     page_title: string;

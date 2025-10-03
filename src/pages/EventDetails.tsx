@@ -480,7 +480,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
           </Button>
           
           {/* Find Friends button for live events */}
-          {event.is_live && !isOrganizer && (
+          {event.is_live && !isOrganizer && event.category !== 'live' && (
             <Button 
               variant="live" 
               className="w-full" 
