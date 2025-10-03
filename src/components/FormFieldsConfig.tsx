@@ -138,10 +138,23 @@ export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigP
                             })}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
+                                e.preventDefault();
                                 e.stopPropagation();
+                                const target = e.currentTarget;
+                                const start = target.selectionStart ?? target.value.length;
+                                const end = target.selectionEnd ?? target.value.length;
+                                const newValue = target.value.slice(0, start) + '\n' + target.value.slice(end);
+                                // Update the options with the inserted line break
+                                updateField(field.id, {
+                                  options: newValue.split('\n').filter(o => o.trim())
+                                });
+                                // Restore caret position after re-render
+                                setTimeout(() => {
+                                  try { target.setSelectionRange(start + 1, start + 1); } catch {}
+                                }, 0);
                               }
                             }}
-                            placeholder="Digite uma opção e pressione Enter&#10;Segunda opção&#10;Terceira opção"
+                            placeholder={"Digite uma opção e pressione Enter\nSegunda opção\nTerceira opção"}
                             className="w-full min-h-[100px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-y"
                             rows={4}
                           />
