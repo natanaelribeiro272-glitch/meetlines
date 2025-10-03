@@ -466,7 +466,7 @@ export default function PublicOrganizerProfile() {
     <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
-        className="relative h-[220px] overflow-hidden"
+        className="relative h-[200px] overflow-hidden"
         style={{
           backgroundImage: organizer.cover_image_url 
             ? `url(${organizer.cover_image_url})`
@@ -488,8 +488,8 @@ export default function PublicOrganizerProfile() {
         <div 
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
           style={{
-            height: '140px',
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 30%, hsl(var(--background) / 0.7) 60%, transparent 100%)',
+            height: '120px',
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 40%, transparent 100%)',
             zIndex: 1
           }}
         />
@@ -503,61 +503,71 @@ export default function PublicOrganizerProfile() {
             <Share2 className="h-5 w-5 text-white" />
           </Button>
         </div>
+      </div>
 
-        {/* Profile Header */}
-        <div className="px-4 pb-6 text-center relative" style={{ zIndex: 10 }}>
-          <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white/20 shadow-lg">
-            {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
-              <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
-            ) : (
-              <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                {organizer.page_title.charAt(0)}
-              </AvatarFallback>
-            )}
-          </Avatar>
-          
-          <h2 className="text-2xl font-bold text-white mb-1">
-            {organizer.profile?.display_name || organizer.page_title}
-          </h2>
-          {organizer.username && (
-            <p className="text-sm text-white/70 mb-2">@{organizer.username}</p>
+      {/* Profile Info - fora da área da capa */}
+      <div className="px-4 pb-6 text-center -mt-12 relative z-10">
+        <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
+          {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
+            <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
+          ) : (
+            <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+              {organizer.page_title.charAt(0)}
+            </AvatarFallback>
           )}
-          <p className="text-white/80 max-w-sm mx-auto mb-4">
-            {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
-          </p>
-          
-          {/* Stats */}
-          {organizer.show_statistics && (
-            <div className="flex justify-center gap-6 mb-4">
-              <div className="text-center">
-                <p className="text-lg font-semibold text-white">
-                  {organizer.stats?.followers_count?.toLocaleString() || '0'}
-                </p>
-                <p className="text-sm text-white/70">Seguidores</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-semibold text-white">
-                  {organizer.stats?.events_count || events.length}
-                </p>
-                <p className="text-sm text-white/70">Eventos</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-semibold text-white">
-                  {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
-                </p>
-                <p className="text-sm text-white/70">Avaliação</p>
-              </div>
+        </Avatar>
+        
+        <h2 className="text-2xl font-bold text-foreground mb-1">
+          {organizer.profile?.display_name || organizer.page_title}
+        </h2>
+        {organizer.username && (
+          <p className="text-sm text-muted-foreground mb-2">@{organizer.username}</p>
+        )}
+        <p className="text-muted-foreground max-w-sm mx-auto mb-4">
+          {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
+        </p>
+        
+        {/* Stats */}
+        {organizer.show_statistics && (
+          <div className="flex justify-center gap-6 mb-4">
+            <div className="text-center">
+              <p className="text-lg font-semibold text-foreground">
+                {organizer.stats?.followers_count?.toLocaleString() || '0'}
+              </p>
+              <p className="text-sm text-muted-foreground">Seguidores</p>
             </div>
-          )}
+            <div className="text-center">
+              <p className="text-lg font-semibold text-foreground">
+                {organizer.stats?.events_count || events.length}
+              </p>
+              <p className="text-sm text-muted-foreground">Eventos</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-foreground">
+                {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
+              </p>
+              <p className="text-sm text-muted-foreground">Avaliação</p>
+            </div>
+          </div>
+        )}
 
-          {/* Follow & Share buttons */}
-          {!isOwnProfile && (
-            <div className="flex justify-center gap-3">
-              <Button variant="glow" size="lg" className="flex-1 max-w-[200px] bg-white text-gray-900 hover:bg-white/90" onClick={handleFollow}>
-                {isFollowing ? 'Seguindo' : 'Seguir'}
-              </Button>
-              <Button variant="outline" size="lg" className="bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white border-white/20" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
+        {/* Follow & Share buttons */}
+        {!isOwnProfile && (
+          <div className="flex justify-center gap-3">
+            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={handleFollow}>
+              {isFollowing ? 'Seguindo' : 'Seguir'}
+            </Button>
+            <Button variant="outline" size="lg" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar
+            </Button>
+          </div>
+        )}
+        
+        {isOwnProfile && (
+          <div className="flex justify-center">
+            <Button variant="outline" size="lg" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
                 Compartilhar
               </Button>
             </div>
@@ -566,12 +576,11 @@ export default function PublicOrganizerProfile() {
           {isOwnProfile && (
             <div className="flex justify-center">
               <Button variant="outline" size="lg" className="bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white border-white/20" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Compartilhar minha página
-              </Button>
-            </div>
-          )}
-        </div>
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar minha página
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

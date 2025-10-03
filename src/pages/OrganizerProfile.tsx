@@ -314,7 +314,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
-        className="relative h-[220px] overflow-hidden"
+        className="relative h-[200px] overflow-hidden"
         style={{
           backgroundImage: organizer.cover_image_url 
             ? `url(${organizer.cover_image_url})`
@@ -336,8 +336,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         <div 
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
           style={{
-            height: '140px',
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 30%, hsl(var(--background) / 0.7) 60%, transparent 100%)',
+            height: '120px',
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 40%, transparent 100%)',
             zIndex: 1
           }}
         />
@@ -396,93 +396,93 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             </div>
           </>
         )}
+      </div>
 
-        {/* Profile Header */}
-        <div className="px-4 pb-6 text-center relative" style={{ zIndex: 10 }}>
-          <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white/20 shadow-lg">
-            {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
-              <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
-            ) : (
-              <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                {organizer.page_title.charAt(0)}
-              </AvatarFallback>
-            )}
-          </Avatar>
-          
-          <h2 className="text-2xl font-bold text-white mb-2">
-            {organizer.profile?.display_name || organizer.page_title}
-          </h2>
-          <p className="text-white/80 max-w-sm mx-auto mb-4">
-            {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
-          </p>
-          
-          {/* Stats */}
-          <div className="flex justify-center gap-6 mb-4">
-            <div className="text-center">
-              <p className="text-lg font-semibold text-white">
-                {organizer.stats?.followers_count?.toLocaleString() || '0'}
-              </p>
-              <p className="text-sm text-white/70">Seguidores</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-white">
-                {organizer.stats?.events_count || events.length}
-              </p>
-              <p className="text-sm text-white/70">Eventos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-white">
-                {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
-              </p>
-              <p className="text-sm text-white/70">Avaliação</p>
-            </div>
-          </div>
-
-          {/* Follow button */}
-          {!user || (organizer.user_id !== user.id) ? (
-            <div className="flex justify-center gap-3">
-              <Button 
-                variant="glow" 
-                size="lg" 
-                className="flex-1 max-w-[200px] bg-white text-gray-900 hover:bg-white/90" 
-                onClick={async () => {
-                  if (!user) {
-                    const currentPath = location.pathname;
-                    navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
-                  } else {
-                    await toggleFollow();
-                  }
-                }}
-                disabled={followLoading}
-              >
-                {followLoading ? (
-                  'Carregando...'
-                ) : isFollowing ? (
-                  <>
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Seguindo
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Seguir
-                  </>
-                )}
-              </Button>
-              <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Compartilhar
-              </Button>
-            </div>
+      {/* Profile Info - fora da área da capa */}
+      <div className="px-4 pb-6 text-center -mt-12 relative z-10">
+        <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
+          {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
+            <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
           ) : (
-            <div className="flex justify-center">
-              <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Compartilhar minha página
-              </Button>
-            </div>
+            <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+              {organizer.page_title.charAt(0)}
+            </AvatarFallback>
           )}
+        </Avatar>
+        
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          {organizer.profile?.display_name || organizer.page_title}
+        </h2>
+        <p className="text-muted-foreground max-w-sm mx-auto mb-4">
+          {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
+        </p>
+        
+        {/* Stats */}
+        <div className="flex justify-center gap-6 mb-4">
+          <div className="text-center">
+            <p className="text-lg font-semibold text-foreground">
+              {organizer.stats?.followers_count?.toLocaleString() || '0'}
+            </p>
+            <p className="text-sm text-muted-foreground">Seguidores</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-semibold text-foreground">
+              {organizer.stats?.events_count || events.length}
+            </p>
+            <p className="text-sm text-muted-foreground">Eventos</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-semibold text-foreground">
+              {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
+            </p>
+            <p className="text-sm text-muted-foreground">Avaliação</p>
+          </div>
         </div>
+
+        {/* Follow button */}
+        {!user || (organizer.user_id !== user.id) ? (
+          <div className="flex justify-center gap-3">
+            <Button 
+              variant="glow" 
+              size="lg" 
+              className="flex-1 max-w-[200px]" 
+              onClick={async () => {
+                if (!user) {
+                  const currentPath = location.pathname;
+                  navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+                } else {
+                  await toggleFollow();
+                }
+              }}
+              disabled={followLoading}
+            >
+              {followLoading ? (
+                'Carregando...'
+              ) : isFollowing ? (
+                <>
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Seguindo
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Seguir
+                </>
+              )}
+            </Button>
+            <Button variant="outline" size="lg" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar
+            </Button>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <Button variant="outline" size="lg" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar minha página
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
