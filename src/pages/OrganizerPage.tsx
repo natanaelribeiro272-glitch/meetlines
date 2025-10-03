@@ -95,12 +95,12 @@ export default function OrganizerPage() {
 
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !organizerData) return;
+    if (!file || !organizerData || !user) return;
 
     try {
       setIsUploadingCover(true);
       const fileExt = file.name.split('.').pop();
-      const fileName = `${organizerData.id}/cover.${fileExt}`;
+      const fileName = `${user.id}/cover.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('user-uploads')
@@ -124,12 +124,12 @@ export default function OrganizerPage() {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !organizerData) return;
+    if (!file || !organizerData || !user) return;
 
     try {
       setIsUploadingAvatar(true);
       const fileExt = file.name.split('.').pop();
-      const fileName = `${organizerData.id}/avatar.${fileExt}`;
+      const fileName = `${user.id}/avatar.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('user-uploads')
