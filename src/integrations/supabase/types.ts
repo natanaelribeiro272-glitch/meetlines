@@ -167,6 +167,7 @@ export type Database = {
           interests: string[] | null
           is_live: boolean | null
           location: string
+          location_link: string | null
           max_attendees: number | null
           organizer_id: string
           requires_registration: boolean | null
@@ -184,6 +185,7 @@ export type Database = {
           interests?: string[] | null
           is_live?: boolean | null
           location: string
+          location_link?: string | null
           max_attendees?: number | null
           organizer_id: string
           requires_registration?: boolean | null
@@ -201,6 +203,7 @@ export type Database = {
           interests?: string[] | null
           is_live?: boolean | null
           location?: string
+          location_link?: string | null
           max_attendees?: number | null
           organizer_id?: string
           requires_registration?: boolean | null

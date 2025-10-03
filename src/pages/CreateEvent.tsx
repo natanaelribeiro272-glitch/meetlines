@@ -141,6 +141,7 @@ export default function CreateEvent({
         description: eventData.description,
         event_date: eventDateTime.toISOString(),
         location: eventData.address,
+        location_link: eventData.locationLink || null,
         image_url: imageUrl,
         max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
         interests: selectedInterest ? [selectedInterest] : [],
