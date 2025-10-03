@@ -493,7 +493,7 @@ export default function UserProfile({ userType }: UserProfileProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm whitespace-pre-wrap">{profile?.notes || 'Clique para adicionar notas públicas que aparecerão nos eventos que você participa'}</p>
+                <p className="text-sm whitespace-pre-wrap">{profile?.notes || 'Clique em "Editar Notas" para escrever o que você está achando dos eventos que participa'}</p>
                 <Button
                   size="sm"
                   variant="outline"
