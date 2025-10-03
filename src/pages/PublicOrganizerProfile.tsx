@@ -183,15 +183,55 @@ export default function PublicOrganizerProfile() {
 
         setCustomLinks(linksData || []);
       } catch (error) {
-        console.error('Error fetching organizer:', error);
-        navigate('/404');
+        console.error('Error fetching organizer data:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrganizerData();
-  }, [slug, navigate, user]);
+  }, [slug, user, navigate]);
+
+  // Realtime updates para perfil do organizador
+  useEffect(() => {
+    if (!organizer) return;
+
+    const channel = supabase
+      .channel('realtime-public-organizer-profile')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'organizers',
+        filter: `id=eq.${organizer.id}`
+      }, (payload) => {
+        const updated = payload.new as any;
+        setOrganizer(prev => prev ? {
+          ...prev,
+          ...updated
+        } : prev);
+      })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles',
+        filter: `user_id=eq.${organizer.user_id}`
+      }, (payload) => {
+        const updated = payload.new as any;
+        setOrganizer(prev => prev ? {
+          ...prev,
+          profile: {
+            display_name: updated.display_name,
+            avatar_url: updated.avatar_url,
+            bio: updated.bio
+          }
+        } : prev);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [organizer?.id, organizer?.user_id]);
 
   const handleFollow = async () => {
     if (!user) {

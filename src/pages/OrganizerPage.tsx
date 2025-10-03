@@ -172,8 +172,15 @@ export default function OrganizerPage() {
         .from('user-uploads')
         .getPublicUrl(fileName);
 
+      // Atualizar em ambas as tabelas
       await updateOrganizerProfile({ avatar_url: publicUrl });
-      toast.success('Foto de perfil atualizada!');
+      
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id);
+      
+      toast.success('Foto de perfil atualizada em todos os lugares!');
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast.error('Erro ao fazer upload da foto');
@@ -442,12 +449,30 @@ export default function OrganizerPage() {
                   ) : (
                     <div className="flex flex-col gap-2">
                       <Button variant="default" size="sm" onClick={async () => {
-                        await updateOrganizerProfile({
-                          page_title: editableProfile.title,
-                          page_description: editableProfile.description
-                        });
-                        setIsEditing(false);
-                        toast.success('Perfil atualizado com sucesso!');
+                        try {
+                          // Atualizar na tabela organizers
+                          await updateOrganizerProfile({
+                            page_title: editableProfile.title,
+                            page_description: editableProfile.description
+                          });
+                          
+                          // Atualizar também na tabela profiles para sincronizar
+                          if (user) {
+                            await supabase
+                              .from('profiles')
+                              .update({
+                                display_name: editableProfile.title,
+                                bio: editableProfile.description
+                              })
+                              .eq('user_id', user.id);
+                          }
+                          
+                          setIsEditing(false);
+                          toast.success('Perfil atualizado em todos os lugares!');
+                        } catch (error) {
+                          console.error('Error updating profile:', error);
+                          toast.error('Erro ao atualizar perfil');
+                        }
                       }}>
                         Salvar
                       </Button>
