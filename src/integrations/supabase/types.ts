@@ -511,6 +511,7 @@ export type Database = {
           linkedin_url: string | null
           location: string | null
           notes: string | null
+          notes_visible: boolean | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           tiktok_url: string | null
@@ -534,6 +535,7 @@ export type Database = {
           linkedin_url?: string | null
           location?: string | null
           notes?: string | null
+          notes_visible?: boolean | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           tiktok_url?: string | null
@@ -557,6 +559,7 @@ export type Database = {
           linkedin_url?: string | null
           location?: string | null
           notes?: string | null
+          notes_visible?: boolean | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           tiktok_url?: string | null

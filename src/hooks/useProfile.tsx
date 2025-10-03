@@ -15,6 +15,7 @@ export interface ProfileData {
   phone: string | null;
   website: string | null;
   notes: string | null;
+  notes_visible: boolean | null;
   instagram_url: string | null;
   twitter_url: string | null;
   linkedin_url: string | null;

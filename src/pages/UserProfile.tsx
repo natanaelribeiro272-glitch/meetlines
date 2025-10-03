@@ -84,6 +84,7 @@ export default function UserProfile({ userType }: UserProfileProps) {
     location: "",
     age: "",
     notes: "",
+    notes_visible: true,
     phone: "",
     website: "",
     interest: "curtição" as "namoro" | "network" | "curtição" | "amizade" | "casual"
@@ -133,6 +134,7 @@ export default function UserProfile({ userType }: UserProfileProps) {
         location: profile.location || "",
         age: profile.age?.toString() || "",
         notes: profile.notes || "",
+        notes_visible: profile.notes_visible ?? true,
         phone: profile.phone || "",
         website: profile.website || "",
         interest: (profile.interest as any) || "curtição"
@@ -146,7 +148,7 @@ export default function UserProfile({ userType }: UserProfileProps) {
     
     // Special handling for age field
     if (field === 'age') {
-      updateData.age = value ? parseInt(value) : null;
+      updateData.age = value ? parseInt(value as string) : null;
     }
 
     const success = await updateProfile(updateData);
@@ -442,42 +444,67 @@ export default function UserProfile({ userType }: UserProfileProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
+            {formData.notes_visible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
             Notas Públicas
-            <Badge variant="secondary" className="text-xs">Visível para outros</Badge>
+            {formData.notes_visible && <Badge variant="secondary" className="text-xs">Visível para outros</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {editingField === 'notes' ? (
-            <div className="space-y-2">
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Escreva algo sobre você que outros possam ver..."
-                className="min-h-[100px]"
+          <div className="space-y-4">
+            {/* Visibility Toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex-1">
+                <Label htmlFor="notes-visibility" className="text-sm font-medium">
+                  Visibilidade das Notas
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formData.notes_visible 
+                    ? "Suas notas aparecerão nos eventos que você participa" 
+                    : "Suas notas ficam privadas"}
+                </p>
+              </div>
+              <Switch
+                id="notes-visibility"
+                checked={formData.notes_visible}
+                onCheckedChange={async (checked) => {
+                  setFormData(prev => ({ ...prev, notes_visible: checked }));
+                  await updateProfile({ notes_visible: checked });
+                }}
               />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => handleSaveField('notes')} disabled={saving}>
-                  Salvar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
-                  Cancelar
+            </div>
+
+            {/* Notes Editor */}
+            {editingField === 'notes' ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Escreva algo sobre você que outros possam ver nos eventos..."
+                  className="min-h-[100px]"
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleSaveField('notes')} disabled={saving}>
+                    Salvar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm whitespace-pre-wrap">{profile?.notes || 'Clique para adicionar notas públicas que aparecerão nos eventos que você participa'}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditingField('notes')}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar Notas
                 </Button>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm">{profile?.notes || 'Clique para adicionar notas públicas'}</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setEditingField('notes')}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar Notas
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
