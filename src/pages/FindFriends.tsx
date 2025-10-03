@@ -81,11 +81,12 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
       }
 
       try {
-        // First, get events where current user registered
+        // First, get events where current user registered with confirmed attendance
         const { data: myRegistrations, error: myRegError } = await supabase
           .from('event_registrations')
           .select('event_id, events!inner(is_live)')
           .eq('user_id', user.id)
+          .eq('attendance_confirmed', true)
           .eq('events.is_live', true);
 
         if (myRegError) {
@@ -102,7 +103,7 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
 
         const myEventIds = myRegistrations.map(reg => reg.event_id);
 
-        // Get other users registered in the same live events who are visible
+        // Get other users with confirmed attendance in the same live events who are visible
         const { data, error } = await supabase
           .from('event_registrations')
           .select(`
@@ -125,6 +126,7 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
             )
           `)
           .in('event_id', myEventIds)
+          .eq('attendance_confirmed', true)
           .eq('events.is_live', true)
           .eq('profiles.find_friends_visible', true)
           .eq('profiles.notes_visible', true)
@@ -219,7 +221,7 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            {isVisible ? "Outras pessoas no evento podem te encontrar. Toque em 'Ser Visto' novamente para ficar invisível." : "Conecte-se com pessoas que estão no evento agora. Sua localização é usada apenas durante eventos ao vivo."}
+            {isVisible ? "Outras pessoas com presença confirmada no evento podem te encontrar. Toque em 'Ser Visto' novamente para ficar invisível." : "Conecte-se com pessoas que confirmaram presença e estão visíveis. Para aparecer para outros, ative 'Ser Visto' e confirme sua presença no evento."}
           </p>
         </div>
 
@@ -298,7 +300,9 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
           </div> : <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">Nenhuma pessoa encontrada</p>
-            <p className="text-sm text-muted-foreground mt-2">Não há outras pessoas em eventos ao vivo no momento</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Não há outras pessoas com presença confirmada e visíveis em eventos ao vivo no momento. Lembre-se de confirmar sua presença no evento!
+            </p>
           </div>}
 
         {/* Bottom CTA */}

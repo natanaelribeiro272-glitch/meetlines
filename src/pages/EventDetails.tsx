@@ -6,10 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
+import { supabase } from "@/integrations/supabase/client";
 interface EventDetailsProps {
   onBack: () => void;
   eventId: string | null;
@@ -26,8 +27,40 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   const navigate = useNavigate();
   const location = useLocation();
   const [newComment, setNewComment] = useState("");
+  const [hasConfirmedAttendance, setHasConfirmedAttendance] = useState(false);
+  const [checkingAttendance, setCheckingAttendance] = useState(true);
+  const [confirmingAttendance, setConfirmingAttendance] = useState(false);
   
   const isOrganizer = user && event?.organizer?.user_id === user.id;
+
+  // Check if user has already confirmed attendance
+  useEffect(() => {
+    const checkAttendance = async () => {
+      if (!user || !eventId) {
+        setCheckingAttendance(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('event_registrations')
+          .select('attendance_confirmed')
+          .eq('event_id', eventId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          setHasConfirmedAttendance(data.attendance_confirmed || false);
+        }
+      } catch (error) {
+        console.error('Error checking attendance:', error);
+      } finally {
+        setCheckingAttendance(false);
+      }
+    };
+
+    checkAttendance();
+  }, [user, eventId]);
 
   const requireAuth = (action: () => void, actionName: string) => {
     if (!user) {
@@ -76,10 +109,76 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     }, 'curtir este evento');
   };
 
-  const handleConfirmPresence = () => {
-    requireAuth(() => {
-      toast.success('Presença confirmada!');
-      // Aqui você adicionaria a lógica real de confirmar presença
+  const handleConfirmPresence = async () => {
+    requireAuth(async () => {
+      if (!user || !eventId) return;
+      
+      setConfirmingAttendance(true);
+      
+      try {
+        // Check if user has registration
+        const { data: existingReg, error: checkError } = await supabase
+          .from('event_registrations')
+          .select('id, attendance_confirmed')
+          .eq('event_id', eventId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking registration:', checkError);
+          toast.error('Erro ao verificar registro');
+          return;
+        }
+
+        if (existingReg) {
+          // Update existing registration
+          const { error: updateError } = await supabase
+            .from('event_registrations')
+            .update({ 
+              attendance_confirmed: true,
+              attendance_confirmed_at: new Date().toISOString()
+            })
+            .eq('id', existingReg.id);
+
+          if (updateError) {
+            console.error('Error updating attendance:', updateError);
+            toast.error('Erro ao confirmar presença');
+            return;
+          }
+        } else {
+          // Create new registration with confirmed attendance
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('user_id', user.id)
+            .single();
+
+          const { error: insertError } = await supabase
+            .from('event_registrations')
+            .insert({
+              event_id: eventId,
+              user_id: user.id,
+              user_name: profile?.display_name || user.email?.split('@')[0] || 'Usuário',
+              user_email: user.email || '',
+              attendance_confirmed: true,
+              attendance_confirmed_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            console.error('Error creating registration:', insertError);
+            toast.error('Erro ao confirmar presença');
+            return;
+          }
+        }
+
+        setHasConfirmedAttendance(true);
+        toast.success('Presença confirmada com sucesso!');
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Erro ao confirmar presença');
+      } finally {
+        setConfirmingAttendance(false);
+      }
     }, 'confirmar presença');
   };
 
@@ -339,8 +438,9 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
               className="flex-1" 
               size="lg" 
               onClick={isOrganizer && onViewAttendances ? onViewAttendances : handleConfirmPresence}
+              disabled={confirmingAttendance || checkingAttendance || hasConfirmedAttendance}
             >
-              {isOrganizer ? 'Ver Presenças Confirmadas' : 'Confirmar Presença'}
+              {isOrganizer ? 'Ver Presenças Confirmadas' : hasConfirmedAttendance ? 'Presença Confirmada' : confirmingAttendance ? 'Confirmando...' : 'Confirmar Presença'}
             </Button>
             {event.is_live ? (
               event.location_link && (

@@ -111,6 +111,8 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          attendance_confirmed: boolean | null
+          attendance_confirmed_at: string | null
           created_at: string | null
           event_id: string
           id: string
@@ -123,6 +125,8 @@ export type Database = {
           user_phone: string | null
         }
         Insert: {
+          attendance_confirmed?: boolean | null
+          attendance_confirmed_at?: string | null
           created_at?: string | null
           event_id: string
           id?: string
@@ -135,6 +139,8 @@ export type Database = {
           user_phone?: string | null
         }
         Update: {
+          attendance_confirmed?: boolean | null
+          attendance_confirmed_at?: string | null
           created_at?: string | null
           event_id?: string
           id?: string
