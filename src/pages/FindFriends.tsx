@@ -114,22 +114,11 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
             events!inner(
               title,
               is_live
-            ),
-            profiles!inner(
-              avatar_url,
-              notes,
-              notes_visible,
-              find_friends_visible,
-              instagram_url,
-              phone,
-              interest
             )
           `)
           .in('event_id', myEventIds)
           .eq('attendance_confirmed', true)
           .eq('events.is_live', true)
-          .eq('profiles.find_friends_visible', true)
-          .eq('profiles.notes_visible', true)
           .neq('user_id', user.id);
 
         if (error) {
@@ -138,18 +127,51 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
           return;
         }
 
-        const formattedAttendees: Attendee[] = (data || []).map((registration: any) => ({
-          id: registration.id,
-          user_id: registration.user_id,
-          name: registration.user_name,
-          avatar: registration.profiles?.avatar_url || "",
-          interest: registration.profiles?.interest || "curtição",
-          note: registration.profiles?.notes || "Participante do evento",
-          distance: `${Math.floor(Math.random() * 100) + 10}m`, // Simulated distance
-          instagram: registration.profiles?.instagram_url || "",
-          phone: registration.profiles?.phone || null,
-          event_name: registration.events?.title || "Evento"
-        }));
+        // Now fetch profile data for each user
+        const userIds = data?.map(reg => reg.user_id) || [];
+        
+        if (userIds.length === 0) {
+          setAttendees([]);
+          setLoading(false);
+          return;
+        }
+
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, avatar_url, notes, notes_visible, find_friends_visible, instagram_url, phone, interest')
+          .in('user_id', userIds)
+          .eq('find_friends_visible', true)
+          .eq('notes_visible', true);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          setLoading(false);
+          return;
+        }
+
+        // Create a map of profiles by user_id
+        const profilesMap = new Map(
+          (profilesData || []).map(p => [p.user_id, p])
+        );
+
+        // Combine registration data with profile data
+        const formattedAttendees: Attendee[] = (data || [])
+          .filter(registration => profilesMap.has(registration.user_id))
+          .map((registration: any) => {
+            const profile = profilesMap.get(registration.user_id);
+            return {
+              id: registration.id,
+              user_id: registration.user_id,
+              name: registration.user_name,
+              avatar: profile?.avatar_url || "",
+              interest: profile?.interest || "curtição",
+              note: profile?.notes || "Participante do evento",
+              distance: `${Math.floor(Math.random() * 100) + 10}m`,
+              instagram: profile?.instagram_url || "",
+              phone: profile?.phone || null,
+              event_name: registration.events?.title || "Evento"
+            };
+          });
 
         setAttendees(formattedAttendees);
       } catch (error) {
