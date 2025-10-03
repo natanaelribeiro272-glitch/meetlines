@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface Attendee {
   id: string;
@@ -28,7 +29,9 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [likedUsers, setLikedUsers] = useState<Set<string>>(new Set());
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Load user visibility preference
   useEffect(() => {
@@ -183,6 +186,82 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
 
     fetchEventAttendees();
   }, [user, isVisible]); // Reload when visibility changes
+
+  // Load liked users
+  useEffect(() => {
+    const loadLikedUsers = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('user_likes')
+        .select('to_user_id')
+        .eq('from_user_id', user.id);
+      
+      if (data && !error) {
+        setLikedUsers(new Set(data.map(like => like.to_user_id)));
+      }
+    };
+    
+    loadLikedUsers();
+  }, [user]);
+
+  const handleLike = async (userId: string) => {
+    if (!user) {
+      toast.error('Faça login para curtir perfis');
+      return;
+    }
+
+    try {
+      const isLiked = likedUsers.has(userId);
+      
+      if (isLiked) {
+        // Unlike
+        const { error } = await supabase
+          .from('user_likes')
+          .delete()
+          .eq('from_user_id', user.id)
+          .eq('to_user_id', userId);
+        
+        if (error) throw error;
+        
+        setLikedUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(userId);
+          return newSet;
+        });
+        toast.success('Curtida removida');
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('user_likes')
+          .insert({
+            from_user_id: user.id,
+            to_user_id: userId
+          });
+        
+        if (error) throw error;
+        
+        setLikedUsers(prev => new Set(prev).add(userId));
+        toast.success('Perfil curtido! A pessoa receberá uma notificação');
+      }
+    } catch (error) {
+      console.error('Error liking user:', error);
+      toast.error('Erro ao curtir perfil');
+    }
+  };
+
+  const handleMessage = (person: Attendee) => {
+    if (person.phone) {
+      // Open WhatsApp if phone is available
+      window.open(`https://wa.me/${person.phone.replace(/\D/g, '')}`, '_blank');
+    } else if (person.instagram) {
+      // Open Instagram if available
+      window.open(person.instagram, '_blank');
+    } else {
+      toast.info('Nenhum contato disponível para mensagem');
+    }
+  };
+  
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       curtição: {
@@ -310,10 +389,21 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-2">
-                  <Button variant="outline" size="sm">
-                    <Heart className="h-4 w-4" />
+                  <Button 
+                    variant={likedUsers.has(person.user_id) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleLike(person.user_id)}
+                  >
+                    <Heart 
+                      className="h-4 w-4" 
+                      fill={likedUsers.has(person.user_id) ? "currentColor" : "none"}
+                    />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleMessage(person)}
+                  >
                     <MessageCircle className="h-4 w-4" />
                   </Button>
                 </div>
