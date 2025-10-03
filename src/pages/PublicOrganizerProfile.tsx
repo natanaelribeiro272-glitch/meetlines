@@ -506,7 +506,7 @@ export default function PublicOrganizerProfile() {
       </div>
 
       {/* Profile Info - fora da área da capa */}
-      <div className="px-4 pb-6 text-center -mt-12 relative z-10">
+      <div className="px-4 pb-6 text-center -mt-16 relative z-10">
         <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
           {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
             <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
