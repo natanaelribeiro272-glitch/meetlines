@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2 } from "lucide-react";
+import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId: string }) {
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPhotos = async () => {
@@ -58,15 +60,47 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
     );
   }
 
+  const handleDownload = async (photoUrl: string, photoCaption: string) => {
+    if (!user) {
+      toast.error('Faça login para baixar fotos');
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      const response = await fetch(photoUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = photoCaption || 'foto-evento.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Foto baixada com sucesso!');
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+      toast.error('Erro ao baixar a foto');
+    }
+  };
+
   return (
     <div className="grid grid-cols-3 gap-2">
       {photos.slice(0, 6).map((photo) => (
-        <div key={photo.id} className="aspect-square bg-surface rounded-lg overflow-hidden">
+        <div key={photo.id} className="aspect-square bg-surface rounded-lg overflow-hidden relative group">
           <img 
             src={photo.photo_url} 
             alt={photo.caption || "Foto do evento"} 
-            className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+            className="w-full h-full object-cover hover:scale-105 transition-transform"
           />
+          <button
+            onClick={() => handleDownload(photo.photo_url, photo.caption)}
+            className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Baixar foto"
+          >
+            <Download className="w-4 h-4" />
+          </button>
         </div>
       ))}
       {photos.length > 6 && (
