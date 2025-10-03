@@ -468,16 +468,18 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             )}
           </div>
           
-          {/* Registration button */}
-          <Button 
-            variant="secondary" 
-            className="w-full" 
-            size="lg"
-            onClick={isOrganizer && onManageRegistrations ? onManageRegistrations : onRegister}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            {isOrganizer ? 'Ver Cadastros no Evento' : 'Fazer Cadastro no Evento'}
-          </Button>
+          {/* Registration button - only if organizer enabled registrations */}
+          {event.requires_registration && (
+            <Button 
+              variant="secondary" 
+              className="w-full" 
+              size="lg"
+              onClick={isOrganizer && onManageRegistrations ? onManageRegistrations : onRegister}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              {isOrganizer ? 'Ver Cadastros no Evento' : 'Fazer Cadastro no Evento'}
+            </Button>
+          )}
           
           {/* Find Friends button (apenas para eventos presenciais, não live) */}
           {!event.is_live && !isOrganizer && event.category?.toLowerCase() !== 'live' && (
