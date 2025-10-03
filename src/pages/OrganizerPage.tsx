@@ -292,25 +292,30 @@ export default function OrganizerPage() {
           <TabsContent value="profile" className="space-y-6">
             <div className="space-y-6">
               {/* Header */}
-              <header className="relative h-64 bg-gradient-to-b from-surface to-background rounded-lg overflow-hidden">
-                {organizerData?.cover_image_url ? (
-                  <img src={organizerData?.cover_image_url} alt="Cover" className="w-full h-full object-cover opacity-30" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+              <header className="relative h-64 bg-gradient-to-b from-surface to-background rounded-lg overflow-hidden group cursor-pointer">
+                <input type="file" accept="image/*" onChange={handleCoverImageUpload} className="hidden" id="cover-upload" />
+                <label htmlFor="cover-upload" className="absolute inset-0 cursor-pointer">
+                  {organizerData?.cover_image_url ? (
+                    <img src={organizerData?.cover_image_url} alt="Cover" className="w-full h-full object-cover opacity-30" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+                  
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {isUploadingCover ? (
+                      <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <div className="text-white text-center">
+                        <Camera className="h-12 w-12 mx-auto mb-2" />
+                        <p className="text-sm font-medium">Clique para alterar a capa</p>
+                      </div>
+                    )}
+                  </div>
+                </label>
                 
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <input type="file" accept="image/*" onChange={handleCoverImageUpload} className="hidden" id="cover-upload" />
-                  <label htmlFor="cover-upload">
-                    <Button variant="ghost" size="icon" className="bg-surface/80 backdrop-blur-sm cursor-pointer" disabled={isUploadingCover}>
-                      {isUploadingCover ? (
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Upload className="h-5 w-5" />
-                      )}
-                    </Button>
-                  </label>
+                <div className="absolute top-4 right-4 flex gap-2 z-10">
                   <Button variant="ghost" size="icon" className="bg-surface/80 backdrop-blur-sm" onClick={handleShareLink}>
                     <Share2 className="h-5 w-5" />
                   </Button>
