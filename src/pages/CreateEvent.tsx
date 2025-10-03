@@ -103,8 +103,20 @@ export default function CreateEvent({
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventData.title || !eventData.date || !eventData.time || !eventData.address) {
+    
+    // Validação condicional baseada no tipo de evento
+    if (!eventData.title || !eventData.date || !eventData.time) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+    
+    if (eventType === "presencial" && !eventData.address) {
+      toast.error('Preencha o endereço do evento');
+      return;
+    }
+    
+    if (eventType === "live" && !eventData.locationLink) {
+      toast.error('Preencha o link da transmissão');
       return;
     }
     try {
@@ -140,7 +152,7 @@ export default function CreateEvent({
         title: eventData.title,
         description: eventData.description,
         event_date: eventDateTime.toISOString(),
-        location: eventData.address,
+        location: eventType === "live" ? "Online" : eventData.address,
         location_link: eventData.locationLink || null,
         image_url: imageUrl,
         max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
@@ -279,21 +291,33 @@ export default function CreateEvent({
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Localização
+                {eventType === "live" ? "Link da Transmissão" : "Localização"}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="address">Endereço Completo</Label>
-                <Input id="address" placeholder="Rua, número, bairro, cidade..." value={eventData.address} onChange={e => handleInputChange("address", e.target.value)} required />
-              </div>
-              <div>
-                <Label htmlFor="locationLink">Link do Endereço</Label>
-                <Input id="locationLink" type="url" placeholder="https://maps.google.com/..." value={eventData.locationLink} onChange={e => handleInputChange("locationLink", e.target.value)} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Cole o link do Google Maps ou Waze
-                </p>
-              </div>
+              {eventType === "presencial" ? (
+                <>
+                  <div>
+                    <Label htmlFor="address">Endereço Completo</Label>
+                    <Input id="address" placeholder="Rua, número, bairro, cidade..." value={eventData.address} onChange={e => handleInputChange("address", e.target.value)} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="locationLink">Link do Endereço</Label>
+                    <Input id="locationLink" type="url" placeholder="https://maps.google.com/..." value={eventData.locationLink} onChange={e => handleInputChange("locationLink", e.target.value)} />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Cole o link do Google Maps ou Waze
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <Label htmlFor="locationLink">Link da Live</Label>
+                  <Input id="locationLink" type="url" placeholder="https://youtube.com/live/... ou https://twitch.tv/..." value={eventData.locationLink} onChange={e => handleInputChange("locationLink", e.target.value)} required />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cole o link da transmissão (YouTube, Twitch, etc)
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
