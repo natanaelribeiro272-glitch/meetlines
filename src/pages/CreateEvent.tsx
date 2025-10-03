@@ -113,7 +113,8 @@ export default function CreateEvent({ onBack }: CreateEventProps) {
         max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
         interests: selectedInterest ? [selectedInterest] : [],
         is_live: false,
-        status: 'upcoming'
+        status: 'upcoming',
+        requires_registration: requiresRegistration
       });
 
       onBack();

@@ -43,6 +43,7 @@ interface Event {
   interests?: string[];
   is_live: boolean;
   status: 'upcoming' | 'live' | 'completed' | 'cancelled';
+  requires_registration: boolean;
 }
 
 interface CustomLink {

@@ -113,7 +113,12 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                     </div>
                     
                     <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        disabled={!event.requires_registration}
+                      >
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Cadastros
                       </Button>

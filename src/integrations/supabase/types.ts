@@ -169,6 +169,7 @@ export type Database = {
           location: string
           max_attendees: number | null
           organizer_id: string
+          requires_registration: boolean | null
           status: string | null
           title: string
           updated_at: string | null
@@ -185,6 +186,7 @@ export type Database = {
           location: string
           max_attendees?: number | null
           organizer_id: string
+          requires_registration?: boolean | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -201,6 +203,7 @@ export type Database = {
           location?: string
           max_attendees?: number | null
           organizer_id?: string
+          requires_registration?: boolean | null
           status?: string | null
           title?: string
           updated_at?: string | null
