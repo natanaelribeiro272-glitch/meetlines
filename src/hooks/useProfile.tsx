@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 export interface ProfileData {
   id: string;
   user_id: string;
+  username: string | null;
   display_name: string | null;
   bio: string | null;
   location: string | null;

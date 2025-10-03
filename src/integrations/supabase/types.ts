@@ -473,6 +473,7 @@ export type Database = {
           twitter_url: string | null
           updated_at: string
           user_id: string
+          username: string | null
           website: string | null
           youtube_url: string | null
         }
@@ -495,6 +496,7 @@ export type Database = {
           twitter_url?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
           website?: string | null
           youtube_url?: string | null
         }
@@ -517,6 +519,7 @@ export type Database = {
           twitter_url?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
           website?: string | null
           youtube_url?: string | null
         }

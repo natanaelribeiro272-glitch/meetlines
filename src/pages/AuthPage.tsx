@@ -51,8 +51,8 @@ export default function AuthPage({
           navigate(redirectTo);
         }
       } else {
+        // Para ambos os tipos, coletar dados no onboarding antes de criar a conta
         if (userType === "organizer") {
-          // Fluxo de organizador: coletar dados no onboarding antes de criar a conta
           navigate('/organizer-onboarding', {
             state: {
               email: formData.email,
@@ -61,11 +61,14 @@ export default function AuthPage({
             }
           });
         } else {
-          const { error } = await signUp(formData.email, formData.password, formData.name, userType);
-          if (!error) {
-            const redirectTo = searchParams.get('redirect') || '/';
-            navigate(redirectTo);
-          }
+          // Fluxo de usuário: coletar dados no onboarding antes de criar a conta
+          navigate('/user-onboarding', {
+            state: {
+              email: formData.email,
+              password: formData.password,
+              name: formData.name,
+            }
+          });
         }
       }
     } finally {
