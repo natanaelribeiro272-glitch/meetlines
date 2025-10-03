@@ -473,45 +473,28 @@ export default function UserProfile({ userType }: UserProfileProps) {
               />
             </div>
 
-            {/* Notes Editor */}
-            {editingField === 'notes' ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Escreva o que você está achando dos eventos que participa..."
-                  className="min-h-[120px]"
-                  autoFocus
-                  aria-label="Editar notas públicas"
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleSaveField('notes')} disabled={saving}>
-                    Salvar
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p 
-                  className="text-sm whitespace-pre-wrap cursor-text hover:bg-muted/50 rounded px-2 py-1 transition-smooth"
-                  onClick={() => setEditingField('notes')}
-                  title="Clique para editar suas notas"
-                >
-                  {profile?.notes || 'Clique para escrever o que você está achando dos eventos que participa'}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setEditingField('notes')}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar Notas
+            {/* Notes Editor - sempre editável */}
+            <div className="space-y-2">
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Escreva o que você está achando dos eventos que participa..."
+                className="min-h-[120px]"
+                autoFocus
+                aria-label="Editar notas públicas"
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => handleSaveField('notes')} disabled={saving}>
+                  Salvar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  setFormData(prev => ({ ...prev, notes: profile?.notes || '' }));
+                  setEditingField(null);
+                }}>
+                  Cancelar
                 </Button>
               </div>
-            )}
+            </div>
           </div>
         </CardContent>
       </Card>
