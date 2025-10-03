@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -79,6 +79,13 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
     }, 100);
   };
 
+  const handleEndEvent = async (eventId: string) => {
+    await updateEvent(eventId, {
+      is_live: false,
+      status: 'completed'
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -156,9 +163,17 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                               <span className="line-clamp-1">{event.location}</span>
                             </div>
                           </div>
-                          <Badge variant="secondary" className="bg-primary/10 text-primary">
-                            {event.status === 'upcoming' ? 'Próximo' : event.status}
-                          </Badge>
+                          <div className="flex flex-col gap-1 items-end">
+                            {event.is_live && (
+                              <Badge variant="destructive" className="mb-1">
+                                <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
+                                AO VIVO
+                              </Badge>
+                            )}
+                            <Badge variant="secondary" className="bg-primary/10 text-primary">
+                              {event.status === 'upcoming' ? 'Próximo' : event.status}
+                            </Badge>
+                          </div>
                         </div>
                         
                         <div className="flex items-center gap-1 text-sm text-emerald-600 mt-2">
@@ -169,10 +184,20 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                     </div>
                     
                     <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                      {event.is_live && (
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleEndEvent(event.id)}
+                        >
+                          <StopCircle className="h-4 w-4 mr-1" />
+                          Encerrar Evento
+                        </Button>
+                      )}
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex-1"
+                        className={event.is_live ? "" : "flex-1"}
                         disabled={!event.requires_registration}
                       >
                         <Eye className="h-4 w-4 mr-1" />
@@ -311,19 +336,37 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                             <span className="line-clamp-1">{event.location}</span>
                           </div>
                         </div>
-                        <Badge variant="secondary" className={
-                          event.status === 'completed' 
-                            ? "bg-emerald-500/10 text-emerald-600"
-                            : "bg-primary/10 text-primary"
-                        }>
-                          {event.status === 'upcoming' ? 'Próximo' : 
-                           event.status === 'completed' ? 'Realizado' : event.status}
-                        </Badge>
+                        <div className="flex flex-col gap-1 items-end">
+                          {event.is_live && (
+                            <Badge variant="destructive" className="mb-1">
+                              <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
+                              AO VIVO
+                            </Badge>
+                          )}
+                          <Badge variant="secondary" className={
+                            event.status === 'completed' 
+                              ? "bg-emerald-500/10 text-emerald-600"
+                              : "bg-primary/10 text-primary"
+                          }>
+                            {event.status === 'upcoming' ? 'Próximo' : 
+                             event.status === 'completed' ? 'Realizado' : event.status}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                    {event.is_live && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleEndEvent(event.id)}
+                      >
+                        <StopCircle className="h-4 w-4 mr-1" />
+                        Encerrar Evento
+                      </Button>
+                    )}
                     <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="flex-1">
