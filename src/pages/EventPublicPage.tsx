@@ -32,29 +32,66 @@ export default function EventPublicPage() {
           return;
         }
 
-        // 1) Find organizer by slug (organizers table already has a slug column)
-        const { data: organizer, error: orgError } = await supabase
+        // Try multiple strategies to resolve organizer
+        let organizerId: string | null = null;
+        const deSlug = organizerSlug.replace(/-/g, ' ');
+
+        // 1) Exact match by organizers.slug
+        const { data: orgBySlug, error: orgError } = await supabase
           .from("organizers")
           .select("id, page_title, user_id")
           .eq("slug", organizerSlug)
           .maybeSingle();
-
         if (orgError) throw orgError;
-        if (!organizer) {
+        if (orgBySlug) {
+          organizerId = orgBySlug.id;
+        }
+
+        // 2) Match by profiles.display_name (user-friendly name used in share)
+        if (!organizerId) {
+          const { data: profileMatch, error: profileErr } = await supabase
+            .from("profiles")
+            .select("user_id, display_name")
+            .ilike("display_name", `%${deSlug}%`)
+            .maybeSingle();
+          if (profileErr && profileErr.code !== 'PGRST116') throw profileErr; // ignore no rows
+          if (profileMatch) {
+            const { data: orgByUser, error: orgByUserErr } = await supabase
+              .from("organizers")
+              .select("id, user_id")
+              .eq("user_id", profileMatch.user_id)
+              .maybeSingle();
+            if (orgByUserErr && orgByUserErr.code !== 'PGRST116') throw orgByUserErr;
+            if (orgByUser) organizerId = orgByUser.id;
+          }
+        }
+
+        // 3) Fallback: match by organizers.page_title (approximate)
+        if (!organizerId) {
+          const { data: orgByTitle, error: orgByTitleErr } = await supabase
+            .from("organizers")
+            .select("id, page_title")
+            .ilike("page_title", `%${deSlug}%`)
+            .maybeSingle();
+          if (orgByTitleErr && orgByTitleErr.code !== 'PGRST116') throw orgByTitleErr;
+          if (orgByTitle) organizerId = orgByTitle.id;
+        }
+
+        if (!organizerId) {
           setLoading(false);
           toast.error("Organizador não encontrado");
           return;
         }
 
-        // 2) Fetch this organizer's events and find by slugified title on the client
+        // Fetch this organizer's events and find by slugified title on the client (case-insensitive)
         const { data: events, error: eventsError } = await supabase
           .from("events")
           .select("id, title, organizer_id")
-          .eq("organizer_id", organizer.id);
-
+          .eq("organizer_id", organizerId);
         if (eventsError) throw eventsError;
 
-        const match = (events || []).find((ev) => slugify(ev.title) === eventSlug);
+        const targetSlug = eventSlug.toLowerCase();
+        const match = (events || []).find((ev) => slugify(ev.title) === targetSlug);
         if (!match) {
           setLoading(false);
           toast.error("Evento não encontrado");
