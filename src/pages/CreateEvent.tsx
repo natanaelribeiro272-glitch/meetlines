@@ -78,6 +78,7 @@ export default function CreateEvent({
     locationLink: "",
     maxAttendees: "",
     ticketPrice: "",
+    ticketLink: "",
     category: ""
   });
   const [eventImage, setEventImage] = useState<string | null>(null);
@@ -121,6 +122,7 @@ export default function CreateEvent({
               locationLink: data.location_link || "",
               maxAttendees: data.max_attendees?.toString() || "",
               ticketPrice: "",
+              ticketLink: "",
               category: data.category || ""
             });
             
@@ -428,9 +430,36 @@ export default function CreateEvent({
                     <DollarSign className="h-3 w-3" />
                     Preço (R$)
                   </Label>
-                  <Input id="ticketPrice" type="number" step="0.01" placeholder="50.00" value={eventData.ticketPrice} onChange={e => handleInputChange("ticketPrice", e.target.value)} />
+                  <Input 
+                    id="ticketPrice" 
+                    type="number" 
+                    step="0.01" 
+                    placeholder="0.00 (Gratuito)" 
+                    value={eventData.ticketPrice} 
+                    onChange={e => handleInputChange("ticketPrice", e.target.value)} 
+                  />
                 </div>
               </div>
+
+              {/* Link de Compra - Só aparece se o evento for pago */}
+              {eventData.ticketPrice && parseFloat(eventData.ticketPrice) > 0 && (
+                <div className="pt-2 border-t">
+                  <Label htmlFor="ticketLink" className="flex items-center gap-1">
+                    <DollarSign className="h-3 w-3" />
+                    Link de Compra do Ingresso
+                  </Label>
+                  <Input 
+                    id="ticketLink" 
+                    type="url" 
+                    placeholder="https://www.sympla.com.br/..." 
+                    value={eventData.ticketLink} 
+                    onChange={e => handleInputChange("ticketLink", e.target.value)} 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cole o link onde os participantes podem comprar o ingresso
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
