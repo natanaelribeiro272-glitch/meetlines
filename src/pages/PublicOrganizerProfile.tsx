@@ -1,30 +1,177 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useOrganizerDetails } from "@/hooks/useOrganizerDetails";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface OrganizerProfileProps {
-  onBack: () => void;
-  organizerId?: string;
-  onEventClick?: (eventId: string) => void;
+interface OrganizerData {
+  id: string;
+  user_id: string;
+  slug: string;
+  page_title: string;
+  page_subtitle?: string;
+  page_description?: string;
+  theme: string;
+  primary_color: string;
+  cover_image_url?: string;
+  avatar_url?: string;
+  show_statistics: boolean;
+  show_events: boolean;
+  show_contact: boolean;
+  whatsapp_url?: string;
+  instagram_url?: string;
+  playlist_url?: string;
+  location_url?: string;
+  website_url?: string;
+  show_whatsapp?: boolean;
+  show_instagram?: boolean;
+  show_playlist?: boolean;
+  show_location?: boolean;
+  show_website?: boolean;
+  profile?: {
+    display_name?: string;
+    avatar_url?: string;
+    bio?: string;
+  };
+  stats?: {
+    followers_count: number;
+    events_count: number;
+    average_rating: number;
+  };
 }
 
-export default function OrganizerProfile({ onBack, organizerId, onEventClick }: OrganizerProfileProps) {
+interface EventData {
+  id: string;
+  title: string;
+  description?: string;
+  image_url?: string;
+  event_date: string;
+  location: string;
+  current_attendees: number;
+  is_live: boolean;
+  likes_count?: number;
+  comments_count?: number;
+}
+
+interface CustomLink {
+  id: string;
+  title: string;
+  url: string;
+  icon?: string;
+  color: string;
+}
+
+export default function PublicOrganizerProfile() {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("eventos");
-  const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
+  const [organizer, setOrganizer] = useState<OrganizerData | null>(null);
+  const [events, setEvents] = useState<EventData[]>([]);
+  const [customLinks, setCustomLinks] = useState<CustomLink[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrganizerData = async () => {
+      if (!slug) return;
+
+      try {
+        setLoading(true);
+
+        // Buscar organizador pelo slug
+        const { data: organizerData, error: organizerError } = await supabase
+          .from('organizers')
+          .select('*')
+          .eq('slug', slug)
+          .eq('is_page_active', true)
+          .maybeSingle();
+
+        if (organizerError) throw organizerError;
+        if (!organizerData) {
+          navigate('/404');
+          return;
+        }
+
+        // Buscar perfil do usuário
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url, bio')
+          .eq('user_id', organizerData.user_id)
+          .maybeSingle();
+
+        // Buscar estatísticas
+        const { data: statsData } = await supabase
+          .from('organizer_stats')
+          .select('*')
+          .eq('organizer_id', organizerData.id)
+          .maybeSingle();
+
+        setOrganizer({
+          ...organizerData,
+          profile: profileData || undefined,
+          stats: statsData || { followers_count: 0, events_count: 0, average_rating: 0 }
+        });
+
+        // Buscar eventos públicos
+        const { data: eventsData } = await supabase
+          .from('events')
+          .select('*')
+          .eq('organizer_id', organizerData.id)
+          .eq('status', 'upcoming')
+          .order('event_date', { ascending: true });
+
+        // Buscar estatísticas dos eventos
+        const eventsWithStats = await Promise.all(
+          (eventsData || []).map(async (event) => {
+            const { count: likesCount } = await supabase
+              .from('event_likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('event_id', event.id);
+
+            const { count: commentsCount } = await supabase
+              .from('event_comments')
+              .select('*', { count: 'exact', head: true })
+              .eq('event_id', event.id);
+
+            return {
+              ...event,
+              likes_count: likesCount || 0,
+              comments_count: commentsCount || 0,
+            };
+          })
+        );
+
+        setEvents(eventsWithStats);
+
+        // Buscar links customizados
+        const { data: linksData } = await supabase
+          .from('custom_links')
+          .select('*')
+          .eq('organizer_id', organizerData.id)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        setCustomLinks(linksData || []);
+      } catch (error) {
+        console.error('Error fetching organizer:', error);
+        navigate('/404');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizerData();
+  }, [slug, navigate]);
 
   const handleShare = () => {
     if (!organizer) return;
     
-    // Gerar URL pública usando apenas o slug
     const publicUrl = `${window.location.origin}/${organizer.slug}`;
     
-    // Copiar para clipboard
     navigator.clipboard.writeText(publicUrl).then(() => {
       toast.success('Link copiado!', {
         description: 'O link da página foi copiado para a área de transferência'
@@ -34,7 +181,6 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     });
   };
 
-  // Função auxiliar para formatizar data
   const formatEventDate = (dateString: string) => {
     const date = new Date(dateString);
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -44,57 +190,41 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     return `${dayName}, ${hours}:${minutes}`;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background pb-20">
-        <div className="flex items-center gap-4 p-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
-        </div>
-        <div className="px-4 pb-6 text-center space-y-4">
-          <Skeleton className="h-24 w-24 rounded-full mx-auto" />
-          <Skeleton className="h-6 w-48 mx-auto" />
-          <Skeleton className="h-4 w-64 mx-auto" />
-          <div className="flex justify-center gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="text-center">
-                <Skeleton className="h-6 w-12 mx-auto mb-1" />
-                <Skeleton className="h-3 w-16 mx-auto" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!organizer) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Organizador não encontrado</p>
-          <Button variant="outline" onClick={onBack}>
-            Voltar
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const tabs = [
     { id: "eventos", label: "Eventos", icon: Calendar },
     { id: "links", label: "Links", icon: ExternalLink },
     { id: "fotos", label: "Fotos", icon: Camera }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="flex items-center justify-between p-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
+          <div className="w-10" />
+        </div>
+        <div className="px-4 pb-6 text-center space-y-4">
+          <Skeleton className="h-24 w-24 rounded-full mx-auto" />
+          <Skeleton className="h-6 w-48 mx-auto" />
+          <Skeleton className="h-4 w-64 mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!organizer) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="relative bg-gradient-to-b from-primary/20 to-background">
         <div className="flex items-center justify-between p-4 relative z-10">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
@@ -123,28 +253,30 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           </p>
           
           {/* Stats */}
-          <div className="flex justify-center gap-6 mb-4">
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">
-                {organizer.stats?.followers_count?.toLocaleString() || '0'}
-              </p>
-              <p className="text-sm text-muted-foreground">Seguidores</p>
+          {organizer.show_statistics && (
+            <div className="flex justify-center gap-6 mb-4">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-foreground">
+                  {organizer.stats?.followers_count?.toLocaleString() || '0'}
+                </p>
+                <p className="text-sm text-muted-foreground">Seguidores</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-foreground">
+                  {organizer.stats?.events_count || events.length}
+                </p>
+                <p className="text-sm text-muted-foreground">Eventos</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-foreground">
+                  {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
+                </p>
+                <p className="text-sm text-muted-foreground">Avaliação</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">
-                {organizer.stats?.events_count || events.length}
-              </p>
-              <p className="text-sm text-muted-foreground">Eventos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">
-                {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
-              </p>
-              <p className="text-sm text-muted-foreground">Avaliação</p>
-            </div>
-          </div>
+          )}
 
-          {/* Follow button */}
+          {/* Follow & Share buttons */}
           <div className="flex justify-center gap-3">
             <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
               Seguir
@@ -183,15 +315,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
       {/* Content */}
       <div className="px-4 max-w-md mx-auto">
         {/* Eventos Tab */}
-        {activeTab === "eventos" && (
+        {activeTab === "eventos" && organizer.show_events && (
           <div className="space-y-4">
             {events.length > 0 ? (
               events.map((event) => (
-                <Card 
-                  key={event.id} 
-                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => onEventClick?.(event.id)}
-                >
+                <Card key={event.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                   <div className="relative">
                     <img 
                       src={event.image_url || '/placeholder.svg'} 
@@ -232,28 +360,20 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
               ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">Nenhum evento criado ainda.</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Os eventos aparecerão aqui assim que forem criados.
-                </p>
+                <p className="text-muted-foreground">Nenhum evento disponível no momento.</p>
               </div>
             )}
           </div>
         )}
 
         {/* Links Tab */}
-        {activeTab === "links" && (
+        {activeTab === "links" && organizer.show_contact && (
           <div className="space-y-3">
             {/* Social Links */}
             {organizer.show_whatsapp && organizer.whatsapp_url && (
               <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.whatsapp_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.whatsapp_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500 text-white">
                       <MessageCircle className="h-5 w-5" />
                     </div>
@@ -270,12 +390,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             {organizer.show_instagram && organizer.instagram_url && (
               <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.instagram_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white">
                       <Instagram className="h-5 w-5" />
                     </div>
@@ -292,12 +407,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             {organizer.show_playlist && organizer.playlist_url && (
               <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.playlist_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.playlist_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-600 text-white">
                       <Music className="h-5 w-5" />
                     </div>
@@ -314,12 +424,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             {organizer.show_location && organizer.location_url && (
               <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.location_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.location_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500 text-white">
                       <MapPin className="h-5 w-5" />
                     </div>
@@ -336,12 +441,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             {organizer.show_website && organizer.website_url && (
               <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-600 text-white">
                       <Globe className="h-5 w-5" />
                     </div>
@@ -356,15 +456,10 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             )}
 
             {/* Custom Links */}
-            {customLinks.length > 0 && customLinks.map((link) => (
+            {customLinks.map((link) => (
               <Card key={link.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div 
                       className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
                       style={{ backgroundColor: link.color }}
@@ -385,10 +480,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             {!organizer.show_whatsapp && !organizer.show_instagram && !organizer.show_playlist && 
              !organizer.show_location && !organizer.show_website && customLinks.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">Nenhum link adicionado ainda.</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Os links aparecerão aqui quando forem adicionados.
-                </p>
+                <p className="text-muted-foreground">Nenhum link disponível.</p>
               </div>
             )}
           </div>
@@ -399,10 +491,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           <div className="text-center py-8">
             <div className="mb-4">
               <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">Nenhuma foto adicionada ainda.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                As fotos dos eventos aparecerão aqui quando forem adicionadas pelo organizador.
-              </p>
+              <p className="text-muted-foreground">Nenhuma foto disponível.</p>
             </div>
           </div>
         )}
