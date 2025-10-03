@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-
+import { getPublicBaseUrl } from "@/config/site";
 interface EventDetailsProps {
   onBack: () => void;
   eventId: string | null;
@@ -111,7 +111,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     const organizerSlug = createSlug(organizerName);
     const eventSlug = createSlug(eventName);
 
-    const eventUrl = `${window.location.origin}/${organizerSlug}/${eventSlug}`;
+    const eventUrl = `${getPublicBaseUrl()}/${organizerSlug}/${eventSlug}`;
 
     // 1) Tenta compartilhamento nativo
     try {
