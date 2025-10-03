@@ -32,7 +32,15 @@ export default function MainLayout() {
   // Verificar se organizador completou onboarding
   useEffect(() => {
     const checkOrganizerOnboarding = async () => {
-      if (!user || userRole !== "organizer" || loading) return;
+      if (!user || loading) return;
+      
+      // Aguardar userRole estar disponível
+      if (userRole === null) return;
+      
+      if (userRole !== "organizer") return;
+
+      // Aguardar um pouco para garantir que os dados foram carregados
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const { data: organizer } = await supabase
         .from("organizers")
@@ -40,7 +48,10 @@ export default function MainLayout() {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      console.log("Checking onboarding:", { organizer, userRole });
+
       if (!organizer || !organizer.username) {
+        console.log("Redirecting to onboarding...");
         // Redirecionar para onboarding
         navigate("/organizer-onboarding");
       }

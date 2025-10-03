@@ -45,7 +45,8 @@ export default function AuthPage({
           error
         } = await signIn(formData.email, formData.password);
         if (!error) {
-          // Redirect to the page they came from
+          // Login bem-sucedido - aguardar role ser carregada
+          // O MainLayout vai fazer o redirecionamento apropriado
           const redirectTo = searchParams.get('redirect') || '/';
           navigate(redirectTo);
         }
@@ -54,6 +55,9 @@ export default function AuthPage({
           error
         } = await signUp(formData.email, formData.password, formData.name, userType);
         if (!error) {
+          // Aguardar um pouco para o perfil ser criado no banco
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
           // Redirecionar organizadores para onboarding
           if (userType === "organizer") {
             navigate('/organizer-onboarding');
