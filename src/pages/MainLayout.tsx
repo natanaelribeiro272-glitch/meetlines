@@ -15,12 +15,12 @@ import OrganizersList from "./OrganizersList";
 import EventRegistration from "./EventRegistration";
 import EventRegistrations from "./EventRegistrations";
 import OrganizerEvents from "./OrganizerEvents";
-
+import EventAttendances from "./EventAttendances";
 export default function MainLayout() {
   const [activeTab, setActiveTab] = useState("home");
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventRegistrations" | "organizerEvents" | "editEvent">("feed");
+  const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventAttendances" | "eventRegistrations" | "organizerEvents" | "editEvent">("feed");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const { user, userRole, loading } = useAuth();
@@ -92,6 +92,9 @@ export default function MainLayout() {
               onManageRegistrations={() => {
                 setCurrentView("eventRegistrations");
               }}
+              onViewAttendances={() => {
+                setCurrentView("eventAttendances");
+              }}
               onFindFriends={handleFindFriends}
               onEdit={handleEditEvent}
             />;
@@ -109,8 +112,10 @@ export default function MainLayout() {
             return <EventRegistration onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           case "eventRegistrations":
             return <EventRegistrations onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
+          case "eventAttendances":
+            return <EventAttendances onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           default:
-        return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
+          return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
         }
       case "create":
         // Only organizers can create events

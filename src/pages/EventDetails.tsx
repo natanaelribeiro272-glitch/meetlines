@@ -17,9 +17,10 @@ interface EventDetailsProps {
   onFindFriends?: () => void;
   onEdit?: (eventId: string) => void;
   onManageRegistrations?: () => void;
+  onViewAttendances?: () => void;
 }
 
-export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit, onManageRegistrations }: EventDetailsProps) {
+export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit, onManageRegistrations, onViewAttendances }: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -337,7 +338,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
               variant="glow" 
               className="flex-1" 
               size="lg" 
-              onClick={isOrganizer && onManageRegistrations ? onManageRegistrations : handleConfirmPresence}
+              onClick={isOrganizer && onViewAttendances ? onViewAttendances : handleConfirmPresence}
             >
               {isOrganizer ? 'Ver Presenças Confirmadas' : 'Confirmar Presença'}
             </Button>
