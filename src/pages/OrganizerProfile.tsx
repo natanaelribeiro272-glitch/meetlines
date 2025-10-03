@@ -268,7 +268,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
-        className="relative min-h-[320px] overflow-hidden"
+        className="relative min-h-[380px] overflow-hidden"
         style={{
           backgroundImage: organizer.cover_image_url 
             ? `url(${organizer.cover_image_url})`
@@ -277,11 +277,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           backgroundPosition: 'center',
         }}
       >
-        {/* Overlay gradiente de baixo para cima */}
+        {/* Overlay gradiente de baixo para cima - mais suave e extendido */}
         <div 
           className="absolute inset-0 z-0"
           style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 30%, transparent 60%)'
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, rgba(0,0,0,0.9) 15%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)'
           }}
         />
         
@@ -391,8 +391,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="px-4 mb-6">
+      {/* Tabs - com margem negativa para sobrepor o degradê */}
+      <div className="px-4 mb-6 -mt-8 relative z-10">
         <div className="flex gap-2 justify-center">
           {tabs.map((tab) => {
             const Icon = tab.icon;
