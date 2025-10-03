@@ -277,11 +277,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           backgroundPosition: 'center',
         }}
       >
-        {/* Overlay gradiente de baixo para cima - mais suave e extendido */}
+        {/* Overlay gradiente de baixo para cima usando a cor do sistema */}
         <div 
           className="absolute inset-0 z-0"
           style={{
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, rgba(0,0,0,0.9) 15%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)'
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 10%, hsl(var(--background) / 0.7) 30%, hsl(var(--background) / 0.3) 60%, transparent 100%)'
           }}
         />
         
@@ -391,8 +391,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         </div>
       </div>
 
-      {/* Tabs - com margem negativa para sobrepor o degradê */}
-      <div className="px-4 mb-6 -mt-8 relative z-10">
+      {/* Tabs */}
+      <div className="px-4 mb-6 -mt-4">
         <div className="flex gap-2 justify-center">
           {tabs.map((tab) => {
             const Icon = tab.icon;
