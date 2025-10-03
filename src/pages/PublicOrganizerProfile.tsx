@@ -156,10 +156,30 @@ export default function PublicOrganizerProfile() {
   const [activeTab, setActiveTab] = useState("eventos");
   const [organizer, setOrganizer] = useState<OrganizerData | null>(null);
   const [events, setEvents] = useState<EventData[]>([]);
+  const [allEvents, setAllEvents] = useState<EventData[]>([]);
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  // Buscar todos os eventos quando está na aba fotos
+  useEffect(() => {
+    const fetchAllEvents = async () => {
+      if (!organizer) return;
+      
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('*')
+        .eq('organizer_id', organizer.id)
+        .order('event_date', { ascending: false });
+      
+      setAllEvents(eventsData || []);
+    };
+    
+    if (activeTab === 'fotos' && organizer) {
+      fetchAllEvents();
+    }
+  }, [activeTab, organizer]);
 
   useEffect(() => {
     const fetchOrganizerData = async () => {
@@ -696,32 +716,28 @@ export default function PublicOrganizerProfile() {
         {/* Fotos Tab */}
         {activeTab === "fotos" && (
           <div className="space-y-6">
-            {events.length === 0 ? (
+            {allEvents.length === 0 ? (
               <div className="text-center py-8">
                 <div className="mb-4">
                   <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">O organizador ainda não adicionou fotos.</p>
+                  <p className="text-muted-foreground">Nenhuma foto adicionada ainda.</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    As fotos dos eventos aparecerão aqui quando forem adicionadas pelo organizador.
+                  </p>
                 </div>
               </div>
             ) : (
-              <>
-                {console.log('Renderizando eventos na aba fotos:', events)}
-                {console.log('Organizer ID:', organizer.id)}
-                {events.map((event) => {
-                  console.log('Renderizando evento:', event.id, event.title);
-                  return (
-                    <div key={event.id} className="space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-foreground">{event.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(event.event_date).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <EventPhotoGrid eventId={event.id} organizerId={organizer.id} />
-                    </div>
-                  );
-                })}
-              </>
+              allEvents.map((event) => (
+                <div key={event.id} className="space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{event.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(event.event_date).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <EventPhotoGrid eventId={event.id} organizerId={organizer.id} />
+                </div>
+              ))
             )}
           </div>
         )}

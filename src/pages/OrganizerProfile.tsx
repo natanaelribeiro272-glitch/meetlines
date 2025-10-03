@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useOrganizerDetails } from "@/hooks/useOrganizerDetails";
+import { useOrganizerDetails, OrganizerEvent } from "@/hooks/useOrganizerDetails";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
@@ -93,10 +93,30 @@ interface OrganizerProfileProps {
 
 export default function OrganizerProfile({ onBack, organizerId, onEventClick }: OrganizerProfileProps) {
   const [activeTab, setActiveTab] = useState("eventos");
+  const [allEvents, setAllEvents] = useState<OrganizerEvent[]>([]);
   const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Buscar todos os eventos para a aba de fotos
+  useEffect(() => {
+    const fetchAllEvents = async () => {
+      if (!organizerId) return;
+      
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('*')
+        .eq('organizer_id', organizerId)
+        .order('event_date', { ascending: false });
+      
+      setAllEvents(eventsData || []);
+    };
+    
+    if (activeTab === 'fotos') {
+      fetchAllEvents();
+    }
+  }, [organizerId, activeTab]);
 
   const handleShare = () => {
     if (!organizer) return;
@@ -493,7 +513,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         {/* Fotos Tab */}
         {activeTab === "fotos" && (
           <div className="space-y-6">
-            {events.length === 0 ? (
+            {allEvents.length === 0 ? (
               <div className="text-center py-8">
                 <div className="mb-4">
                   <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
@@ -501,7 +521,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                 </div>
               </div>
             ) : (
-              events.map((event) => (
+              allEvents.map((event) => (
                 <div key={event.id} className="space-y-3">
                   <div>
                     <h3 className="font-semibold text-foreground">{event.title}</h3>
