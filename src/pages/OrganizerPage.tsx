@@ -328,8 +328,120 @@ export default function OrganizerPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Social Links Section */}
+                <div className="space-y-4 bg-card rounded-lg p-4">
+                  <h3 className="font-semibold text-foreground">Links Sociais</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="whatsapp" className="flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          WhatsApp
+                        </Label>
+                        <Switch 
+                          checked={organizerData?.show_whatsapp}
+                          onCheckedChange={async (checked) => {
+                            await updateOrganizerProfile({ show_whatsapp: checked });
+                          }}
+                        />
+                      </div>
+                      <Input 
+                        id="whatsapp"
+                        placeholder="https://wa.me/..."
+                        value={organizerData?.whatsapp_url || ""}
+                        onChange={(e) => updateOrganizerProfile({ whatsapp_url: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="instagram" className="flex items-center gap-2">
+                          <Instagram className="h-4 w-4" />
+                          Instagram
+                        </Label>
+                        <Switch 
+                          checked={organizerData?.show_instagram}
+                          onCheckedChange={async (checked) => {
+                            await updateOrganizerProfile({ show_instagram: checked });
+                          }}
+                        />
+                      </div>
+                      <Input 
+                        id="instagram"
+                        placeholder="https://instagram.com/..."
+                        value={organizerData?.instagram_url || ""}
+                        onChange={(e) => updateOrganizerProfile({ instagram_url: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="playlist" className="flex items-center gap-2">
+                          <Music className="h-4 w-4" />
+                          Playlist
+                        </Label>
+                        <Switch 
+                          checked={organizerData?.show_playlist}
+                          onCheckedChange={async (checked) => {
+                            await updateOrganizerProfile({ show_playlist: checked });
+                          }}
+                        />
+                      </div>
+                      <Input 
+                        id="playlist"
+                        placeholder="https://open.spotify.com/..."
+                        value={organizerData?.playlist_url || ""}
+                        onChange={(e) => updateOrganizerProfile({ playlist_url: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="location" className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Localização
+                        </Label>
+                        <Switch 
+                          checked={organizerData?.show_location}
+                          onCheckedChange={async (checked) => {
+                            await updateOrganizerProfile({ show_location: checked });
+                          }}
+                        />
+                      </div>
+                      <Input 
+                        id="location"
+                        placeholder="https://maps.google.com/..."
+                        value={organizerData?.location_url || ""}
+                        onChange={(e) => updateOrganizerProfile({ location_url: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="website" className="flex items-center gap-2">
+                          <Globe className="h-4 w-4" />
+                          Website
+                        </Label>
+                        <Switch 
+                          checked={organizerData?.show_website}
+                          onCheckedChange={async (checked) => {
+                            await updateOrganizerProfile({ show_website: checked });
+                          }}
+                        />
+                      </div>
+                      <Input 
+                        id="website"
+                        placeholder="https://seusite.com"
+                        value={organizerData?.website_url || ""}
+                        onChange={(e) => updateOrganizerProfile({ website_url: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                </div>
               </div>
-            </div>
           </TabsContent>
 
           <TabsContent value="events" className="space-y-6">
