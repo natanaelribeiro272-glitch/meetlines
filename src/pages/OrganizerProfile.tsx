@@ -268,21 +268,21 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
-        className="relative bg-gradient-to-b from-primary/20 to-background"
+        className="relative min-h-[320px]"
         style={{
           backgroundImage: organizer.cover_image_url 
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${organizer.cover_image_url})`
-            : undefined,
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${organizer.cover_image_url})`
+            : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
         <div className="flex items-center justify-between p-4 relative z-10">
-          <Button variant="ghost" size="icon" onClick={onBack} className="bg-black/30 hover:bg-black/50 text-white">
+          <Button variant="ghost" size="icon" onClick={onBack} className={organizer.cover_image_url ? "bg-black/30 hover:bg-black/50 text-white" : ""}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold text-white">Organizador</h1>
-          <Button variant="ghost" size="icon" onClick={handleShare} className="bg-black/30 hover:bg-black/50 text-white">
+          <h1 className={`text-lg font-semibold ${organizer.cover_image_url ? 'text-white' : 'text-white'}`}>Organizador</h1>
+          <Button variant="ghost" size="icon" onClick={handleShare} className={organizer.cover_image_url ? "bg-black/30 hover:bg-black/50 text-white" : ""}>
             <Share2 className="h-5 w-5" />
           </Button>
         </div>
@@ -315,7 +315,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
 
         {/* Profile Header */}
         <div className="px-4 pb-6 text-center">
-          <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
+          <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white/20 shadow-lg">
             {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
               <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
             ) : (
@@ -325,39 +325,39 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             )}
           </Avatar>
           
-          <h2 className="text-2xl font-bold text-foreground mb-2">
+          <h2 className="text-2xl font-bold text-white mb-2">
             {organizer.profile?.display_name || organizer.page_title}
           </h2>
-          <p className="text-muted-foreground max-w-sm mx-auto mb-4">
+          <p className="text-white/80 max-w-sm mx-auto mb-4">
             {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
           </p>
           
           {/* Stats */}
           <div className="flex justify-center gap-6 mb-4">
             <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">
+              <p className="text-lg font-semibold text-white">
                 {organizer.stats?.followers_count?.toLocaleString() || '0'}
               </p>
-              <p className="text-sm text-muted-foreground">Seguidores</p>
+              <p className="text-sm text-white/70">Seguidores</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">
+              <p className="text-lg font-semibold text-white">
                 {organizer.stats?.events_count || events.length}
               </p>
-              <p className="text-sm text-muted-foreground">Eventos</p>
+              <p className="text-sm text-white/70">Eventos</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">
+              <p className="text-lg font-semibold text-white">
                 {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
               </p>
-              <p className="text-sm text-muted-foreground">Avaliação</p>
+              <p className="text-sm text-white/70">Avaliação</p>
             </div>
           </div>
 
           {/* Follow button */}
           {!user || (organizer.user_id !== user.id) ? (
             <div className="flex justify-center gap-3">
-              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={() => {
+              <Button variant="glow" size="lg" className="flex-1 max-w-[200px] bg-white text-primary hover:bg-white/90" onClick={() => {
                 if (!user) {
                   const currentPath = location.pathname;
                   navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
@@ -367,14 +367,14 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
               }}>
                 Seguir
               </Button>
-              <Button variant="outline" size="lg" onClick={handleShare}>
+              <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 Compartilhar
               </Button>
             </div>
           ) : (
             <div className="flex justify-center">
-              <Button variant="outline" size="lg" onClick={handleShare}>
+              <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 Compartilhar minha página
               </Button>
