@@ -120,23 +120,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Try global sign out; if session is missing, fall back to local token clear
-      const { error } = await supabase.auth.signOut();
-      if (error && (error as any).message && !(error as any).message.toLowerCase().includes('session')) {
-        toast.error(error.message);
-      } else {
-        toast.success('Logout realizado com sucesso!');
-      }
-    } catch (error: any) {
-      // Ignore server errors; ensure local state is cleared
-      toast.error('Erro ao fazer logout');
-    } finally {
-      // Ensure UI updates even if server returns session_not_found
+      // Clear all sessions globally
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Force clear local state
       setSession(null);
       setUser(null);
       setUserRole(null);
-      // Force redirect to auth
-      window.location.href = '/auth';
+      
+      toast.success('Logout realizado com sucesso!');
+      
+      // Force redirect to auth after a brief delay to ensure state is cleared
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+    } catch (error: any) {
+      // Force clear local state even on error
+      setSession(null);
+      setUser(null);
+      setUserRole(null);
+      
+      console.error('Logout error:', error);
+      
+      // Still redirect to auth
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
     }
   };
   return (
