@@ -425,11 +425,14 @@ export type Database = {
           instagram_url: string | null
           is_page_active: boolean | null
           location_url: string | null
+          notify_event_reminders: boolean | null
+          notify_new_registrations: boolean | null
           page_description: string | null
           page_subtitle: string | null
           page_title: string
           playlist_url: string | null
           primary_color: string | null
+          public_page_visible: boolean | null
           show_contact: boolean | null
           show_events: boolean | null
           show_instagram: boolean | null
@@ -453,11 +456,14 @@ export type Database = {
           instagram_url?: string | null
           is_page_active?: boolean | null
           location_url?: string | null
+          notify_event_reminders?: boolean | null
+          notify_new_registrations?: boolean | null
           page_description?: string | null
           page_subtitle?: string | null
           page_title: string
           playlist_url?: string | null
           primary_color?: string | null
+          public_page_visible?: boolean | null
           show_contact?: boolean | null
           show_events?: boolean | null
           show_instagram?: boolean | null
@@ -481,11 +487,14 @@ export type Database = {
           instagram_url?: string | null
           is_page_active?: boolean | null
           location_url?: string | null
+          notify_event_reminders?: boolean | null
+          notify_new_registrations?: boolean | null
           page_description?: string | null
           page_subtitle?: string | null
           page_title?: string
           playlist_url?: string | null
           primary_color?: string | null
+          public_page_visible?: boolean | null
           show_contact?: boolean | null
           show_events?: boolean | null
           show_instagram?: boolean | null
