@@ -16,9 +16,10 @@ import event2 from "@/assets/event-2.jpg";
 
 interface OrganizerEventsListProps {
   onCreateEvent: () => void;
+  onManageRegistrations?: (eventId: string) => void;
 }
 
-export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsListProps) {
+export default function OrganizerEventsList({ onCreateEvent, onManageRegistrations }: OrganizerEventsListProps) {
   const { events, loading, updateEvent, deleteEvent } = useOrganizer();
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
@@ -199,6 +200,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                         size="sm" 
                         className={event.is_live ? "" : "flex-1"}
                         disabled={!event.requires_registration}
+                        onClick={() => onManageRegistrations?.(event.id)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Cadastros

@@ -17,10 +17,13 @@ import { toast } from "sonner";
 import OrganizerEventsList from "@/components/OrganizerEventsList";
 import OrganizerSettings from "@/components/OrganizerSettings";
 import CreateEvent from "@/pages/CreateEvent";
+import EventRegistrations from "@/pages/EventRegistrations";
 
 export default function OrganizerPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [showRegistrations, setShowRegistrations] = useState(false);
+  const [selectedEventIdForRegistrations, setSelectedEventIdForRegistrations] = useState<string | null>(null);
   const [showAddPhotos, setShowAddPhotos] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -237,6 +240,10 @@ export default function OrganizerPage() {
 
   if (showCreateEvent) {
     return <CreateEvent onBack={() => setShowCreateEvent(false)} />;
+  }
+
+  if (showRegistrations) {
+    return <EventRegistrations onBack={() => setShowRegistrations(false)} eventId={selectedEventIdForRegistrations || undefined} />;
   }
 
   // Profile tab content
@@ -629,7 +636,13 @@ export default function OrganizerPage() {
           </TabsContent>
 
           <TabsContent value="events" className="space-y-6">
-            <OrganizerEventsList onCreateEvent={() => setShowCreateEvent(true)} />
+            <OrganizerEventsList 
+              onCreateEvent={() => setShowCreateEvent(true)} 
+              onManageRegistrations={(eventId) => {
+                setSelectedEventIdForRegistrations(eventId);
+                setShowRegistrations(true);
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="photos" className="space-y-6 p-4">
