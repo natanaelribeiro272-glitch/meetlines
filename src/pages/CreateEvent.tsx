@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, Heart, Eye } from "lucide-react";
+import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, Heart, Eye, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import FormBuilder, { FormField } from "@/components/FormBuilder";
+import RegistrationFormDialog from "@/components/RegistrationFormDialog";
+import { FormField } from "@/components/FormFieldsConfig";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,6 +84,7 @@ export default function CreateEvent({
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
   const [requiresRegistration, setRequiresRegistration] = useState(false);
   const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedInterest, setSelectedInterest] = useState<string>("");
   const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
@@ -240,7 +242,8 @@ export default function CreateEvent({
           is_live: eventType === "live",
           status: 'upcoming',
           requires_registration: requiresRegistration,
-          category: eventData.category || null
+          category: eventData.category || null,
+          form_fields: requiresRegistration ? formFields : []
         });
         toast.success('Evento criado com sucesso!');
       }
@@ -450,11 +453,26 @@ export default function CreateEvent({
                 <Switch checked={requiresRegistration} onCheckedChange={setRequiresRegistration} />
               </div>
 
-              {requiresRegistration && <div className="mt-4">
-                  <FormBuilder fields={formFields} onChange={setFormFields} />
-                </div>}
+              {requiresRegistration && (
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setFormDialogOpen(true)}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurar Campos do Formulário {formFields.length > 0 && `(${formFields.length} campos)`}
+                </Button>
+              )}
             </CardContent>
           </Card>
+
+          <RegistrationFormDialog
+            open={formDialogOpen}
+            onOpenChange={setFormDialogOpen}
+            fields={formFields}
+            onSave={setFormFields}
+          />
 
           {/* Botões de Ação */}
           <div className="space-y-3">

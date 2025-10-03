@@ -15,11 +15,13 @@ interface Registration {
   user_phone?: string;
   status: string;
   created_at: string;
+  registration_data?: any;
   event: {
     id: string;
     title: string;
     event_date: string;
     location: string;
+    form_fields?: any[];
   };
 }
 
@@ -51,11 +53,13 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
             user_phone,
             status,
             created_at,
+            registration_data,
             event:events!inner(
               id,
               title,
               event_date,
               location,
+              form_fields,
               organizer:organizers!inner(
                 user_id
               )
@@ -76,7 +80,14 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
           return;
         }
 
-        setRegistrations(data || []);
+        setRegistrations(data?.map(reg => ({
+          ...reg,
+          registration_data: (reg.registration_data as any) || {},
+          event: {
+            ...reg.event,
+            form_fields: (reg.event.form_fields as any) || []
+          }
+        })) || []);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Erro ao carregar cadastros');
@@ -201,6 +212,19 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
                       <Users className="h-3 w-3" />
                       Cadastrado em: {new Date(registration.created_at).toLocaleDateString('pt-BR')}
                     </div>
+
+                    {/* Custom Form Data */}
+                    {registration.registration_data && Object.keys(registration.registration_data).length > 0 && (
+                      <div className="mt-3 pt-3 border-t space-y-2">
+                        <p className="text-xs font-semibold text-foreground">Dados Personalizados:</p>
+                        {Object.entries(registration.registration_data).map(([key, value]) => (
+                          <div key={key} className="text-xs">
+                            <span className="font-medium text-foreground">{key}:</span>{' '}
+                            <span className="text-muted-foreground">{String(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

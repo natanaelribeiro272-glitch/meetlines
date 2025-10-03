@@ -30,6 +30,9 @@ interface OrganizerData {
   show_playlist?: boolean;
   show_location?: boolean;
   show_website?: boolean;
+  notify_new_registrations?: boolean;
+  notify_event_reminders?: boolean;
+  public_page_visible?: boolean;
 }
 
 interface Event {
@@ -47,6 +50,7 @@ interface Event {
   status: 'upcoming' | 'live' | 'completed' | 'cancelled';
   requires_registration: boolean;
   category?: string;
+  form_fields?: any[];
 }
 
 interface CustomLink {
@@ -107,7 +111,8 @@ export function useOrganizer() {
 
       setEvents(eventsData?.map(event => ({
         ...event,
-        status: event.status as 'upcoming' | 'live' | 'completed' | 'cancelled'
+        status: event.status as 'upcoming' | 'live' | 'completed' | 'cancelled',
+        form_fields: (event.form_fields as any) || []
       })) || []);
 
       // Fetch custom links
@@ -165,7 +170,8 @@ export function useOrganizer() {
 
       setEvents(prev => [...prev, {
         ...data,
-        status: data.status as 'upcoming' | 'live' | 'completed' | 'cancelled'
+        status: data.status as 'upcoming' | 'live' | 'completed' | 'cancelled',
+        form_fields: (data.form_fields as any) || []
       }]);
       toast.success('Evento criado com sucesso!');
       return data;
