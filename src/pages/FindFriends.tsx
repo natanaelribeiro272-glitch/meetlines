@@ -1,68 +1,154 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Heart, Users, MessageCircle, Instagram, Phone, Eye } from "lucide-react";
+import { ArrowLeft, Heart, Users, MessageCircle, Instagram, Phone, Eye, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+
 interface Attendee {
   id: string;
+  user_id: string;
   name: string;
   avatar: string;
-  status: string;
+  interest: string;
   note: string;
   distance: string;
   instagram: string;
-  hasPhone: boolean;
+  phone: string | null;
+  event_name: string;
 }
+
 interface FindFriendsProps {
   onBack: () => void;
 }
-export default function FindFriends({
-  onBack
-}: FindFriendsProps) {
+
+export default function FindFriends({ onBack }: FindFriendsProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+
+  // Load user visibility preference
+  useEffect(() => {
+    const loadVisibility = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('find_friends_visible')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data && !error) {
+        setIsVisible(data.find_friends_visible ?? false);
+      }
+    };
+    
+    loadVisibility();
+  }, [user]);
+
+  // Toggle visibility and save to database
+  const toggleVisibility = async () => {
+    if (!user) {
+      toast.error('Faça login para usar esta funcionalidade');
+      return;
+    }
+
+    const newVisibility = !isVisible;
+    setIsVisible(newVisibility);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ find_friends_visible: newVisibility })
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error updating visibility:', error);
+      toast.error('Erro ao atualizar visibilidade');
+      setIsVisible(!newVisibility); // Revert on error
+    } else {
+      toast.success(newVisibility ? 'Você está visível para outros' : 'Você está invisível');
+    }
+  };
+
   useEffect(() => {
     const fetchEventAttendees = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Get registrations for live events with profile data
-        const {
-          data,
-          error
-        } = await supabase.from('event_registrations').select(`
+        // First, get events where current user registered
+        const { data: myRegistrations, error: myRegError } = await supabase
+          .from('event_registrations')
+          .select('event_id, events!inner(is_live)')
+          .eq('user_id', user.id)
+          .eq('events.is_live', true);
+
+        if (myRegError) {
+          console.error('Error fetching my registrations:', myRegError);
+          setLoading(false);
+          return;
+        }
+
+        if (!myRegistrations || myRegistrations.length === 0) {
+          setAttendees([]);
+          setLoading(false);
+          return;
+        }
+
+        const myEventIds = myRegistrations.map(reg => reg.event_id);
+
+        // Get other users registered in the same live events who are visible
+        const { data, error } = await supabase
+          .from('event_registrations')
+          .select(`
             id,
+            user_id,
             user_name,
             event_id,
+            events!inner(
+              title,
+              is_live
+            ),
             profiles!inner(
               avatar_url,
               notes,
-              instagram_url
-            ),
-            events!inner(
-              is_live
+              notes_visible,
+              find_friends_visible,
+              instagram_url,
+              phone,
+              interest
             )
-          `).eq('events.is_live', true).neq('user_id', user.id); // Exclude current user
+          `)
+          .in('event_id', myEventIds)
+          .eq('events.is_live', true)
+          .eq('profiles.find_friends_visible', true)
+          .eq('profiles.notes_visible', true)
+          .neq('user_id', user.id);
 
         if (error) {
           console.error('Error fetching attendees:', error);
+          setLoading(false);
           return;
         }
-        const formattedAttendees: Attendee[] = (data || []).map((registration: any, index: number) => ({
+
+        const formattedAttendees: Attendee[] = (data || []).map((registration: any) => ({
           id: registration.id,
+          user_id: registration.user_id,
           name: registration.user_name,
           avatar: registration.profiles?.avatar_url || "",
-          status: ["curtição", "amizade", "network"][index % 3],
+          interest: registration.profiles?.interest || "curtição",
           note: registration.profiles?.notes || "Participante do evento",
-          distance: `${Math.floor(Math.random() * 100) + 10}m`,
+          distance: `${Math.floor(Math.random() * 100) + 10}m`, // Simulated distance
           instagram: registration.profiles?.instagram_url || "",
-          hasPhone: Math.random() > 0.5
+          phone: registration.profiles?.phone || null,
+          event_name: registration.events?.title || "Evento"
         }));
+
         setAttendees(formattedAttendees);
       } catch (error) {
         console.error('Error:', error);
@@ -70,8 +156,9 @@ export default function FindFriends({
         setLoading(false);
       }
     };
+
     fetchEventAttendees();
-  }, [user]);
+  }, [user, isVisible]); // Reload when visibility changes
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       curtição: {
@@ -109,7 +196,7 @@ export default function FindFriends({
             
           </div>
           <div className="flex items-center gap-2">
-            <Button variant={isVisible ? "glow" : "outline"} size="sm" onClick={() => setIsVisible(!isVisible)}>
+            <Button variant={isVisible ? "glow" : "outline"} size="sm" onClick={toggleVisibility}>
               <Eye className="h-4 w-4 mr-1" />
               {isVisible ? "Visível" : "Ser Visto"}
             </Button>
@@ -158,23 +245,42 @@ export default function FindFriends({
                     <span className="text-xs text-muted-foreground">• {person.distance}</span>
                   </div>
                   
-                  {getStatusBadge(person.status)}
+                  {getStatusBadge(person.interest)}
                   
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                     {person.note}
                   </p>
+
+                  <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3" />
+                    <span>{person.event_name}</span>
+                  </div>
                   
                   {/* Social Links */}
                   <div className="flex items-center gap-3 mt-3">
-                    <button className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth">
-                      <Instagram className="h-4 w-4" />
-                      <span>{person.instagram}</span>
-                    </button>
+                    {person.instagram && (
+                      <a 
+                        href={person.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth"
+                      >
+                        <Instagram className="h-4 w-4" />
+                        <span>Instagram</span>
+                      </a>
+                    )}
                     
-                    {person.hasPhone && <button className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth">
+                    {person.phone && (
+                      <a 
+                        href={`https://wa.me/${person.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth"
+                      >
                         <Phone className="h-4 w-4" />
                         <span>WhatsApp</span>
-                      </button>}
+                      </a>
+                    )}
                   </div>
                 </div>
 

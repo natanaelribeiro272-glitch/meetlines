@@ -505,6 +505,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           facebook_url: string | null
+          find_friends_visible: boolean | null
           id: string
           instagram_url: string | null
           interest: Database["public"]["Enums"]["user_interest"] | null
@@ -529,6 +530,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           facebook_url?: string | null
+          find_friends_visible?: boolean | null
           id?: string
           instagram_url?: string | null
           interest?: Database["public"]["Enums"]["user_interest"] | null
@@ -553,6 +555,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           facebook_url?: string | null
+          find_friends_visible?: boolean | null
           id?: string
           instagram_url?: string | null
           interest?: Database["public"]["Enums"]["user_interest"] | null
