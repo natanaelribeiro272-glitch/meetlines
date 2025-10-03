@@ -70,6 +70,7 @@ export default function CreateEvent({
     time: "",
     location: "",
     address: "",
+    locationLink: "",
     maxAttendees: "",
     ticketPrice: "",
     category: ""
@@ -102,7 +103,7 @@ export default function CreateEvent({
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventData.title || !eventData.date || !eventData.time || !eventData.location) {
+    if (!eventData.title || !eventData.date || !eventData.time || !eventData.address) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -139,7 +140,7 @@ export default function CreateEvent({
         title: eventData.title,
         description: eventData.description,
         event_date: eventDateTime.toISOString(),
-        location: eventData.location,
+        location: eventData.address,
         image_url: imageUrl,
         max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
         interests: selectedInterest ? [selectedInterest] : [],
@@ -282,12 +283,15 @@ export default function CreateEvent({
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="location">Nome do Local</Label>
-                <Input id="location" placeholder="Ex: Club Disco, Warehouse District..." value={eventData.location} onChange={e => handleInputChange("location", e.target.value)} required />
-              </div>
-              <div>
                 <Label htmlFor="address">Endereço Completo</Label>
                 <Input id="address" placeholder="Rua, número, bairro, cidade..." value={eventData.address} onChange={e => handleInputChange("address", e.target.value)} required />
+              </div>
+              <div>
+                <Label htmlFor="locationLink">Link do Endereço</Label>
+                <Input id="locationLink" type="url" placeholder="https://maps.google.com/..." value={eventData.locationLink} onChange={e => handleInputChange("locationLink", e.target.value)} />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cole o link do Google Maps ou Waze
+                </p>
               </div>
             </CardContent>
           </Card>
