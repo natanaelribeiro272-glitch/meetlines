@@ -225,7 +225,7 @@ export default function AuthPage({
         {/* Footer */}
         <div className="text-center pt-6 pb-4">
           <p className="text-xs text-muted-foreground">
-            Esse site foi desenvolvido pela Flat Company
+            Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
           </p>
         </div>
       </div>

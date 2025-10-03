@@ -781,7 +781,7 @@ export default function OrganizerPage() {
       {/* Footer */}
       <footer className="mt-8 pb-6 text-center border-t border-border pt-6">
         <p className="text-xs text-muted-foreground">
-          Esse site foi desenvolvido pela Flat Company
+          Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
         </p>
       </footer>
     </div>
