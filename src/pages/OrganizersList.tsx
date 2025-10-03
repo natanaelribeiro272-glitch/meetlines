@@ -116,7 +116,7 @@ export default function OrganizersList({
               <div className="flex items-start gap-3">
                 <div className="avatar-story">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={organizer.profile?.avatar_url} />
+                    <AvatarImage src={organizer.profile?.avatar_url || organizer.avatar_url} />
                     <AvatarFallback className="bg-surface text-lg font-bold">
                       {organizer.page_title.charAt(0)}
                     </AvatarFallback>
