@@ -152,6 +152,17 @@ export default function OrganizerOnboarding() {
         return;
       }
 
+      // Limpar possíveis registros antigos (caso o usuário tenha sido deletado e recriado)
+      await supabase
+        .from('organizers')
+        .delete()
+        .eq('user_id', user.id);
+      
+      await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', user.id);
+
       // 3) Upload do avatar (se houver)
       let uploadedAvatarUrl: string | undefined;
       if (avatarFile) {
@@ -168,15 +179,16 @@ export default function OrganizerOnboarding() {
         }
       }
 
-      // 4) Atualizar perfil do usuário (profiles)
+      // 4) Criar perfil do usuário (profiles)
       await supabase
         .from('profiles')
-        .update({
+        .insert({
+          user_id: user.id,
           display_name: displayName,
           avatar_url: uploadedAvatarUrl,
-          bio: bio
-        })
-        .eq('user_id', user.id);
+          bio: bio,
+          role: 'organizer'
+        });
 
       // 5) Criar organizer
       const { data: organizer, error: organizerError } = await supabase
