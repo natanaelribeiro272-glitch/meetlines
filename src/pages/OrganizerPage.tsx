@@ -24,6 +24,11 @@ export default function OrganizerPage() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [sessionName, setSessionName] = useState("");
+  const [stats, setStats] = useState({
+    followers_count: 0,
+    events_count: 0,
+    page_views: 0
+  });
   const photoInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profileForm, setProfileForm] = useState({
@@ -58,6 +63,31 @@ export default function OrganizerPage() {
 
   useEffect(() => {
     if (organizerData) {
+      // Buscar estatísticas reais do organizador
+      const fetchStats = async () => {
+        const { data: statsData } = await supabase
+          .from('organizer_stats')
+          .select('*')
+          .eq('organizer_id', organizerData.id)
+          .maybeSingle();
+
+        if (statsData) {
+          setStats({
+            followers_count: statsData.followers_count || 0,
+            events_count: events.length, // Usar o número real de eventos
+            page_views: 0 // Por enquanto 0, pode ser implementado com analytics
+          });
+        } else {
+          // Se não houver stats, usar valores padrão
+          setStats({
+            followers_count: 0,
+            events_count: events.length,
+            page_views: 0
+          });
+        }
+      };
+      
+      fetchStats();
       setPageSettings({
         title: organizerData.page_title || "",
         subtitle: organizerData.page_subtitle || "",
@@ -72,7 +102,7 @@ export default function OrganizerPage() {
         description: organizerData.page_description || ""
       });
     }
-  }, [organizerData]);
+  }, [organizerData, events]);
 
   if (loading) {
     return (
@@ -88,9 +118,9 @@ export default function OrganizerPage() {
   const organizer = {
     name: organizerData?.page_title || "Meu Perfil",
     bio: organizerData?.page_description || "Organizador de eventos",
-    followers: 1250,
-    events: events.length,
-    pageViews: 8450
+    followers: stats.followers_count,
+    events: stats.events_count,
+    pageViews: stats.page_views
   };
 
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
