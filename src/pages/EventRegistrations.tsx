@@ -1,21 +1,25 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Users, Search } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Users, Search, Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface Registration {
   id: string;
+  user_id: string;
   user_name: string;
   user_email: string;
   user_phone?: string;
   status: string;
   created_at: string;
   registration_data?: any;
+  user_avatar?: string;
   event: {
     id: string;
     title: string;
@@ -34,6 +38,7 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -48,6 +53,7 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
           .from('event_registrations')
           .select(`
             id,
+            user_id,
             user_name,
             user_email,
             user_phone,
@@ -80,8 +86,18 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
           return;
         }
 
+        // Fetch user avatars
+        const userIds = data?.map(reg => reg.user_id) || [];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, avatar_url')
+          .in('user_id', userIds);
+
+        const avatarMap = new Map(profiles?.map(p => [p.user_id, p.avatar_url]) || []);
+
         setRegistrations(data?.map(reg => ({
           ...reg,
+          user_avatar: avatarMap.get(reg.user_id),
           registration_data: (reg.registration_data as any) || {},
           event: {
             ...reg.event,
@@ -113,6 +129,21 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
       cancelled: "bg-red-500/20 text-red-400",
     };
     return colors[status as keyof typeof colors] || colors.confirmed;
+  };
+
+  const handleDownload = (fieldName: string, value: any) => {
+    // Check if it's a data URL (uploaded file)
+    if (typeof value === 'string' && value.startsWith('data:')) {
+      const link = document.createElement('a');
+      link.href = value;
+      link.download = `${fieldName}.${value.split(';')[0].split('/')[1]}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Download iniciado');
+    } else {
+      toast.error('Arquivo não disponível para download');
+    }
   };
 
   if (loading) {
@@ -163,68 +194,30 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
 
         {/* Registrations List */}
         {filteredRegistrations.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {filteredRegistrations.map((registration) => (
-              <Card key={registration.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <User className="h-4 w-4" />
+              <Card 
+                key={registration.id}
+                className="cursor-pointer hover:bg-accent/50 transition-colors"
+                onClick={() => setSelectedRegistration(registration)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={registration.user_avatar} />
+                      <AvatarFallback>
+                        {registration.user_name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">
                         {registration.user_name}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">
                         {registration.event.title}
                       </p>
                     </div>
-                    <Badge className={getStatusBadge(registration.status)}>
-                      {registration.status === 'confirmed' ? 'Confirmado' :
-                       registration.status === 'pending' ? 'Pendente' :
-                       'Cancelado'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      {registration.user_email}
-                    </div>
-                    
-                    {registration.user_phone && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-3 w-3" />
-                        {registration.user_phone}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(registration.event.event_date).toLocaleDateString('pt-BR')}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {registration.event.location}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      Cadastrado em: {new Date(registration.created_at).toLocaleDateString('pt-BR')}
-                    </div>
-
-                    {/* Custom Form Data */}
-                    {registration.registration_data && Object.keys(registration.registration_data).length > 0 && (
-                      <div className="mt-3 pt-3 border-t space-y-2">
-                        <p className="text-xs font-semibold text-foreground">Dados Personalizados:</p>
-                        {Object.entries(registration.registration_data).map(([key, value]) => (
-                          <div key={key} className="text-xs">
-                            <span className="font-medium text-foreground">{key}:</span>{' '}
-                            <span className="text-muted-foreground">{String(value)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   </div>
                 </CardContent>
               </Card>
@@ -242,6 +235,118 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
           </div>
         )}
       </div>
+
+      {/* Details Dialog */}
+      <Dialog open={!!selectedRegistration} onOpenChange={(open) => !open && setSelectedRegistration(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          {selectedRegistration && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Detalhes do Cadastro</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                {/* User Info */}
+                <div className="flex items-center gap-3 pb-4 border-b">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={selectedRegistration.user_avatar} />
+                    <AvatarFallback className="text-lg">
+                      {selectedRegistration.user_name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{selectedRegistration.user_name}</h3>
+                    <Badge className={getStatusBadge(selectedRegistration.status)}>
+                      {selectedRegistration.status === 'confirmed' ? 'Confirmado' :
+                       selectedRegistration.status === 'pending' ? 'Pendente' :
+                       'Cancelado'}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Contact Info */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedRegistration.user_email}</span>
+                  </div>
+                  
+                  {selectedRegistration.user_phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{selectedRegistration.user_phone}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>Evento: {new Date(selectedRegistration.event.event_date).toLocaleDateString('pt-BR')}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedRegistration.event.location}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span>Cadastrado em: {new Date(selectedRegistration.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+
+                {/* Custom Form Data */}
+                {selectedRegistration.registration_data && Object.keys(selectedRegistration.registration_data).length > 0 && (
+                  <div className="pt-4 border-t space-y-3">
+                    <h4 className="font-semibold text-sm">Dados Personalizados</h4>
+                    {Object.entries(selectedRegistration.registration_data).map(([key, value]) => {
+                      const isImage = typeof value === 'string' && value.startsWith('data:image/');
+                      const isFile = typeof value === 'string' && value.startsWith('data:');
+                      
+                      return (
+                        <div key={key} className="space-y-2">
+                          <p className="text-sm font-medium">{key}</p>
+                          {isImage ? (
+                            <div className="space-y-2">
+                              <img 
+                                src={value as string} 
+                                alt={key}
+                                className="w-full h-auto rounded border max-h-64 object-contain"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(key, value)}
+                                className="w-full"
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Baixar Imagem
+                              </Button>
+                            </div>
+                          ) : isFile ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownload(key, value)}
+                              className="w-full"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Baixar Arquivo
+                            </Button>
+                          ) : Array.isArray(value) ? (
+                            <p className="text-sm text-muted-foreground">{value.join(', ')}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">{String(value)}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
