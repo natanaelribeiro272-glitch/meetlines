@@ -87,6 +87,31 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     }, 'encontrar amigos');
   };
 
+  const handleShare = async () => {
+    const eventUrl = `${window.location.origin}/event/${eventId}`;
+    
+    try {
+      if (navigator.share) {
+        // Use native share if available
+        await navigator.share({
+          title: event.title,
+          text: `Confira este evento: ${event.title}`,
+          url: eventUrl,
+        });
+        toast.success('Evento compartilhado!');
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(eventUrl);
+        toast.success('Link copiado para a área de transferência!');
+      }
+    } catch (error) {
+      // User cancelled or error occurred
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast.error('Erro ao compartilhar evento');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -138,23 +163,28 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
         {/* Action buttons */}
         <div className="absolute top-4 right-4 flex gap-2">
-          {isOrganizer && onEdit && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
-              onClick={() => onEdit(eventId!)}
-            >
-              <Edit className="h-5 w-5" />
-            </Button>
+          {isOrganizer && (
+            <>
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
+                  onClick={() => onEdit(eventId!)}
+                >
+                  <Edit className="h-5 w-5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
+                onClick={handleShare}
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+            </>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
         </div>
 
         {/* Live indicator */}

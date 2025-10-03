@@ -52,9 +52,11 @@ const EVENT_CATEGORIES = [
 ];
 interface CreateEventProps {
   onBack: () => void;
+  eventId?: string; // Para edição futura
 }
 export default function CreateEvent({
-  onBack
+  onBack,
+  eventId
 }: CreateEventProps) {
   const {
     createEvent

@@ -20,7 +20,8 @@ export default function MainLayout() {
   const [activeTab, setActiveTab] = useState("home");
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventRegistrations" | "organizerEvents">("feed");
+  const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventRegistrations" | "organizerEvents" | "editEvent">("feed");
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const { user, userRole, loading } = useAuth();
 
@@ -54,10 +55,16 @@ export default function MainLayout() {
     setCurrentView("organizersList");
   };
 
+  const handleEditEvent = (eventId: string) => {
+    setEditingEventId(eventId);
+    setCurrentView("editEvent");
+  };
+
   const handleBackToFeed = () => {
     setCurrentView("feed");
     setCurrentEventId(null);
     setCurrentOrganizerId(null);
+    setEditingEventId(null);
   };
 
   if (loading) {
@@ -83,7 +90,10 @@ export default function MainLayout() {
                 setCurrentView("eventRegistration");
               }}
               onFindFriends={handleFindFriends}
+              onEdit={handleEditEvent}
             />;
+          case "editEvent":
+            return <CreateEvent onBack={handleBackToFeed} eventId={editingEventId || undefined} />;
           case "findFriends":
             return <FindFriends onBack={handleBackToFeed} />;
           case "liveEvents":
