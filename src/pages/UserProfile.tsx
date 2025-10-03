@@ -87,7 +87,8 @@ export default function UserProfile({ userType }: UserProfileProps) {
     notes_visible: true,
     phone: "",
     website: "",
-    interest: "curtição" as "namoro" | "network" | "curtição" | "amizade" | "casual"
+    interest: "curtição" as "namoro" | "network" | "curtição" | "amizade" | "casual",
+    relationship_status: "preferencia_nao_informar" as "solteiro" | "namorando" | "casado" | "relacionamento_aberto" | "preferencia_nao_informar"
   });
 
   const { user, signOut } = useAuth();
@@ -137,7 +138,8 @@ export default function UserProfile({ userType }: UserProfileProps) {
         notes_visible: profile.notes_visible ?? true,
         phone: profile.phone || "",
         website: profile.website || "",
-        interest: (profile.interest as any) || "curtição"
+        interest: (profile.interest as any) || "curtição",
+        relationship_status: (profile.relationship_status as any) || "preferencia_nao_informar"
       });
     }
   }, [profile]);
@@ -440,6 +442,44 @@ export default function UserProfile({ userType }: UserProfileProps) {
         </CardContent>
       </Card>
 
+      {/* Relationship Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="h-5 w-5" />
+            Status de Relacionamento
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "solteiro", label: "Solteiro(a)", emoji: "😊" },
+              { value: "namorando", label: "Namorando", emoji: "💑" },
+              { value: "casado", label: "Casado(a)", emoji: "💍" },
+              { value: "relacionamento_aberto", label: "Relacionamento Aberto", emoji: "🌈" },
+              { value: "preferencia_nao_informar", label: "Prefiro não informar", emoji: "🤐" }
+            ].map((status) => (
+              <button
+                key={status.value}
+                type="button"
+                onClick={() => {
+                  const newStatus = status.value as "solteiro" | "namorando" | "casado" | "relacionamento_aberto" | "preferencia_nao_informar";
+                  setFormData(prev => ({ ...prev, relationship_status: newStatus }));
+                  updateProfile({ relationship_status: newStatus });
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  formData.relationship_status === status.value
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                {status.emoji} {status.label}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Public Notes */}
       <Card>
         <CardHeader>
@@ -478,9 +518,8 @@ export default function UserProfile({ userType }: UserProfileProps) {
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Escreva o que você está achando dos eventos que participa..."
+                placeholder="Interesses: balada, encontros, festas, networking"
                 className="min-h-[120px]"
-                autoFocus
                 aria-label="Editar notas públicas"
               />
               <div className="flex gap-2">

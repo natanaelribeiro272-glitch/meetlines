@@ -520,6 +520,9 @@ export type Database = {
           notes: string | null
           notes_visible: boolean | null
           phone: string | null
+          relationship_status:
+            | Database["public"]["Enums"]["relationship_status"]
+            | null
           role: Database["public"]["Enums"]["user_role"] | null
           tiktok_url: string | null
           twitter_url: string | null
@@ -545,6 +548,9 @@ export type Database = {
           notes?: string | null
           notes_visible?: boolean | null
           phone?: string | null
+          relationship_status?:
+            | Database["public"]["Enums"]["relationship_status"]
+            | null
           role?: Database["public"]["Enums"]["user_role"] | null
           tiktok_url?: string | null
           twitter_url?: string | null
@@ -570,6 +576,9 @@ export type Database = {
           notes?: string | null
           notes_visible?: boolean | null
           phone?: string | null
+          relationship_status?:
+            | Database["public"]["Enums"]["relationship_status"]
+            | null
           role?: Database["public"]["Enums"]["user_role"] | null
           tiktok_url?: string | null
           twitter_url?: string | null
@@ -683,6 +692,12 @@ export type Database = {
       }
     }
     Enums: {
+      relationship_status:
+        | "solteiro"
+        | "namorando"
+        | "casado"
+        | "relacionamento_aberto"
+        | "preferencia_nao_informar"
       user_interest: "namoro" | "network" | "curtição" | "amizade" | "casual"
       user_role: "user" | "organizer"
     }
@@ -812,6 +827,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      relationship_status: [
+        "solteiro",
+        "namorando",
+        "casado",
+        "relacionamento_aberto",
+        "preferencia_nao_informar",
+      ],
       user_interest: ["namoro", "network", "curtição", "amizade", "casual"],
       user_role: ["user", "organizer"],
     },

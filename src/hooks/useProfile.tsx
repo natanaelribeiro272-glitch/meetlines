@@ -24,6 +24,7 @@ export interface ProfileData {
   tiktok_url: string | null;
   youtube_url: string | null;
   interest: "namoro" | "network" | "curtição" | "amizade" | "casual" | null;
+  relationship_status: "solteiro" | "namorando" | "casado" | "relacionamento_aberto" | "preferencia_nao_informar" | null;
   created_at: string;
   updated_at: string;
 }
