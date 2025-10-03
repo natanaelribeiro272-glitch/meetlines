@@ -149,8 +149,9 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
           const organizerNameMatch = event.organizer?.page_title.toLowerCase().includes(query);
           const organizerDisplayNameMatch = event.organizer?.profile?.display_name?.toLowerCase().includes(query);
           const locationMatch = event.location.toLowerCase().includes(query);
+          const categoryMatch = event.category?.toLowerCase().includes(query);
           
-          return titleMatch || descriptionMatch || organizerNameMatch || organizerDisplayNameMatch || locationMatch;
+          return titleMatch || descriptionMatch || organizerNameMatch || organizerDisplayNameMatch || locationMatch || categoryMatch;
         });
       }
       
