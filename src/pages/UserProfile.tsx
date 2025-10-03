@@ -48,7 +48,8 @@ export default function UserProfile({
     notes_visible: true,
     phone: "",
     website: "",
-    interest: "curtição" as "namoro" | "network" | "curtição" | "amizade" | "casual"
+    interest: "curtição" as "namoro" | "network" | "curtição" | "amizade" | "casual",
+    relationship_status: "preferencia_nao_informar" as "solteiro" | "namorando" | "casado" | "relacionamento_aberto" | "preferencia_nao_informar"
   });
   const {
     user,
@@ -108,7 +109,8 @@ export default function UserProfile({
         notes_visible: profile.notes_visible ?? true,
         phone: profile.phone || "",
         website: profile.website || "",
-        interest: profile.interest as any || "curtição"
+        interest: profile.interest as any || "curtição",
+        relationship_status: (profile.relationship_status as any) || "preferencia_nao_informar"
       });
     }
   }, [profile]);
@@ -335,6 +337,45 @@ export default function UserProfile({
           }} className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${formData.interest === interest.value ? 'bg-primary text-primary-foreground shadow-md' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
                 {interest.emoji} {interest.label}
               </button>)}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status de Relacionamento */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Status de Relacionamento
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "solteiro", label: "Solteiro(a)", emoji: "😊" },
+              { value: "namorando", label: "Namorando", emoji: "💑" },
+              { value: "casado", label: "Casado(a)", emoji: "💍" },
+              { value: "relacionamento_aberto", label: "Relacionamento Aberto", emoji: "🌈" },
+              { value: "preferencia_nao_informar", label: "Não informar", emoji: "🤐" }
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  const newStatus = opt.value as "solteiro" | "namorando" | "casado" | "relacionamento_aberto" | "preferencia_nao_informar";
+                  setFormData((prev) => ({ ...prev, relationship_status: newStatus }));
+                  updateProfile({ relationship_status: newStatus });
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  formData.relationship_status === opt.value
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                <span className="mr-1">{opt.emoji}</span>
+                {opt.label}
+              </button>
+            ))}
           </div>
         </CardContent>
       </Card>
