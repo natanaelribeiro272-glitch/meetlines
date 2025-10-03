@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FormBuilder, { FormField } from "@/components/FormBuilder";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useProfile } from "@/hooks/useProfile";
@@ -33,6 +34,22 @@ const INTEREST_OPTIONS = [{
   label: "🤪 Casual",
   emoji: "🤪"
 }];
+
+const EVENT_CATEGORIES = [
+  { value: "cristao", label: "🙏 Cristão" },
+  { value: "lives", label: "🔴 Lives" },
+  { value: "festas", label: "🎉 Festas" },
+  { value: "eventos", label: "📅 Eventos" },
+  { value: "eletronica", label: "🎵 Eletrônica" },
+  { value: "rock", label: "🎸 Rock" },
+  { value: "pop", label: "🎤 Pop" },
+  { value: "forro", label: "🪗 Forró" },
+  { value: "sertanejo", label: "🤠 Sertanejo" },
+  { value: "funk", label: "🕺 Funk" },
+  { value: "samba", label: "🥁 Samba" },
+  { value: "jazz", label: "🎺 Jazz" },
+  { value: "outros", label: "🎭 Outros" }
+];
 interface CreateEventProps {
   onBack: () => void;
 }
@@ -128,7 +145,8 @@ export default function CreateEvent({
         interests: selectedInterest ? [selectedInterest] : [],
         is_live: eventType === "live",
         status: 'upcoming',
-        requires_registration: requiresRegistration
+        requires_registration: requiresRegistration,
+        category: eventData.category || null
       });
       onBack();
     } catch (error) {
@@ -193,7 +211,18 @@ export default function CreateEvent({
 
               <div>
                 <Label htmlFor="category">Categoria</Label>
-                <Input id="category" placeholder="Ex: Música Eletrônica, Rock, Pop..." value={eventData.category} onChange={e => handleInputChange("category", e.target.value)} />
+                <Select value={eventData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border-border z-50">
+                    {EVENT_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>

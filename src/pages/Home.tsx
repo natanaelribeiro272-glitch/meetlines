@@ -20,12 +20,20 @@ export default function Home({ onEventClick, onFindFriends, onOrganizerClick, on
   const [selectedCategory, setSelectedCategory] = useState("todos");
 
   const categories = [
-    { id: "todos", label: "Todos", count: 12 },
-    { id: "eletronica", label: "Eletrônica", count: 5 },
-    { id: "rock", label: "Rock", count: 3 },
-    { id: "pop", label: "Pop", count: 2 },
-    { id: "hip-hop", label: "Hip-Hop", count: 1 },
-    { id: "jazz", label: "Jazz", count: 1 },
+    { id: "todos", label: "Todos" },
+    { id: "cristao", label: "🙏 Cristão" },
+    { id: "lives", label: "🔴 Lives" },
+    { id: "festas", label: "🎉 Festas" },
+    { id: "eventos", label: "📅 Eventos" },
+    { id: "eletronica", label: "🎵 Eletrônica" },
+    { id: "rock", label: "🎸 Rock" },
+    { id: "pop", label: "🎤 Pop" },
+    { id: "forro", label: "🪗 Forró" },
+    { id: "sertanejo", label: "🤠 Sertanejo" },
+    { id: "funk", label: "🕺 Funk" },
+    { id: "samba", label: "🥁 Samba" },
+    { id: "jazz", label: "🎺 Jazz" },
+    { id: "outros", label: "🎭 Outros" }
   ];
 
   return (
@@ -68,18 +76,6 @@ export default function Home({ onEventClick, onFindFriends, onOrganizerClick, on
                 }`}
               >
                 <span className="text-sm font-medium">{category.label}</span>
-                {category.count > 0 && (
-                  <Badge 
-                    variant="secondary" 
-                    className={`ml-2 text-xs ${
-                      selectedCategory === category.id 
-                        ? "bg-primary-foreground/20 text-primary-foreground" 
-                        : ""
-                    }`}
-                  >
-                    {category.count}
-                  </Badge>
-                )}
               </button>
             ))}
           </div>
@@ -122,7 +118,12 @@ export default function Home({ onEventClick, onFindFriends, onOrganizerClick, on
         )}
 
         {/* Event Feed */}
-        <EventFeed onEventClick={onEventClick} onOrganizerClick={onOrganizerClick} userType={userType} />
+        <EventFeed 
+          onEventClick={onEventClick} 
+          onOrganizerClick={onOrganizerClick} 
+          userType={userType}
+          categoryFilter={selectedCategory}
+        />
       </main>
     </div>
   );

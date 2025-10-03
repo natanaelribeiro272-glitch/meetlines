@@ -16,10 +16,11 @@ interface EventFeedProps {
   onEventClick: (eventId: string) => void;
   onOrganizerClick: (organizerId: string) => void;
   userType?: "user" | "organizer";
+  categoryFilter?: string;
 }
 
-export function EventFeed({ onEventClick, onOrganizerClick, userType = "user" }: EventFeedProps) {
-  const { events, loading, toggleLike } = useEvents();
+export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter }: EventFeedProps) {
+  const { events, loading, toggleLike } = useEvents(categoryFilter);
 
   const handleEventClick = (eventId: string) => {
     onEventClick(eventId);

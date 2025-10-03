@@ -30,7 +30,7 @@ export interface EventData {
   category?: string;
 }
 
-export function useEvents() {
+export function useEvents(categoryFilter?: string) {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -39,25 +39,54 @@ export function useEvents() {
     try {
       setLoading(true);
       
+      let eventsData: any;
+      let error: any;
+
       // Buscar eventos com informações do organizador
-      const { data: eventsData, error } = await supabase
-        .from('events')
-        .select(`
-          *,
-          organizer:organizers!inner(
-            id,
-            page_title,
-            user_id
-          )
-        `)
-        .eq('status', 'upcoming')
-        .order('event_date', { ascending: true });
+      if (categoryFilter && categoryFilter !== 'todos') {
+        // Query com filtro de categoria
+        // @ts-ignore - Evitar recursão infinita de tipos do Supabase
+        const response = await supabase
+          .from('events')
+          .select(`
+            *,
+            organizer:organizers!inner(
+              id,
+              page_title,
+              user_id
+            )
+          `)
+          .eq('status', 'upcoming')
+          .eq('category', categoryFilter)
+          .order('event_date', { ascending: true });
+        
+        eventsData = response.data;
+        error = response.error;
+      } else {
+        // Query sem filtro de categoria
+        // @ts-ignore - Evitar recursão infinita de tipos do Supabase
+        const response = await supabase
+          .from('events')
+          .select(`
+            *,
+            organizer:organizers!inner(
+              id,
+              page_title,
+              user_id
+            )
+          `)
+          .eq('status', 'upcoming')
+          .order('event_date', { ascending: true });
+        
+        eventsData = response.data;
+        error = response.error;
+      }
 
       if (error) throw error;
 
       // Para cada evento, buscar estatísticas de curtidas e comentários
       const eventsWithStats = await Promise.all(
-        (eventsData || []).map(async (event) => {
+        (eventsData || []).map(async (event: any) => {
           // Buscar perfil do organizador
           const { data: organizerProfile } = await supabase
             .from('profiles')
@@ -158,7 +187,8 @@ export function useEvents() {
 
   useEffect(() => {
     fetchEvents();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, categoryFilter]);
 
   return {
     events,
