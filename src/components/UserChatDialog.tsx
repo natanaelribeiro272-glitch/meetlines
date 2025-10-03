@@ -76,32 +76,43 @@ export default function UserChatDialog({
 
     loadMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages - listening to all inserts and filtering on client
     const channel = supabase
-      .channel(`chat:${user.id}:${recipientId}`)
+      .channel(`chat-messages-${user.id}-${recipientId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'user_messages',
-          filter: `or(and(from_user_id.eq.${user.id},to_user_id.eq.${recipientId}),and(from_user_id.eq.${recipientId},to_user_id.eq.${user.id}))`
+          table: 'user_messages'
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          const newMsg = payload.new as Message;
           
-          // Mark as read if it's from the recipient
-          if (payload.new.from_user_id === recipientId) {
-            supabase
-              .from('user_messages')
-              .update({ read: true })
-              .eq('id', payload.new.id);
+          // Only process messages between current user and recipient
+          if (
+            (newMsg.from_user_id === user.id && newMsg.to_user_id === recipientId) ||
+            (newMsg.from_user_id === recipientId && newMsg.to_user_id === user.id)
+          ) {
+            console.log('Nova mensagem recebida:', newMsg);
+            setMessages((prev) => [...prev, newMsg]);
+            
+            // Mark as read if it's from the recipient
+            if (newMsg.from_user_id === recipientId && newMsg.to_user_id === user.id) {
+              supabase
+                .from('user_messages')
+                .update({ read: true })
+                .eq('id', newMsg.id);
+            }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Status da inscrição do chat:', status);
+      });
 
     return () => {
+      console.log('Removendo canal do chat');
       supabase.removeChannel(channel);
     };
   }, [open, user, recipientId]);
