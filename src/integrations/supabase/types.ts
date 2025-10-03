@@ -638,6 +638,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_messages: {
+        Row: {
+          content: string
+          created_at: string
+          from_user_id: string
+          id: string
+          read: boolean
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          read?: boolean
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          read?: boolean
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import UserChatDialog from "@/components/UserChatDialog";
 
 interface Attendee {
   id: string;
@@ -30,6 +31,8 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedUsers, setLikedUsers] = useState<Set<string>>(new Set());
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selectedChat, setSelectedChat] = useState<Attendee | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -251,15 +254,8 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
   };
 
   const handleMessage = (person: Attendee) => {
-    if (person.phone) {
-      // Open WhatsApp if phone is available
-      window.open(`https://wa.me/${person.phone.replace(/\D/g, '')}`, '_blank');
-    } else if (person.instagram) {
-      // Open Instagram if available
-      window.open(person.instagram, '_blank');
-    } else {
-      toast.info('Nenhum contato disponível para mensagem');
-    }
+    setSelectedChat(person);
+    setChatOpen(true);
   };
   
   const getStatusBadge = (status: string) => {
@@ -427,5 +423,16 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
           </Button>
         </div>
       </div>
+
+      {/* Chat Dialog */}
+      {selectedChat && (
+        <UserChatDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          recipientId={selectedChat.user_id}
+          recipientName={selectedChat.name}
+          recipientAvatar={selectedChat.avatar}
+        />
+      )}
     </div>;
 }
