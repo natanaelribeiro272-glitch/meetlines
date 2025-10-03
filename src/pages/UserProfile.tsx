@@ -39,6 +39,7 @@ export default function UserProfile({
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [notesEdited, setNotesEdited] = useState(false);
   const [formData, setFormData] = useState({
     display_name: "",
     bio: "",
@@ -112,6 +113,7 @@ export default function UserProfile({
         interest: profile.interest as any || "curtição",
         relationship_status: (profile.relationship_status as any) || "preferencia_nao_informar"
       });
+      setNotesEdited(false);
     }
   }, [profile]);
   const handleSaveField = async (field: keyof typeof formData) => {
@@ -128,6 +130,7 @@ export default function UserProfile({
     if (success) {
       setEditingField(null);
     }
+    return success;
   };
   const handleSaveSocialLink = async (platform: string, url: string) => {
     const socialPlatform = socialPlatforms.find(p => p.id === platform);
@@ -414,24 +417,39 @@ export default function UserProfile({
 
             {/* Notes Editor - sempre editável */}
             <div className="space-y-2">
-              <Textarea value={formData.notes} onChange={e => setFormData(prev => ({
-              ...prev,
-              notes: e.target.value
-            }))} placeholder="Escreva o que você está achando dos eventos que participa..." className="min-h-[120px]" autoFocus aria-label="Editar notas públicas" />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => handleSaveField('notes')} disabled={saving}>
-                  Salvar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  notes: profile?.notes || ''
-                }));
-                setEditingField(null);
-              }}>
-                  Cancelar
-                </Button>
-              </div>
+              <Textarea 
+                value={formData.notes} 
+                onChange={e => {
+                  const newValue = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    notes: newValue
+                  }));
+                  setNotesEdited(newValue !== (profile?.notes || ''));
+                }} 
+                placeholder="Escreva o que você está achando dos eventos que participa..." 
+                className="min-h-[120px]" 
+                aria-label="Editar notas públicas" 
+              />
+              {notesEdited && (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={async () => {
+                    const success = await handleSaveField('notes');
+                    if (success) setNotesEdited(false);
+                  }} disabled={saving}>
+                    Salvar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      notes: profile?.notes || ''
+                    }));
+                    setNotesEdited(false);
+                  }}>
+                    Cancelar
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
