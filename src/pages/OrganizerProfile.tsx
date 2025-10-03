@@ -181,9 +181,31 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     try {
       setUploadingCover(true);
 
+      // Verificar se é um formato de imagem suportado
+      const fileType = file.type.toLowerCase();
+      const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      
+      if (!supportedFormats.includes(fileType)) {
+        toast.error('Formato não suportado', {
+          description: 'Por favor, use imagens JPG, PNG ou WEBP. Se você está no iPhone, abra a foto no app Fotos e compartilhe > Salvar imagem para converter automaticamente para JPG.'
+        });
+        setUploadingCover(false);
+        return;
+      }
+
+      // Validar tamanho do arquivo (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Arquivo muito grande', {
+          description: 'A imagem deve ter no máximo 5MB'
+        });
+        setUploadingCover(false);
+        return;
+      }
+
       // Upload para o Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/cover.${fileExt}`;
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const timestamp = Date.now();
+      const fileName = `${user.id}/cover-${timestamp}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('user-uploads')
@@ -314,7 +336,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
               onChange={handleCoverUpload}
               className="hidden"
             />
