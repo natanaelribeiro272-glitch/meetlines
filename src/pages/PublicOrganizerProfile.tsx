@@ -225,10 +225,14 @@ export default function PublicOrganizerProfile() {
       {/* Header */}
       <div className="relative bg-gradient-to-b from-primary/20 to-background">
         <div className="flex items-center justify-between p-4 relative z-10">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Descubra mais eventos na sua cidade
+            </p>
+          </div>
           <Button variant="ghost" size="icon" onClick={handleShare}>
             <Share2 className="h-5 w-5" />
           </Button>
@@ -278,19 +282,14 @@ export default function PublicOrganizerProfile() {
           )}
 
           {/* Follow & Share buttons */}
-          <div className="space-y-3">
-            <div className="flex justify-center gap-3">
-              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
-                Seguir
-              </Button>
-              <Button variant="outline" size="lg" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Compartilhar
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground text-center">
-              Descubra mais eventos na sua cidade
-            </p>
+          <div className="flex justify-center gap-3">
+            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
+              Seguir
+            </Button>
+            <Button variant="outline" size="lg" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar
+            </Button>
           </div>
         </div>
       </div>
