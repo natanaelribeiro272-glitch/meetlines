@@ -109,6 +109,13 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
         return;
       }
 
+      // Se o usuário não está visível, não pode ver outras pessoas
+      if (!isVisible) {
+        setAttendees([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         // First, get events where current user registered with confirmed attendance
         const { data: myRegistrations, error: myRegError } = await supabase
@@ -577,9 +584,15 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
         ) : (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhuma pessoa encontrada</p>
+            <p className="text-muted-foreground">
+              {isVisible 
+                ? "Nenhuma pessoa encontrada" 
+                : "Você precisa ser visível para ver outras pessoas"}
+            </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Não há outras pessoas com presença confirmada e visíveis em eventos ao vivo no momento. Lembre-se de confirmar sua presença no evento!
+              {isVisible 
+                ? "Não há outras pessoas com presença confirmada e visíveis em eventos ao vivo no momento. Lembre-se de confirmar sua presença no evento!" 
+                : "Ative 'Ser Visto' no topo da página para poder ver e se conectar com outras pessoas do evento."}
             </p>
           </div>
         )}
