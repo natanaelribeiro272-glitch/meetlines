@@ -117,14 +117,13 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
       }
 
       try {
-        // First, get events where current user registered with confirmed attendance
+        // First, get events where current user registered with confirmed attendance (exclude online/live)
         const { data: myRegistrations, error: myRegError } = await supabase
           .from('event_registrations')
-          .select('event_id, events!inner(is_live, category)')
+          .select('event_id, events!inner(is_live)')
           .eq('user_id', user.id)
           .eq('attendance_confirmed', true)
-          .eq('events.is_live', true)
-          .neq('events.category', 'live');
+          .eq('events.is_live', false);
 
         if (myRegError) {
           console.error('Error fetching my registrations:', myRegError);
@@ -140,7 +139,7 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
 
         const myEventIds = myRegistrations.map(reg => reg.event_id);
 
-        // Get other users with confirmed attendance in the same live events who are visible
+        // Get other users with confirmed attendance in the same in-person events who are visible
         const { data, error } = await supabase
           .from('event_registrations')
           .select(`
@@ -150,14 +149,12 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
             event_id,
             events!inner(
               title,
-              is_live,
-              category
+              is_live
             )
           `)
           .in('event_id', myEventIds)
           .eq('attendance_confirmed', true)
-          .eq('events.is_live', true)
-          .neq('events.category', 'live')
+          .eq('events.is_live', false)
           .neq('user_id', user.id);
 
         if (error) {
