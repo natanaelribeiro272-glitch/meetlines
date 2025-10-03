@@ -88,14 +88,19 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   };
 
   const handleShare = async () => {
+    if (!eventId) {
+      toast.error('Evento não encontrado');
+      return;
+    }
+    
     const eventUrl = `${window.location.origin}/event/${eventId}`;
     
     try {
       if (navigator.share) {
         // Use native share if available
         await navigator.share({
-          title: event.title,
-          text: `Confira este evento: ${event.title}`,
+          title: event?.title || 'Evento',
+          text: `Confira este evento: ${event?.title || ''}`,
           url: eventUrl,
         });
         toast.success('Evento compartilhado!');

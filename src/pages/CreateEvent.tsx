@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, Heart, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,7 @@ export default function CreateEvent({
     profile,
     updateProfile
   } = useProfile();
+  const [isEditMode, setIsEditMode] = useState(false);
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
@@ -86,6 +87,57 @@ export default function CreateEvent({
   const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
   const [notesVisible, setNotesVisible] = useState(true);
   const [eventType, setEventType] = useState<"presencial" | "live">("presencial");
+  
+  // Load event data if editing
+  useEffect(() => {
+    const loadEventData = async () => {
+      if (eventId) {
+        setIsEditMode(true);
+        try {
+          const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .eq('id', eventId)
+            .single();
+          
+          if (error) throw error;
+          
+          if (data) {
+            // Parse date and time from event_date
+            const eventDate = new Date(data.event_date);
+            const dateStr = eventDate.toISOString().split('T')[0];
+            const timeStr = eventDate.toTimeString().slice(0, 5);
+            
+            setEventData({
+              title: data.title || "",
+              description: data.description || "",
+              date: dateStr,
+              time: timeStr,
+              location: data.location || "",
+              address: data.is_live ? "" : data.location || "",
+              locationLink: data.location_link || "",
+              maxAttendees: data.max_attendees?.toString() || "",
+              ticketPrice: "",
+              category: data.category || ""
+            });
+            
+            setEventImage(data.image_url || null);
+            setEventType(data.is_live ? "live" : "presencial");
+            setRequiresRegistration(data.requires_registration || false);
+            
+            if (data.interests && data.interests.length > 0) {
+              setSelectedInterest(data.interests[0]);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading event:', error);
+          toast.error('Erro ao carregar evento');
+        }
+      }
+    };
+    
+    loadEventData();
+  }, [eventId]);
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -150,24 +202,52 @@ export default function CreateEvent({
           notes: publicNotes
         });
       }
-      await createEvent({
-        title: eventData.title,
-        description: eventData.description,
-        event_date: eventDateTime.toISOString(),
-        location: eventType === "live" ? "Online" : eventData.address,
-        location_link: eventData.locationLink || null,
-        image_url: imageUrl,
-        max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
-        interests: selectedInterest ? [selectedInterest] : [],
-        is_live: eventType === "live",
-        status: 'upcoming',
-        requires_registration: requiresRegistration,
-        category: eventData.category || null
-      });
+      
+      if (isEditMode && eventId) {
+        // Update existing event
+        const { error: updateError } = await supabase
+          .from('events')
+          .update({
+            title: eventData.title,
+            description: eventData.description,
+            event_date: eventDateTime.toISOString(),
+            location: eventType === "live" ? "Online" : eventData.address,
+            location_link: eventData.locationLink || null,
+            image_url: imageUrl || eventImage,
+            max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
+            interests: selectedInterest ? [selectedInterest] : [],
+            is_live: eventType === "live",
+            requires_registration: requiresRegistration,
+            category: eventData.category || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', eventId);
+        
+        if (updateError) throw updateError;
+        toast.success('Evento atualizado com sucesso!');
+      } else {
+        // Create new event
+        await createEvent({
+          title: eventData.title,
+          description: eventData.description,
+          event_date: eventDateTime.toISOString(),
+          location: eventType === "live" ? "Online" : eventData.address,
+          location_link: eventData.locationLink || null,
+          image_url: imageUrl,
+          max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
+          interests: selectedInterest ? [selectedInterest] : [],
+          is_live: eventType === "live",
+          status: 'upcoming',
+          requires_registration: requiresRegistration,
+          category: eventData.category || null
+        });
+        toast.success('Evento criado com sucesso!');
+      }
+      
       onBack();
     } catch (error) {
-      console.error('Error creating event:', error);
-      toast.error('Erro ao criar evento');
+      console.error('Error saving event:', error);
+      toast.error(isEditMode ? 'Erro ao atualizar evento' : 'Erro ao criar evento');
     } finally {
       setIsCreating(false);
     }
@@ -179,7 +259,9 @@ export default function CreateEvent({
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold text-foreground">Criar Evento</h1>
+          <h1 className="text-lg font-semibold text-foreground">
+            {isEditMode ? 'Editar Evento' : 'Criar Evento'}
+          </h1>
           <div className="w-10" />
         </div>
       </div>
