@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ export default function OrganizerOnboarding() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const avatarPreview = useMemo(() => (avatarFile ? URL.createObjectURL(avatarFile) : ""), [avatarFile]);
   const [bio, setBio] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Step 3: Links
   const [whatsappUrl, setWhatsappUrl] = useState("");
@@ -319,16 +320,25 @@ export default function OrganizerOnboarding() {
                     <AvatarFallback className="bg-surface text-2xl">{displayName.charAt(0) || "U"}</AvatarFallback>
                   )}
                 </Avatar>
-                <input type="file" accept="image/*" onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setAvatarFile(file);
-                }} className="hidden" id="avatar-upload-onboarding" />
-                <label htmlFor="avatar-upload-onboarding" className="w-full">
-                  <Button variant="outline" className="w-full cursor-pointer" type="button">
-                    <Upload className="h-4 w-4 mr-2" />
-                    {avatarPreview ? "Trocar Foto" : "Adicionar Foto"}
-                  </Button>
-                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setAvatarFile(file);
+                  }}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {avatarPreview ? "Trocar Foto" : "Adicionar Foto"}
+                </Button>
                 <p className="text-xs text-muted-foreground text-center">Foto de perfil (opcional)</p>
               </div>
               <div>
