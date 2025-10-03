@@ -278,14 +278,19 @@ export default function PublicOrganizerProfile() {
           )}
 
           {/* Follow & Share buttons */}
-          <div className="flex justify-center gap-3">
-            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
-              Seguir
-            </Button>
-            <Button variant="outline" size="lg" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Compartilhar
-            </Button>
+          <div className="space-y-3">
+            <div className="flex justify-center gap-3">
+              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
+                Seguir
+              </Button>
+              <Button variant="outline" size="lg" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Compartilhar
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              Descubra mais eventos na sua cidade
+            </p>
           </div>
         </div>
       </div>
@@ -497,6 +502,13 @@ export default function PublicOrganizerProfile() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="mt-8 pb-6 text-center border-t border-border pt-6">
+        <p className="text-sm text-muted-foreground">
+          Sistema desenvolvido por Flat Company
+        </p>
+      </footer>
     </div>
   );
 }
