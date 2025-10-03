@@ -120,10 +120,11 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
         // First, get events where current user registered with confirmed attendance
         const { data: myRegistrations, error: myRegError } = await supabase
           .from('event_registrations')
-          .select('event_id, events!inner(is_live)')
+          .select('event_id, events!inner(is_live, category)')
           .eq('user_id', user.id)
           .eq('attendance_confirmed', true)
-          .eq('events.is_live', true);
+          .eq('events.is_live', true)
+          .neq('events.category', 'live');
 
         if (myRegError) {
           console.error('Error fetching my registrations:', myRegError);
@@ -149,12 +150,14 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
             event_id,
             events!inner(
               title,
-              is_live
+              is_live,
+              category
             )
           `)
           .in('event_id', myEventIds)
           .eq('attendance_confirmed', true)
           .eq('events.is_live', true)
+          .neq('events.category', 'live')
           .neq('user_id', user.id);
 
         if (error) {
