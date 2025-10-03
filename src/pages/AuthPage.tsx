@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,8 @@ interface AuthPageProps {
 export default function AuthPage({
   onLogin
 }: AuthPageProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<"user" | "organizer">("user");
@@ -22,8 +25,17 @@ export default function AuthPage({
   });
   const {
     signUp,
-    signIn
+    signIn,
+    user
   } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      const redirectTo = searchParams.get('redirect') || '/';
+      navigate(redirectTo);
+    }
+  }, [user, navigate, searchParams]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -33,7 +45,9 @@ export default function AuthPage({
           error
         } = await signIn(formData.email, formData.password);
         if (!error) {
-          // Auth provider will handle the redirect via the context
+          // Redirect to the page they came from
+          const redirectTo = searchParams.get('redirect') || '/';
+          navigate(redirectTo);
         }
       } else {
         const {
@@ -41,6 +55,8 @@ export default function AuthPage({
         } = await signUp(formData.email, formData.password, formData.name, userType);
         if (!error) {
           // Success handled by auth provider
+          const redirectTo = searchParams.get('redirect') || '/';
+          navigate(redirectTo);
         }
       }
     } finally {

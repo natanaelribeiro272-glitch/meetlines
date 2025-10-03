@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -70,6 +71,8 @@ interface CustomLink {
 export default function PublicOrganizerProfile() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("eventos");
   const [organizer, setOrganizer] = useState<OrganizerData | null>(null);
   const [events, setEvents] = useState<EventData[]>([]);
@@ -167,6 +170,18 @@ export default function PublicOrganizerProfile() {
 
     fetchOrganizerData();
   }, [slug, navigate]);
+
+  const handleFollow = () => {
+    if (!user) {
+      // Redirect to login with current page as return url
+      const currentPath = location.pathname;
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+    
+    // TODO: Implement follow functionality
+    toast.success('Você está seguindo este organizador!');
+  };
 
   const handleShare = () => {
     if (!organizer) return;
@@ -283,7 +298,7 @@ export default function PublicOrganizerProfile() {
 
           {/* Follow & Share buttons */}
           <div className="flex justify-center gap-3">
-            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
+            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={handleFollow}>
               Seguir
             </Button>
             <Button variant="outline" size="lg" onClick={handleShare}>
