@@ -88,19 +88,37 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   };
 
   const handleShare = async () => {
-    if (!eventId) {
+    if (!eventId || !event) {
       toast.error('Evento não encontrado');
       return;
     }
     
-    const eventUrl = `${window.location.origin}/event/${eventId}`;
+    // Criar slugs amigáveis para URL
+    const createSlug = (text: string) => {
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
+        .replace(/\s+/g, '-') // Substitui espaços por hífens
+        .replace(/-+/g, '-') // Remove hífens duplicados
+        .trim();
+    };
+    
+    const organizerName = event.organizer?.profile?.display_name || event.organizer?.page_title || 'organizador';
+    const eventName = event.title;
+    
+    const organizerSlug = createSlug(organizerName);
+    const eventSlug = createSlug(eventName);
+    
+    const eventUrl = `${window.location.origin}/${organizerSlug}/${eventSlug}`;
     
     try {
       if (navigator.share) {
         // Use native share if available
         await navigator.share({
-          title: event?.title || 'Evento',
-          text: `Confira este evento: ${event?.title || ''}`,
+          title: event.title,
+          text: `Confira este evento: ${event.title}`,
           url: eventUrl,
         });
         toast.success('Evento compartilhado!');
@@ -112,6 +130,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     } catch (error) {
       // User cancelled or error occurred
       if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Share error:', error);
         toast.error('Erro ao compartilhar evento');
       }
     }
