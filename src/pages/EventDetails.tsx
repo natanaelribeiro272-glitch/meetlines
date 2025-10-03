@@ -393,7 +393,9 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-primary" />
-              <span className="text-foreground">{event.current_attendees} pessoas interessadas</span>
+              <span className="text-foreground">
+                {((event.registrations_count || 0) + (event.confirmed_attendees_count || 0))} pessoas interessadas
+              </span>
             </div>
           </div>
         </div>
