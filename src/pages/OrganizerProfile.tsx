@@ -377,7 +377,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           {/* Follow button */}
           {!user || (organizer.user_id !== user.id) ? (
             <div className="flex justify-center gap-3">
-              <Button variant="glow" size="lg" className="flex-1 max-w-[200px] bg-white text-primary hover:bg-white/90" onClick={() => {
+              <Button variant="glow" size="lg" className="flex-1 max-w-[200px] bg-white text-gray-900 hover:bg-white/90" onClick={() => {
                 if (!user) {
                   const currentPath = location.pathname;
                   navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
