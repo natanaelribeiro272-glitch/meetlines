@@ -1,75 +1,33 @@
-import { useState, useRef, useEffect } from "react";
-import { Bell, Users, Calendar, Heart, X } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { Bell, Calendar, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface Notification {
-  id: string;
-  type: "event" | "friend" | "like" | "reminder";
-  title: string;
-  message: string;
-  time: string;
-  isNew: boolean;
-}
-
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "event",
-    title: "Novo evento na sua área",
-    message: "Festival de Rock acontece amanhã às 20h",
-    time: "há 2 min",
-    isNew: true
-  },
-  {
-    id: "2", 
-    type: "friend",
-    title: "João confirmou presença",
-    message: "João confirmou presença no seu evento 'Festa Tropical'",
-    time: "há 5 min",
-    isNew: true
-  },
-  {
-    id: "3",
-    type: "reminder",
-    title: "Lembrete de evento",
-    message: "Festival Eletrônico Underground começa em 2 horas",
-    time: "há 10 min",
-    isNew: true
-  },
-  {
-    id: "4",
-    type: "like",
-    title: "Curtidas no seu evento",
-    message: "5 pessoas curtiram 'Rooftop Party'",
-    time: "há 1h",
-    isNew: false
-  },
-  {
-    id: "5",
-    type: "event",
-    title: "Evento cancelado",
-    message: "Infelizmente o 'Show de Jazz' foi cancelado",
-    time: "há 2h",
-    isNew: false
-  }
-];
+import { useNotifications } from "@/hooks/useNotifications";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface NotificationDropdownProps {
   onUnauthorizedClick?: () => void;
 }
 
 export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdownProps = {}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const newNotificationsCount = notifications.filter(n => n.isNew).length;
+  const newNotificationsCount = unreadCount;
 
   const handleClick = () => {
-    if (onUnauthorizedClick) {
-      onUnauthorizedClick();
+    if (!user) {
+      if (onUnauthorizedClick) {
+        onUnauthorizedClick();
+      } else {
+        navigate('/auth');
+      }
     } else {
       setIsOpen(!isOpen);
     }
@@ -88,37 +46,34 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
 
   const getIcon = (type: string) => {
     switch (type) {
-      case "event":
+      case "event_created":
         return Calendar;
-      case "friend":
-        return Users;
-      case "like":
-        return Heart;
-      case "reminder":
-        return Bell;
+      case "event_updated":
+        return AlertCircle;
+      case "event_cancelled":
+        return X;
       default:
         return Bell;
     }
   };
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, isNew: false }
-          : notification
-      )
-    );
+  const formatTime = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: true,
+        locale: ptBR,
+      });
+    } catch {
+      return 'recentemente';
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isNew: false }))
-    );
-  };
-
-  const removeNotification = (notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+  const handleNotificationClick = (notification: any) => {
+    markAsRead(notification.id);
+    if (notification.event_id) {
+      navigate(`/event/${notification.event_id}`);
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -153,7 +108,12 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
 
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
+            {loading ? (
+              <div className="p-6 text-center text-muted-foreground">
+                <Bell className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                <p>Carregando...</p>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
                 <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Nenhuma notificação</p>
@@ -165,14 +125,14 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
                   return (
                     <div
                       key={notification.id}
-                      className={`p-3 hover:bg-surface cursor-pointer transition-colors ${
-                        notification.isNew ? "bg-primary/5 border-l-2 border-l-primary" : ""
+                      className={`p-3 hover:bg-surface cursor-pointer transition-colors group ${
+                        !notification.read ? "bg-primary/5 border-l-2 border-l-primary" : ""
                       }`}
-                      onClick={() => markAsRead(notification.id)}
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start gap-3">
                         <div className={`p-1 rounded-full ${
-                          notification.isNew ? "bg-primary/20" : "bg-surface"
+                          !notification.read ? "bg-primary/20" : "bg-surface"
                         }`}>
                           <Icon className="h-4 w-4 text-primary" />
                         </div>
@@ -182,7 +142,7 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
                               {notification.title}
                             </p>
                             <div className="flex items-center gap-1">
-                              {notification.isNew && (
+                              {!notification.read && (
                                 <Badge variant="destructive" className="h-2 w-2 p-0 rounded-full" />
                               )}
                               <Button
@@ -191,7 +151,7 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
                                 className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-destructive/10"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  removeNotification(notification.id);
+                                  deleteNotification(notification.id);
                                 }}
                               >
                                 <X className="h-3 w-3" />
@@ -202,7 +162,7 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
                             {notification.message}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {notification.time}
+                            {formatTime(notification.created_at)}
                           </p>
                         </div>
                       </div>

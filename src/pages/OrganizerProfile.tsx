@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, Upload } from "lucide-react";
+import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, Upload, UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganizerDetails, OrganizerEvent } from "@/hooks/useOrganizerDetails";
 import { useOrganizer } from "@/hooks/useOrganizer";
+import { useFollowers } from "@/hooks/useFollowers";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
@@ -136,6 +137,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isFollowing, loading: followLoading, toggleFollow } = useFollowers(organizerId);
 
   // Buscar todos os eventos para a aba de fotos
   useEffect(() => {
@@ -377,15 +379,33 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           {/* Follow button */}
           {!user || (organizer.user_id !== user.id) ? (
             <div className="flex justify-center gap-3">
-              <Button variant="glow" size="lg" className="flex-1 max-w-[200px] bg-white text-gray-900 hover:bg-white/90" onClick={() => {
-                if (!user) {
-                  const currentPath = location.pathname;
-                  navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
-                } else {
-                  toast.success('Você está seguindo este organizador!');
-                }
-              }}>
-                Seguir
+              <Button 
+                variant="glow" 
+                size="lg" 
+                className="flex-1 max-w-[200px] bg-white text-gray-900 hover:bg-white/90" 
+                onClick={async () => {
+                  if (!user) {
+                    const currentPath = location.pathname;
+                    navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+                  } else {
+                    await toggleFollow();
+                  }
+                }}
+                disabled={followLoading}
+              >
+                {followLoading ? (
+                  'Carregando...'
+                ) : isFollowing ? (
+                  <>
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Seguindo
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Seguir
+                  </>
+                )}
               </Button>
               <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
