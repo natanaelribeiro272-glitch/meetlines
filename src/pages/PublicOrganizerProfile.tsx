@@ -19,6 +19,8 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
+        console.log('Buscando fotos para:', { eventId, organizerId });
+        
         const { data, error } = await supabase
           .from('organizer_photos')
           .select('*')
@@ -27,7 +29,12 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        console.log('Fotos encontradas:', data);
+        if (error) {
+          console.error('Erro ao buscar fotos:', error);
+          throw error;
+        }
+        
         setPhotos(data || []);
       } catch (error) {
         console.error('Error fetching event photos:', error);
@@ -697,20 +704,24 @@ export default function PublicOrganizerProfile() {
                 </div>
               </div>
             ) : (
-              events.map((event) => {
-                // Buscar fotos deste evento
-                return (
-                  <div key={event.id} className="space-y-3">
-                    <div>
-                      <h3 className="font-semibold text-foreground">{event.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(event.event_date).toLocaleDateString('pt-BR')}
-                      </p>
+              <>
+                {console.log('Renderizando eventos na aba fotos:', events)}
+                {console.log('Organizer ID:', organizer.id)}
+                {events.map((event) => {
+                  console.log('Renderizando evento:', event.id, event.title);
+                  return (
+                    <div key={event.id} className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-foreground">{event.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(event.event_date).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                      <EventPhotoGrid eventId={event.id} organizerId={organizer.id} />
                     </div>
-                    <EventPhotoGrid eventId={event.id} organizerId={organizer.id} />
-                  </div>
-                );
-              })
+                  );
+                })}
+              </>
             )}
           </div>
         )}
