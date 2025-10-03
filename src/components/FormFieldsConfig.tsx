@@ -129,18 +129,26 @@ export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigP
                       {(field.type === 'select' || field.type === 'checkbox') && (
                         <div>
                           <Label className="text-xs">
-                            {field.type === 'select' ? 'Opções (uma por linha)' : 'Opções para selecionar (uma por linha)'}
+                            {field.type === 'select' ? 'Opções (pressione Enter para nova linha)' : 'Opções para selecionar (pressione Enter para nova linha)'}
                           </Label>
                           <textarea
                             value={(field.options || []).join('\n')}
                             onChange={(e) => updateField(field.id, { 
                               options: e.target.value.split('\n').filter(o => o.trim()) 
                             })}
-                            placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
-                            className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.stopPropagation();
+                              }
+                            }}
+                            placeholder="Digite uma opção e pressione Enter&#10;Segunda opção&#10;Terceira opção"
+                            className="w-full min-h-[100px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-y"
+                            rows={4}
                           />
                           <p className="text-xs text-muted-foreground mt-1">
-                            {field.type === 'checkbox' && 'Participante poderá selecionar múltiplas opções'}
+                            {field.type === 'checkbox' 
+                              ? 'Participante poderá selecionar múltiplas opções' 
+                              : 'Participante poderá selecionar apenas uma opção'}
                           </p>
                         </div>
                       )}
