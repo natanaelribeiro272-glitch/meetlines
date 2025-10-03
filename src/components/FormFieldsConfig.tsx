@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, GripVertical, Text, Mail, Phone, Calendar, ToggleLeft, List } from "lucide-react";
+import { Plus, Trash2, GripVertical, Text, Mail, Phone, Calendar, ToggleLeft, List, Image, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export interface FormField {
   id: string;
-  type: 'text' | 'email' | 'phone' | 'date' | 'select' | 'checkbox';
+  type: 'text' | 'email' | 'phone' | 'date' | 'select' | 'checkbox' | 'photo' | 'file';
   label: string;
   required: boolean;
   options?: string[];
@@ -27,6 +27,8 @@ const fieldIcons = {
   date: Calendar,
   select: List,
   checkbox: ToggleLeft,
+  photo: Image,
+  file: FileText,
 };
 
 export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigProps) {
@@ -105,8 +107,10 @@ export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigP
                               <SelectItem value="email">Email</SelectItem>
                               <SelectItem value="phone">Telefone</SelectItem>
                               <SelectItem value="date">Data</SelectItem>
-                              <SelectItem value="select">Seleção</SelectItem>
-                              <SelectItem value="checkbox">Checkbox</SelectItem>
+                              <SelectItem value="select">Seleção Única</SelectItem>
+                              <SelectItem value="checkbox">Múltipla Escolha</SelectItem>
+                              <SelectItem value="photo">Upload de Foto</SelectItem>
+                              <SelectItem value="file">Upload de Arquivo</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -122,9 +126,11 @@ export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigP
                         </div>
                       </div>
 
-                      {field.type === 'select' && (
+                      {(field.type === 'select' || field.type === 'checkbox') && (
                         <div>
-                          <Label className="text-xs">Opções (uma por linha)</Label>
+                          <Label className="text-xs">
+                            {field.type === 'select' ? 'Opções (uma por linha)' : 'Opções para selecionar (uma por linha)'}
+                          </Label>
                           <textarea
                             value={(field.options || []).join('\n')}
                             onChange={(e) => updateField(field.id, { 
@@ -133,6 +139,27 @@ export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigP
                             placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
                             className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background"
                           />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {field.type === 'checkbox' && 'Participante poderá selecionar múltiplas opções'}
+                          </p>
+                        </div>
+                      )}
+
+                      {field.type === 'photo' && (
+                        <div className="rounded-lg border border-border bg-surface/30 p-3">
+                          <p className="text-xs text-muted-foreground">
+                            <Image className="h-3 w-3 inline mr-1" />
+                            Participante poderá enviar uma foto (JPG, PNG, até 5MB)
+                          </p>
+                        </div>
+                      )}
+
+                      {field.type === 'file' && (
+                        <div className="rounded-lg border border-border bg-surface/30 p-3">
+                          <p className="text-xs text-muted-foreground">
+                            <FileText className="h-3 w-3 inline mr-1" />
+                            Participante poderá enviar um arquivo (PDF, DOC, até 10MB)
+                          </p>
                         </div>
                       )}
 
@@ -181,9 +208,12 @@ export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigP
                           {field.type === 'email' && 'Email'}
                           {field.type === 'phone' && 'Telefone'}
                           {field.type === 'date' && 'Data'}
-                          {field.type === 'select' && 'Seleção'}
-                          {field.type === 'checkbox' && 'Checkbox'}
+                          {field.type === 'select' && 'Seleção Única'}
+                          {field.type === 'checkbox' && 'Múltipla Escolha'}
+                          {field.type === 'photo' && 'Upload de Foto'}
+                          {field.type === 'file' && 'Upload de Arquivo'}
                           {field.required && ' • Obrigatório'}
+                          {field.options && field.options.length > 0 && ` • ${field.options.length} opções`}
                         </p>
                       </div>
 
@@ -214,11 +244,28 @@ export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigP
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-surface/50 p-4">
+      <div className="rounded-lg border border-border bg-surface/50 p-4 space-y-2">
         <p className="text-xs text-muted-foreground">
           <strong>Dica:</strong> Os campos "Nome", "Email" e "Telefone" já são coletados por padrão. 
           Use campos personalizados para informações adicionais específicas do seu evento.
         </p>
+        <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Text className="h-3 w-3" /> Texto livre
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <List className="h-3 w-3" /> Escolha única
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <ToggleLeft className="h-3 w-3" /> Múltiplas opções
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Image className="h-3 w-3" /> Fotos
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <FileText className="h-3 w-3" /> Arquivos
+          </div>
+        </div>
       </div>
     </div>
   );
