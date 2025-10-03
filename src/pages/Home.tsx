@@ -123,6 +123,7 @@ export default function Home({ onEventClick, onFindFriends, onOrganizerClick, on
           onOrganizerClick={onOrganizerClick} 
           userType={userType}
           categoryFilter={selectedCategory}
+          searchQuery={searchQuery}
         />
       </main>
     </div>

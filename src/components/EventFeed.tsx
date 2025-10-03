@@ -17,10 +17,11 @@ interface EventFeedProps {
   onOrganizerClick: (organizerId: string) => void;
   userType?: "user" | "organizer";
   categoryFilter?: string;
+  searchQuery?: string;
 }
 
-export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter }: EventFeedProps) {
-  const { events, loading, toggleLike } = useEvents(categoryFilter);
+export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery }: EventFeedProps) {
+  const { events, loading, toggleLike } = useEvents(categoryFilter, searchQuery);
 
   const handleEventClick = (eventId: string) => {
     onEventClick(eventId);

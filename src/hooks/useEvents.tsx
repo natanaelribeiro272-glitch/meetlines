@@ -32,7 +32,7 @@ export interface EventData {
   category?: string;
 }
 
-export function useEvents(categoryFilter?: string) {
+export function useEvents(categoryFilter?: string, searchQuery?: string) {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -139,7 +139,22 @@ export function useEvents(categoryFilter?: string) {
         })
       );
 
-      setEvents(eventsWithStats);
+      // Aplicar filtro de pesquisa no lado do cliente
+      let filteredEvents = eventsWithStats;
+      if (searchQuery && searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase().trim();
+        filteredEvents = eventsWithStats.filter(event => {
+          const titleMatch = event.title.toLowerCase().includes(query);
+          const descriptionMatch = event.description?.toLowerCase().includes(query);
+          const organizerNameMatch = event.organizer?.page_title.toLowerCase().includes(query);
+          const organizerDisplayNameMatch = event.organizer?.profile?.display_name?.toLowerCase().includes(query);
+          const locationMatch = event.location.toLowerCase().includes(query);
+          
+          return titleMatch || descriptionMatch || organizerNameMatch || organizerDisplayNameMatch || locationMatch;
+        });
+      }
+      
+      setEvents(filteredEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
@@ -195,7 +210,7 @@ export function useEvents(categoryFilter?: string) {
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, categoryFilter]);
+  }, [user, categoryFilter, searchQuery]);
 
   // Realtime updates for organizer profile/name/avatar changes
   useEffect(() => {
