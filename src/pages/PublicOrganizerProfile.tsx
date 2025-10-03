@@ -318,9 +318,12 @@ export default function PublicOrganizerProfile() {
             )}
           </Avatar>
           
-          <h2 className="text-2xl font-bold text-foreground mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-1">
             {organizer.profile?.display_name || organizer.page_title}
           </h2>
+          {organizer.username && (
+            <p className="text-sm text-muted-foreground mb-2">@{organizer.username}</p>
+          )}
           <p className="text-muted-foreground max-w-sm mx-auto mb-4">
             {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
           </p>

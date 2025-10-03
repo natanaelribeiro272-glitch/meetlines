@@ -392,6 +392,9 @@ export default function OrganizerPage() {
                       className="text-xl font-bold bg-transparent border-border"
                       placeholder="Nome do perfil"
                     />
+                    {organizerData?.username && (
+                      <p className="text-sm text-muted-foreground">@{organizerData.username}</p>
+                    )}
                     <Input
                       value={editableProfile.description}
                       onChange={(e) => setEditableProfile(prev => ({ ...prev, description: e.target.value }))}

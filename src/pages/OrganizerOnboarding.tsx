@@ -337,30 +337,167 @@ export default function OrganizerOnboarding() {
               <div className="text-center mb-6">
                 <LinkIcon className="h-12 w-12 mx-auto text-primary mb-2" />
                 <h3 className="text-lg font-semibold">Links e Redes Sociais</h3>
-                <p className="text-sm text-muted-foreground">Conecte suas redes (opcional)</p>
+                <p className="text-sm text-muted-foreground">Selecione as redes que deseja adicionar</p>
               </div>
-              <div>
-                <Label htmlFor="whatsapp" className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-green-500" />WhatsApp</Label>
-                <Input id="whatsapp" value={whatsappUrl} onChange={(e) => setWhatsappUrl(e.target.value)} placeholder="https://wa.me/5511999999999" />
+
+              {/* Ícones clicáveis */}
+              <div className="grid grid-cols-5 gap-4 mb-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!whatsappUrl) setWhatsappUrl("https://wa.me/");
+                    else setWhatsappUrl("");
+                  }}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    whatsappUrl
+                      ? "border-green-500 bg-green-500/10"
+                      : "border-border hover:border-green-500/50"
+                  }`}
+                >
+                  <MessageCircle className={`h-6 w-6 mx-auto ${whatsappUrl ? "text-green-500" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!instagramUrl) setInstagramUrl("https://instagram.com/");
+                    else setInstagramUrl("");
+                  }}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    instagramUrl
+                      ? "border-pink-500 bg-pink-500/10"
+                      : "border-border hover:border-pink-500/50"
+                  }`}
+                >
+                  <Instagram className={`h-6 w-6 mx-auto ${instagramUrl ? "text-pink-500" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!playlistUrl) setPlaylistUrl("https://open.spotify.com/");
+                    else setPlaylistUrl("");
+                  }}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    playlistUrl
+                      ? "border-purple-500 bg-purple-500/10"
+                      : "border-border hover:border-purple-500/50"
+                  }`}
+                >
+                  <Music className={`h-6 w-6 mx-auto ${playlistUrl ? "text-purple-500" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!locationUrl) setLocationUrl("https://maps.google.com/");
+                    else setLocationUrl("");
+                  }}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    locationUrl
+                      ? "border-red-500 bg-red-500/10"
+                      : "border-border hover:border-red-500/50"
+                  }`}
+                >
+                  <MapPin className={`h-6 w-6 mx-auto ${locationUrl ? "text-red-500" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!websiteUrl) setWebsiteUrl("https://");
+                    else setWebsiteUrl("");
+                  }}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    websiteUrl
+                      ? "border-blue-500 bg-blue-500/10"
+                      : "border-border hover:border-blue-500/50"
+                  }`}
+                >
+                  <Globe className={`h-6 w-6 mx-auto ${websiteUrl ? "text-blue-500" : "text-muted-foreground"}`} />
+                </button>
               </div>
-              <div>
-                <Label htmlFor="instagram" className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-500" />Instagram</Label>
-                <Input id="instagram" value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/seu_perfil" />
-              </div>
-              <div>
-                <Label htmlFor="playlist" className="flex items-center gap-2"><Music className="h-4 w-4 text-purple-500" />Playlist</Label>
-                <Input id="playlist" value={playlistUrl} onChange={(e) => setPlaylistUrl(e.target.value)} placeholder="https://open.spotify.com/playlist/..." />
-              </div>
-              <div>
-                <Label htmlFor="location" className="flex items-center gap-2"><MapPin className="h-4 w-4 text-red-500" />Localização</Label>
-                <Input id="location" value={locationUrl} onChange={(e) => setLocationUrl(e.target.value)} placeholder="https://maps.google.com/..." />
-              </div>
-              <div>
-                <Label htmlFor="website" className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-500" />Site</Label>
-                <Input id="website" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://seusite.com.br" />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(2)} className="w-full">Voltar</Button>
+
+              {/* Campos de input aparecem apenas se selecionados */}
+              {whatsappUrl && (
+                <div>
+                  <Label htmlFor="whatsapp" className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-green-500" />
+                    WhatsApp
+                  </Label>
+                  <Input
+                    id="whatsapp"
+                    value={whatsappUrl}
+                    onChange={(e) => setWhatsappUrl(e.target.value)}
+                    placeholder="https://wa.me/5511999999999"
+                  />
+                </div>
+              )}
+
+              {instagramUrl && (
+                <div>
+                  <Label htmlFor="instagram" className="flex items-center gap-2">
+                    <Instagram className="h-4 w-4 text-pink-500" />
+                    Instagram
+                  </Label>
+                  <Input
+                    id="instagram"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    placeholder="https://instagram.com/seu_perfil"
+                  />
+                </div>
+              )}
+
+              {playlistUrl && (
+                <div>
+                  <Label htmlFor="playlist" className="flex items-center gap-2">
+                    <Music className="h-4 w-4 text-purple-500" />
+                    Playlist
+                  </Label>
+                  <Input
+                    id="playlist"
+                    value={playlistUrl}
+                    onChange={(e) => setPlaylistUrl(e.target.value)}
+                    placeholder="https://open.spotify.com/playlist/..."
+                  />
+                </div>
+              )}
+
+              {locationUrl && (
+                <div>
+                  <Label htmlFor="location" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-red-500" />
+                    Localização
+                  </Label>
+                  <Input
+                    id="location"
+                    value={locationUrl}
+                    onChange={(e) => setLocationUrl(e.target.value)}
+                    placeholder="https://maps.google.com/..."
+                  />
+                </div>
+              )}
+
+              {websiteUrl && (
+                <div>
+                  <Label htmlFor="website" className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-blue-500" />
+                    Site
+                  </Label>
+                  <Input
+                    id="website"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    placeholder="https://seusite.com.br"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-6">
+                <Button variant="outline" onClick={() => setCurrentStep(2)} className="w-full">
+                  Voltar
+                </Button>
                 <Button onClick={handleComplete} className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
