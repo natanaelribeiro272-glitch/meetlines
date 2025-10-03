@@ -22,8 +22,10 @@ export default function OrganizerPage() {
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showAddPhotos, setShowAddPhotos] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [sessionName, setSessionName] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profileForm, setProfileForm] = useState({
     bio: "",
     instagram: "",
@@ -37,6 +39,10 @@ export default function OrganizerPage() {
     showStats: true,
     showEvents: true,
     showContact: true
+  });
+  const [editableProfile, setEditableProfile] = useState({
+    title: "",
+    description: ""
   });
   const [defaultLinks, setDefaultLinks] = useState({
     instagram: { url: "", visible: false },
@@ -60,6 +66,10 @@ export default function OrganizerPage() {
         showStats: organizerData.show_statistics,
         showEvents: organizerData.show_events,
         showContact: organizerData.show_contact
+      });
+      setEditableProfile({
+        title: organizerData.page_title || "",
+        description: organizerData.page_description || ""
       });
     }
   }, [organizerData]);
@@ -109,6 +119,35 @@ export default function OrganizerPage() {
       toast.error('Erro ao fazer upload da imagem');
     } finally {
       setIsUploadingCover(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !organizerData) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${organizerData.id}/avatar.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('user-uploads')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(fileName);
+
+      await updateOrganizerProfile({ avatar_url: publicUrl });
+      toast.success('Foto de perfil atualizada!');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Erro ao fazer upload da foto');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -281,30 +320,57 @@ export default function OrganizerPage() {
               {/* Profile Section */}
               <div className="-mt-16 relative z-10">
                 <div className="flex items-end gap-4 mb-4">
-                  <div className="avatar-story">
+                  <div className="avatar-story relative group">
                     <Avatar className="h-20 w-20 border-4 border-background">
-                      <AvatarFallback className="bg-surface text-lg font-bold">
-                        {organizer.name.charAt(0)}
-                      </AvatarFallback>
+                      {organizerData?.avatar_url ? (
+                        <img src={organizerData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <AvatarFallback className="bg-surface text-lg font-bold">
+                          {editableProfile.title.charAt(0) || 'O'}
+                        </AvatarFallback>
+                      )}
                     </Avatar>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      ref={avatarInputRef}
+                      onChange={handleAvatarUpload} 
+                      className="hidden" 
+                      id="avatar-upload" 
+                    />
+                    <label 
+                      htmlFor="avatar-upload"
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      {isUploadingAvatar ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Upload className="h-5 w-5 text-white" />
+                      )}
+                    </label>
                   </div>
                   
-                  <div className="flex-1 pb-2">
-                    <h1 className="text-xl font-bold text-foreground">{organizer.name}</h1>
-                    <p className="text-sm text-muted-foreground">{organizer.bio}</p>
+                  <div className="flex-1 pb-2 space-y-2">
+                    <Input
+                      value={editableProfile.title}
+                      onChange={(e) => setEditableProfile(prev => ({ ...prev, title: e.target.value }))}
+                      className="text-xl font-bold bg-transparent border-border"
+                      placeholder="Nome do perfil"
+                    />
+                    <Input
+                      value={editableProfile.description}
+                      onChange={(e) => setEditableProfile(prev => ({ ...prev, description: e.target.value }))}
+                      className="text-sm bg-transparent border-border"
+                      placeholder="Descrição"
+                    />
                   </div>
                   
                   <Button variant="outline" size="sm" onClick={async () => {
                     await updateOrganizerProfile({
-                      page_title: pageSettings.title,
-                      page_subtitle: pageSettings.subtitle,
-                      page_description: pageSettings.description,
-                      primary_color: pageSettings.primaryColor,
-                      show_statistics: pageSettings.showStats,
-                      show_events: pageSettings.showEvents,
-                      show_contact: pageSettings.showContact
+                      page_title: editableProfile.title,
+                      page_description: editableProfile.description
                     });
-                    toast.success('Configurações salvas com sucesso!');
+                    toast.success('Perfil atualizado com sucesso!');
                   }}>
                     <Edit3 className="h-4 w-4" />
                     Salvar
