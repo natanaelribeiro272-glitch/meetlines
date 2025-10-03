@@ -37,7 +37,8 @@ const INTEREST_OPTIONS = [{
 
 const EVENT_CATEGORIES = [
   { value: "cristao", label: "🙏 Cristão" },
-  { value: "lives", label: "🔴 Lives" },
+  { value: "vendas", label: "💰 Vendas" },
+  { value: "streemer", label: "🎮 Streemer" },
   { value: "festas", label: "🎉 Festas" },
   { value: "eventos", label: "📅 Eventos" },
   { value: "eletronica", label: "🎵 Eletrônica" },

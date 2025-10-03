@@ -22,7 +22,8 @@ export default function Home({ onEventClick, onFindFriends, onOrganizerClick, on
   const categories = [
     { id: "todos", label: "Todos" },
     { id: "cristao", label: "🙏 Cristão" },
-    { id: "lives", label: "🔴 Lives" },
+    { id: "vendas", label: "💰 Vendas" },
+    { id: "streemer", label: "🎮 Streemer" },
     { id: "festas", label: "🎉 Festas" },
     { id: "eventos", label: "📅 Eventos" },
     { id: "eletronica", label: "🎵 Eletrônica" },
