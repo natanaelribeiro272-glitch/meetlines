@@ -268,22 +268,30 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
-        className="relative min-h-[320px]"
+        className="relative min-h-[320px] overflow-hidden"
         style={{
           backgroundImage: organizer.cover_image_url 
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${organizer.cover_image_url})`
+            ? `url(${organizer.cover_image_url})`
             : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
+        {/* Overlay gradiente apenas na parte inferior */}
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0.7) 100%)'
+          }}
+        />
+        
         <div className="flex items-center justify-between p-4 relative z-10">
-          <Button variant="ghost" size="icon" onClick={onBack} className={organizer.cover_image_url ? "bg-black/30 hover:bg-black/50 text-white" : ""}>
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={onBack} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
+            <ArrowLeft className="h-5 w-5 text-white" />
           </Button>
-          <h1 className={`text-lg font-semibold ${organizer.cover_image_url ? 'text-white' : 'text-white'}`}>Organizador</h1>
-          <Button variant="ghost" size="icon" onClick={handleShare} className={organizer.cover_image_url ? "bg-black/30 hover:bg-black/50 text-white" : ""}>
-            <Share2 className="h-5 w-5" />
+          <h1 className="text-lg font-semibold text-white">Organizador</h1>
+          <Button variant="ghost" size="icon" onClick={handleShare} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
+            <Share2 className="h-5 w-5 text-white" />
           </Button>
         </div>
 
@@ -302,7 +310,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
               size="icon"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingCover}
-              className="absolute top-4 right-16 bg-black/30 hover:bg-black/50 text-white z-10"
+              className="absolute top-4 right-16 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white z-10"
             >
               {uploadingCover ? (
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
