@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 interface AuthPageProps {
   onLogin: (userType: "user" | "organizer") => void;
 }
@@ -59,7 +57,7 @@ export default function AuthPage({
             state: {
               email: formData.email,
               password: formData.password,
-              name: formData.name,
+              name: formData.name
             }
           });
         } else {
@@ -68,37 +66,11 @@ export default function AuthPage({
             state: {
               email: formData.email,
               password: formData.password,
-              name: formData.name,
+              name: formData.name
             }
           });
         }
       }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        }
-      });
-
-      if (error) {
-        toast.error(`Erro ao fazer login com ${provider === 'google' ? 'Google' : 'Facebook'}`);
-        console.error('Social login error:', error);
-      }
-    } catch (error) {
-      console.error('Social login error:', error);
-      toast.error('Erro ao fazer login social');
     } finally {
       setLoading(false);
     }
@@ -178,14 +150,7 @@ export default function AuthPage({
 
         {/* Social Auth */}
         <div className="space-y-3">
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="w-full"
-            onClick={() => handleSocialLogin('google')}
-            disabled={loading}
-            type="button"
-          >
+          <Button variant="outline" size="lg" className="w-full">
             <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -195,14 +160,7 @@ export default function AuthPage({
             Continuar com Google
           </Button>
           
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="w-full"
-            onClick={() => handleSocialLogin('facebook')}
-            disabled={loading}
-            type="button"
-          >
+          <Button variant="outline" size="lg" className="w-full">
             <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
@@ -211,23 +169,10 @@ export default function AuthPage({
         </div>
 
         {/* Toggle Auth Mode */}
-        <div className="text-center">
-          <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-muted-foreground hover:text-primary transition-smooth">
-            {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
-            <span className="text-primary font-medium">
-              {isLogin ? "Cadastre-se" : "Entre"}
-            </span>
-          </button>
-        </div>
+        
 
         {/* Demo Login */}
         
-        {/* Footer */}
-        <div className="text-center pt-6 pb-4">
-          <p className="text-xs text-muted-foreground">
-            Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
-          </p>
-        </div>
       </div>
     </div>;
 }
