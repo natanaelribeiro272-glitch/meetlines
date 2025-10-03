@@ -626,6 +626,10 @@ export type Database = {
         Args: { org_id: string }
         Returns: undefined
       }
+      user_confirmed_attendance_in_event: {
+        Args: { _event_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_interest: "namoro" | "network" | "curtição" | "amizade" | "casual"
