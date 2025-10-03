@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getPublicBaseUrl } from "@/config/site";
 
 interface OrganizerData {
   id: string;
@@ -170,7 +171,7 @@ export default function PublicOrganizerProfile() {
   const handleShare = () => {
     if (!organizer) return;
     
-    const publicUrl = `${window.location.origin}/${organizer.slug}`;
+    const publicUrl = `${getPublicBaseUrl()}/${organizer.slug}`;
     
     navigator.clipboard.writeText(publicUrl).then(() => {
       toast.success('Link copiado!', {

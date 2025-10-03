@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganizerDetails } from "@/hooks/useOrganizerDetails";
 import { toast } from "sonner";
+import { getPublicBaseUrl } from "@/config/site";
 
 interface OrganizerProfileProps {
   onBack: () => void;
@@ -22,7 +23,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     if (!organizer) return;
     
     // Gerar URL pública usando apenas o slug
-    const publicUrl = `${window.location.origin}/${organizer.slug}`;
+    const publicUrl = `${getPublicBaseUrl()}/${organizer.slug}`;
     
     // Copiar para clipboard
     navigator.clipboard.writeText(publicUrl).then(() => {
