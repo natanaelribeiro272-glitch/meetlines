@@ -271,14 +271,23 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         className="relative min-h-[380px] overflow-hidden"
         style={{
           backgroundImage: organizer.cover_image_url 
-            ? `linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.9) 30%, transparent 100%), url(${organizer.cover_image_url})`
+            ? `url(${organizer.cover_image_url})`
             : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
+        {/* Gradiente suave de transição na parte inferior - NÃO escurece, só faz transição */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          style={{
+            height: '120px',
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, transparent 100%)',
+            zIndex: 1
+          }}
+        />
         
-        <div className="flex items-center justify-between p-4 relative z-10">
+        <div className="flex items-center justify-between p-4 relative" style={{ zIndex: 10 }}>
           <Button variant="ghost" size="icon" onClick={onBack} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
             <ArrowLeft className="h-5 w-5 text-white" />
           </Button>
@@ -303,7 +312,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
               size="icon"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingCover}
-              className="absolute top-4 right-16 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white z-10"
+              className="absolute top-4 right-16 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white"
+              style={{ zIndex: 10 }}
             >
               {uploadingCover ? (
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -315,7 +325,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         )}
 
         {/* Profile Header */}
-        <div className="px-4 pb-6 text-center relative z-10">
+        <div className="px-4 pb-6 text-center relative" style={{ zIndex: 10 }}>
           <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white/20 shadow-lg">
             {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
               <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
@@ -385,7 +395,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
       </div>
 
       {/* Tabs */}
-      <div className="px-4 mb-6 -mt-4">
+      <div className="px-4 mb-6 -mt-4 relative" style={{ zIndex: 10 }}>
         <div className="flex gap-2 justify-center">
           {tabs.map((tab) => {
             const Icon = tab.icon;
