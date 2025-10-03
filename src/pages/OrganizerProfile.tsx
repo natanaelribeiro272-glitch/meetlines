@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe } from "lucide-react";
+import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganizerDetails } from "@/hooks/useOrganizerDetails";
+import { toast } from "sonner";
 
 interface OrganizerProfileProps {
   onBack: () => void;
@@ -16,6 +17,22 @@ interface OrganizerProfileProps {
 export default function OrganizerProfile({ onBack, organizerId, onEventClick }: OrganizerProfileProps) {
   const [activeTab, setActiveTab] = useState("eventos");
   const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
+
+  const handleShare = () => {
+    if (!organizer) return;
+    
+    // Gerar URL pública baseada no slug do organizador
+    const publicUrl = `${window.location.origin}/organizer/${organizer.slug}`;
+    
+    // Copiar para clipboard
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      toast.success('Link copiado!', {
+        description: 'O link da página foi copiado para a área de transferência'
+      });
+    }).catch(() => {
+      toast.error('Erro ao copiar link');
+    });
+  };
 
   // Função auxiliar para formatizar data
   const formatEventDate = (dateString: string) => {
@@ -76,11 +93,14 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="relative bg-gradient-to-b from-primary/20 to-background">
-        <div className="flex items-center gap-4 p-4 relative z-10">
+        <div className="flex items-center justify-between p-4 relative z-10">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
+          <Button variant="ghost" size="icon" onClick={handleShare}>
+            <Share2 className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Profile Header */}
@@ -125,9 +145,13 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           </div>
 
           {/* Follow button */}
-          <div className="flex justify-center">
-            <Button variant="glow" size="lg">
+          <div className="flex justify-center gap-3">
+            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]">
               Seguir
+            </Button>
+            <Button variant="outline" size="lg" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar
             </Button>
           </div>
         </div>
