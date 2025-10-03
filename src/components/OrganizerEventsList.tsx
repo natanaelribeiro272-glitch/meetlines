@@ -22,6 +22,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
   const { events, loading, updateEvent, deleteEvent } = useOrganizer();
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -41,14 +42,17 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
   };
 
   const handleEditEvent = (event: any) => {
-    setEditingEvent(event);
-    setEditForm({
-      title: event.title,
-      description: event.description || "",
-      location: event.location,
-      event_date: new Date(event.event_date).toISOString().slice(0, 16),
-      max_attendees: event.max_attendees || 0
-    });
+    setOpenDropdownId(null); // Fecha o dropdown primeiro
+    setTimeout(() => {
+      setEditingEvent(event);
+      setEditForm({
+        title: event.title,
+        description: event.description || "",
+        location: event.location,
+        event_date: new Date(event.event_date).toISOString().slice(0, 16),
+        max_attendees: event.max_attendees || 0
+      });
+    }, 100);
   };
 
   const handleSaveEdit = async () => {
@@ -66,6 +70,13 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
     if (!deletingEventId) return;
     await deleteEvent(deletingEventId);
     setDeletingEventId(null);
+  };
+
+  const handleDeleteClick = (eventId: string) => {
+    setOpenDropdownId(null); // Fecha o dropdown primeiro
+    setTimeout(() => {
+      setDeletingEventId(eventId);
+    }, 100);
   };
 
   if (loading) {
@@ -167,7 +178,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Cadastros
                       </Button>
-                      <DropdownMenu>
+                      <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
                             <Settings className="h-4 w-4" />
@@ -179,7 +190,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => setDeletingEventId(event.id)}
+                            onClick={() => handleDeleteClick(event.id)}
                             className="text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -239,7 +250,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                   </div>
                   
                   <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                    <DropdownMenu>
+                    <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="flex-1">
                           <Settings className="h-4 w-4 mr-2" />
@@ -252,7 +263,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => setDeletingEventId(event.id)}
+                          onClick={() => handleDeleteClick(event.id)}
                           className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -313,7 +324,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                   </div>
                   
                   <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                    <DropdownMenu>
+                    <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="flex-1">
                           <Settings className="h-4 w-4 mr-2" />
@@ -326,7 +337,7 @@ export default function OrganizerEventsList({ onCreateEvent }: OrganizerEventsLi
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => setDeletingEventId(event.id)}
+                          onClick={() => handleDeleteClick(event.id)}
                           className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
