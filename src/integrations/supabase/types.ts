@@ -169,6 +169,7 @@ export type Database = {
           current_attendees: number | null
           description: string | null
           event_date: string
+          form_fields: Json | null
           id: string
           image_url: string | null
           interests: string[] | null
@@ -188,6 +189,7 @@ export type Database = {
           current_attendees?: number | null
           description?: string | null
           event_date: string
+          form_fields?: Json | null
           id?: string
           image_url?: string | null
           interests?: string[] | null
@@ -207,6 +209,7 @@ export type Database = {
           current_attendees?: number | null
           description?: string | null
           event_date?: string
+          form_fields?: Json | null
           id?: string
           image_url?: string | null
           interests?: string[] | null

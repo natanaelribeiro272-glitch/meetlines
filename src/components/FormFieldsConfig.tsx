@@ -1,0 +1,225 @@
+import { useState } from "react";
+import { Plus, Trash2, GripVertical, Text, Mail, Phone, Calendar, ToggleLeft, List } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+
+export interface FormField {
+  id: string;
+  type: 'text' | 'email' | 'phone' | 'date' | 'select' | 'checkbox';
+  label: string;
+  required: boolean;
+  options?: string[];
+}
+
+interface FormFieldsConfigProps {
+  fields: FormField[];
+  onChange: (fields: FormField[]) => void;
+}
+
+const fieldIcons = {
+  text: Text,
+  email: Mail,
+  phone: Phone,
+  date: Calendar,
+  select: List,
+  checkbox: ToggleLeft,
+};
+
+export default function FormFieldsConfig({ fields, onChange }: FormFieldsConfigProps) {
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  const addField = () => {
+    const newField: FormField = {
+      id: `field_${Date.now()}`,
+      type: 'text',
+      label: 'Novo Campo',
+      required: false,
+    };
+    onChange([...fields, newField]);
+    setEditingField(newField.id);
+  };
+
+  const removeField = (id: string) => {
+    onChange(fields.filter(f => f.id !== id));
+  };
+
+  const updateField = (id: string, updates: Partial<FormField>) => {
+    onChange(fields.map(f => f.id === id ? { ...f, ...updates } : f));
+  };
+
+  const moveField = (index: number, direction: 'up' | 'down') => {
+    const newFields = [...fields];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newFields.length) return;
+    [newFields[index], newFields[targetIndex]] = [newFields[targetIndex], newFields[index]];
+    onChange(newFields);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Configure os campos que deseja coletar dos participantes
+        </p>
+        <Button onClick={addField} size="sm" variant="outline">
+          <Plus className="h-4 w-4 mr-1" />
+          Adicionar Campo
+        </Button>
+      </div>
+
+      {fields.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            <Text className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Nenhum campo personalizado ainda</p>
+            <p className="text-xs mt-1">Clique em "Adicionar Campo" para começar</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {fields.map((field, index) => {
+            const Icon = fieldIcons[field.type];
+            const isEditing = editingField === field.id;
+
+            return (
+              <Card key={field.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Tipo do Campo</Label>
+                          <Select
+                            value={field.type}
+                            onValueChange={(value) => updateField(field.id, { type: value as FormField['type'] })}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text">Texto</SelectItem>
+                              <SelectItem value="email">Email</SelectItem>
+                              <SelectItem value="phone">Telefone</SelectItem>
+                              <SelectItem value="date">Data</SelectItem>
+                              <SelectItem value="select">Seleção</SelectItem>
+                              <SelectItem value="checkbox">Checkbox</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="text-xs">Nome do Campo</Label>
+                          <Input
+                            value={field.label}
+                            onChange={(e) => updateField(field.id, { label: e.target.value })}
+                            placeholder="Ex: Nome completo"
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+
+                      {field.type === 'select' && (
+                        <div>
+                          <Label className="text-xs">Opções (uma por linha)</Label>
+                          <textarea
+                            value={(field.options || []).join('\n')}
+                            onChange={(e) => updateField(field.id, { 
+                              options: e.target.value.split('\n').filter(o => o.trim()) 
+                            })}
+                            placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
+                            className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={field.required}
+                            onCheckedChange={(checked) => updateField(field.id, { required: checked })}
+                          />
+                          <Label className="text-xs">Campo obrigatório</Label>
+                        </div>
+                        <Button onClick={() => setEditingField(null)} size="sm" variant="outline">
+                          Concluir
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => moveField(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <GripVertical className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => moveField(index, 'down')}
+                          disabled={index === fields.length - 1}
+                        >
+                          <GripVertical className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{field.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {field.type === 'text' && 'Texto'}
+                          {field.type === 'email' && 'Email'}
+                          {field.type === 'phone' && 'Telefone'}
+                          {field.type === 'date' && 'Data'}
+                          {field.type === 'select' && 'Seleção'}
+                          {field.type === 'checkbox' && 'Checkbox'}
+                          {field.required && ' • Obrigatório'}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setEditingField(field.id)}
+                        >
+                          <Text className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => removeField(field.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="rounded-lg border border-border bg-surface/50 p-4">
+        <p className="text-xs text-muted-foreground">
+          <strong>Dica:</strong> Os campos "Nome", "Email" e "Telefone" já são coletados por padrão. 
+          Use campos personalizados para informações adicionais específicas do seu evento.
+        </p>
+      </div>
+    </div>
+  );
+}
