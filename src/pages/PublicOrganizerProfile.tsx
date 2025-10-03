@@ -464,25 +464,49 @@ export default function PublicOrganizerProfile() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="relative bg-gradient-to-b from-primary/20 to-background">
-        <div className="flex items-center justify-between p-4 relative z-10">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Descubra mais eventos na sua cidade
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
-            <Share2 className="h-5 w-5" />
+      {/* Header com capa de fundo */}
+      <div 
+        className="relative min-h-[260px] overflow-hidden"
+        style={{
+          backgroundImage: organizer.cover_image_url 
+            ? `url(${organizer.cover_image_url})`
+            : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+        }}
+      >
+        {/* Overlay escuro sobre toda a capa para dar contraste */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 0
+          }}
+        />
+        
+        {/* Gradiente suave de transição na parte inferior */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          style={{
+            height: '180px',
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.9) 40%, transparent 100%)',
+            zIndex: 1
+          }}
+        />
+        
+        <div className="flex items-center justify-between p-4 relative" style={{ zIndex: 10 }}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
+            <ArrowLeft className="h-5 w-5 text-white" />
+          </Button>
+          <h1 className="text-lg font-semibold text-white">Organizador</h1>
+          <Button variant="ghost" size="icon" onClick={handleShare} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
+            <Share2 className="h-5 w-5 text-white" />
           </Button>
         </div>
 
         {/* Profile Header */}
-        <div className="px-4 pb-6 text-center">
-          <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
+        <div className="px-4 pb-6 text-center relative" style={{ zIndex: 10 }}>
+          <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white/20 shadow-lg">
             {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
               <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
             ) : (
@@ -492,13 +516,13 @@ export default function PublicOrganizerProfile() {
             )}
           </Avatar>
           
-          <h2 className="text-2xl font-bold text-foreground mb-1">
+          <h2 className="text-2xl font-bold text-white mb-1">
             {organizer.profile?.display_name || organizer.page_title}
           </h2>
           {organizer.username && (
-            <p className="text-sm text-muted-foreground mb-2">@{organizer.username}</p>
+            <p className="text-sm text-white/70 mb-2">@{organizer.username}</p>
           )}
-          <p className="text-muted-foreground max-w-sm mx-auto mb-4">
+          <p className="text-white/80 max-w-sm mx-auto mb-4">
             {organizer.profile?.bio || organizer.page_description || 'Organizador de eventos'}
           </p>
           
@@ -506,22 +530,22 @@ export default function PublicOrganizerProfile() {
           {organizer.show_statistics && (
             <div className="flex justify-center gap-6 mb-4">
               <div className="text-center">
-                <p className="text-lg font-semibold text-foreground">
+                <p className="text-lg font-semibold text-white">
                   {organizer.stats?.followers_count?.toLocaleString() || '0'}
                 </p>
-                <p className="text-sm text-muted-foreground">Seguidores</p>
+                <p className="text-sm text-white/70">Seguidores</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-semibold text-foreground">
+                <p className="text-lg font-semibold text-white">
                   {organizer.stats?.events_count || events.length}
                 </p>
-                <p className="text-sm text-muted-foreground">Eventos</p>
+                <p className="text-sm text-white/70">Eventos</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-semibold text-foreground">
+                <p className="text-lg font-semibold text-white">
                   {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
                 </p>
-                <p className="text-sm text-muted-foreground">Avaliação</p>
+                <p className="text-sm text-white/70">Avaliação</p>
               </div>
             </div>
           )}
@@ -529,10 +553,10 @@ export default function PublicOrganizerProfile() {
           {/* Follow & Share buttons */}
           {!isOwnProfile && (
             <div className="flex justify-center gap-3">
-              <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={handleFollow}>
+              <Button variant="glow" size="lg" className="flex-1 max-w-[200px] bg-white text-gray-900 hover:bg-white/90" onClick={handleFollow}>
                 {isFollowing ? 'Seguindo' : 'Seguir'}
               </Button>
-              <Button variant="outline" size="lg" onClick={handleShare}>
+              <Button variant="outline" size="lg" className="bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white border-white/20" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 Compartilhar
               </Button>
@@ -541,7 +565,7 @@ export default function PublicOrganizerProfile() {
           
           {isOwnProfile && (
             <div className="flex justify-center">
-              <Button variant="outline" size="lg" onClick={handleShare}>
+              <Button variant="outline" size="lg" className="bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white border-white/20" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 Compartilhar minha página
               </Button>

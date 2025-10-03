@@ -314,20 +314,20 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
-        className="relative min-h-[380px] overflow-hidden"
+        className="relative min-h-[260px] overflow-hidden"
         style={{
           backgroundImage: organizer.cover_image_url 
             ? `url(${organizer.cover_image_url})`
             : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center top',
         }}
       >
         {/* Overlay escuro sobre toda a capa para dar contraste */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'rgba(0, 0, 0, 0.4)',
+            background: 'rgba(0, 0, 0, 0.5)',
             zIndex: 0
           }}
         />
@@ -336,8 +336,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         <div 
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
           style={{
-            height: '120px',
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, transparent 100%)',
+            height: '180px',
+            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.9) 40%, transparent 100%)',
             zIndex: 1
           }}
         />
