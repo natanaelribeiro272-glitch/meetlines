@@ -322,7 +322,7 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         )}
 
         {/* Profile Header */}
-        <div className="px-4 pb-6 text-center">
+        <div className="px-4 pb-6 text-center relative z-10">
           <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white/20 shadow-lg">
             {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
               <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
