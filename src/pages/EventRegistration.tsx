@@ -86,7 +86,10 @@ export default function EventRegistration({ onBack, eventId }: EventRegistration
       const formFields = (event?.form_fields as any[]) || [];
       
       formFields.forEach(field => {
-        if (formData[field.id]) {
+        // Para campos de arquivo/foto, usar o data URL do uploadedFiles
+        if ((field.type === 'photo' || field.type === 'file') && uploadedFiles[field.id]) {
+          customData[field.label] = uploadedFiles[field.id];
+        } else if (formData[field.id]) {
           customData[field.label] = formData[field.id];
         }
       });
