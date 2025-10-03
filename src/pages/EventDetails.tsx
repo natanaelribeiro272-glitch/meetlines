@@ -493,8 +493,8 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             </Button>
           )}
           
-          {/* Find Friends button (apenas para eventos presenciais, não live) */}
-          {!event.is_live && !isOrganizer && event.category?.toLowerCase() !== 'live' && (
+          {/* Find Friends button (apenas para eventos ao vivo) */}
+          {event.is_live && !isOrganizer && (
             <Button 
               variant="live" 
               className="w-full" 

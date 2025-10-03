@@ -96,12 +96,11 @@ export function EventCard({
           alt={title}
           className="w-full h-64 object-cover"
         />
-        {price && (
-          <div className="absolute top-3 right-3 bg-surface/90 backdrop-blur-sm px-2 py-1 rounded-md">
-            <span className="text-sm font-medium text-primary">R$ {price}</span>
+        {price && price > 0 ? (
+          <div className="absolute top-3 right-3 bg-destructive/90 backdrop-blur-sm px-2 py-1 rounded-md">
+            <span className="text-xs font-medium text-white">PAGO</span>
           </div>
-        )}
-        {!price && (
+        ) : (
           <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm px-2 py-1 rounded-md">
             <span className="text-xs font-medium text-primary-foreground">GRÁTIS</span>
           </div>
