@@ -61,6 +61,7 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
                 organizerAvatar={event.organizer?.profile?.avatar_url || ""}
                 date={new Date(event.event_date).toLocaleDateString('pt-BR')}
                 location={event.location}
+                locationLink={event.location_link || undefined}
                 estimatedAttendees={event.current_attendees || 0}
                 likes={event.likes_count || 0}
                 comments={event.comments_count || 0}

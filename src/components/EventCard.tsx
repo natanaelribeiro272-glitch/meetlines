@@ -10,6 +10,7 @@ interface EventCardProps {
   organizerAvatar?: string;
   date: string;
   location: string;
+  locationLink?: string;
   estimatedAttendees: number;
   likes: number;
   comments: number;
@@ -33,6 +34,7 @@ export function EventCard({
   organizerAvatar,
   date,
   location,
+  locationLink,
   estimatedAttendees,
   likes,
   comments,
@@ -144,8 +146,15 @@ export function EventCard({
             </div>
           </div>
 
-          {isLive && (
-            <Button variant="live" size="sm" onClick={(e) => e.stopPropagation()}>
+          {isLive && locationLink && (
+            <Button 
+              variant="live" 
+              size="sm" 
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(locationLink, '_blank');
+              }}
+            >
               Entrar
             </Button>
           )}
