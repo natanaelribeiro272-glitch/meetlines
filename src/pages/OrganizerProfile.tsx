@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,80 @@ import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+// Componente auxiliar para fotos de evento
+function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId: string }) {
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('organizer_photos')
+          .select('*')
+          .eq('organizer_id', organizerId)
+          .eq('event_id', eventId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setPhotos(data || []);
+      } catch (error) {
+        console.error('Error fetching event photos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPhotos();
+  }, [eventId, organizerId]);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="aspect-square rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (photos.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-4">
+        Nenhuma foto deste evento ainda
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {photos.slice(0, 6).map((photo) => (
+        <div key={photo.id} className="aspect-square bg-surface rounded-lg overflow-hidden">
+          <img 
+            src={photo.photo_url} 
+            alt={photo.caption || "Foto do evento"} 
+            className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+          />
+        </div>
+      ))}
+      {photos.length > 6 && (
+        <div className="aspect-square bg-surface rounded-lg overflow-hidden relative">
+          <img 
+            src={photos[6].photo_url} 
+            alt="Mais fotos" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <span className="text-white font-semibold text-sm">+{photos.length - 6}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface OrganizerProfileProps {
   onBack: () => void;
@@ -418,14 +492,27 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
 
         {/* Fotos Tab */}
         {activeTab === "fotos" && (
-          <div className="text-center py-8">
-            <div className="mb-4">
-              <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">Nenhuma foto adicionada ainda.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                As fotos dos eventos aparecerão aqui quando forem adicionadas pelo organizador.
-              </p>
-            </div>
+          <div className="space-y-6">
+            {events.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="mb-4">
+                  <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">O organizador ainda não adicionou fotos.</p>
+                </div>
+              </div>
+            ) : (
+              events.map((event) => (
+                <div key={event.id} className="space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{event.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(event.event_date).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <EventPhotoGrid eventId={event.id} organizerId={organizer.id} />
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
