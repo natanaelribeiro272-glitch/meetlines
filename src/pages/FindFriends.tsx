@@ -190,25 +190,32 @@ export default function FindFriends({ onBack }: FindFriendsProps) {
           (profilesData || []).map(p => [p.user_id, p])
         );
 
-        // Combine registration data with profile data
-        const formattedAttendees: Attendee[] = (data || [])
+        // Combine registration data with profile data and remove duplicates
+        const attendeesMap = new Map<string, Attendee>();
+        
+        (data || [])
           .filter(registration => profilesMap.has(registration.user_id))
-          .map((registration: any) => {
-            const profile = profilesMap.get(registration.user_id);
-            return {
-              id: registration.id,
-              user_id: registration.user_id,
-              name: registration.user_name,
-              avatar: profile?.avatar_url || "",
-              interest: profile?.interest || "curtição",
-              note: profile?.notes || "Participante do evento",
-              distance: `${Math.floor(Math.random() * 100) + 10}m`,
-              instagram: profile?.instagram_url || "",
-              phone: profile?.phone || null,
-              event_name: registration.events?.title || "Evento",
-              relationship_status: profile?.relationship_status || "preferencia_nao_informar"
-            };
+          .forEach((registration: any) => {
+            // Only add if user not already in map (prevents duplicates)
+            if (!attendeesMap.has(registration.user_id)) {
+              const profile = profilesMap.get(registration.user_id);
+              attendeesMap.set(registration.user_id, {
+                id: registration.user_id, // Use user_id as unique id instead of registration id
+                user_id: registration.user_id,
+                name: registration.user_name,
+                avatar: profile?.avatar_url || "",
+                interest: profile?.interest || "curtição",
+                note: profile?.notes || "Participante do evento",
+                distance: `${Math.floor(Math.random() * 100) + 10}m`,
+                instagram: profile?.instagram_url || "",
+                phone: profile?.phone || null,
+                event_name: registration.events?.title || "Evento",
+                relationship_status: profile?.relationship_status || "preferencia_nao_informar"
+              });
+            }
           });
+
+        const formattedAttendees: Attendee[] = Array.from(attendeesMap.values());
 
         setAttendees(formattedAttendees);
 
