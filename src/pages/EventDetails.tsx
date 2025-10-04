@@ -182,6 +182,39 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     }, 'confirmar presença');
   };
 
+  const handleCancelAttendance = async () => {
+    requireAuth(async () => {
+      if (!user || !eventId) return;
+      
+      setConfirmingAttendance(true);
+      
+      try {
+        const { error } = await supabase
+          .from('event_registrations')
+          .update({ 
+            attendance_confirmed: false,
+            attendance_confirmed_at: null
+          })
+          .eq('event_id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error canceling attendance:', error);
+          toast.error('Erro ao cancelar presença');
+          return;
+        }
+
+        setHasConfirmedAttendance(false);
+        toast.success('Confirmação de presença cancelada');
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Erro ao cancelar presença');
+      } finally {
+        setConfirmingAttendance(false);
+      }
+    }, 'cancelar presença');
+  };
+
   const handleFindFriendsClick = () => {
     requireAuth(() => {
       if (onFindFriends) onFindFriends();
@@ -448,13 +481,13 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
           
           <div className="flex gap-3">
             <Button 
-              variant="glow" 
+              variant={hasConfirmedAttendance ? "outline" : "glow"}
               className="flex-1" 
               size="lg" 
-              onClick={isOrganizer && onViewAttendances ? onViewAttendances : handleConfirmPresence}
-              disabled={confirmingAttendance || checkingAttendance || hasConfirmedAttendance}
+              onClick={isOrganizer && onViewAttendances ? onViewAttendances : (hasConfirmedAttendance ? handleCancelAttendance : handleConfirmPresence)}
+              disabled={confirmingAttendance || checkingAttendance}
             >
-              {isOrganizer ? 'Ver Presenças Confirmadas' : hasConfirmedAttendance ? 'Presença Confirmada' : confirmingAttendance ? 'Confirmando...' : 'Confirmar Presença'}
+              {isOrganizer ? 'Ver Presenças Confirmadas' : hasConfirmedAttendance ? 'Cancelar Presença' : confirmingAttendance ? 'Confirmando...' : 'Confirmar Presença'}
             </Button>
             {event.is_live ? (
               event.location_link && (

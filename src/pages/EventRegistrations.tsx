@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Users, Search, Download, ChevronRight } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Users, Search, Download, ChevronRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
+  const [deletingRegistration, setDeletingRegistration] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -143,6 +145,30 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
       toast.success('Download iniciado');
     } else {
       toast.error('Arquivo não disponível para download');
+    }
+  };
+
+  const handleDeleteRegistration = async (registrationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('event_registrations')
+        .delete()
+        .eq('id', registrationId);
+
+      if (error) {
+        console.error('Error deleting registration:', error);
+        toast.error('Erro ao excluir cadastro');
+        return;
+      }
+
+      // Remove from local state
+      setRegistrations(prev => prev.filter(reg => reg.id !== registrationId));
+      setSelectedRegistration(null);
+      setDeletingRegistration(null);
+      toast.success('Cadastro excluído com sucesso. O usuário pode se cadastrar novamente.');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erro ao excluir cadastro');
     }
   };
 
@@ -339,14 +365,50 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
                           )}
                         </div>
                       );
-                    })}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                     })}
+                   </div>
+                 )}
+
+                 {/* Delete Button */}
+                 <div className="pt-4 border-t">
+                   <Button
+                     variant="destructive"
+                     className="w-full"
+                     onClick={() => setDeletingRegistration(selectedRegistration.id)}
+                   >
+                     <Trash2 className="h-4 w-4 mr-2" />
+                     Excluir Cadastro
+                   </Button>
+                   <p className="text-xs text-muted-foreground text-center mt-2">
+                     Ao excluir, o usuário poderá se cadastrar novamente
+                   </p>
+                 </div>
+               </div>
+             </>
+           )}
+         </DialogContent>
+       </Dialog>
+
+       {/* Delete Confirmation Dialog */}
+       <AlertDialog open={!!deletingRegistration} onOpenChange={(open) => !open && setDeletingRegistration(null)}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>Excluir Cadastro?</AlertDialogTitle>
+             <AlertDialogDescription>
+               Esta ação não pode ser desfeita. O cadastro será permanentemente excluído e o usuário poderá se cadastrar novamente no evento.
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel>Cancelar</AlertDialogCancel>
+             <AlertDialogAction
+               onClick={() => deletingRegistration && handleDeleteRegistration(deletingRegistration)}
+               className="bg-destructive hover:bg-destructive/90"
+             >
+               Excluir
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
+     </div>
+   );
+ }
