@@ -28,10 +28,19 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
   };
 
   const categorizeEvents = () => {
-    // Dividir eventos em categorias baseado na data ou tipo
     const now = new Date();
-    const upcoming = events.filter(event => new Date(event.event_date) > now);
-    const live = events.filter(event => event.is_live);
+    
+    // Eventos ao vivo: data do evento já passou ou está acontecendo agora
+    const live = events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      return eventDate <= now;
+    });
+    
+    // Próximos eventos: data do evento ainda não chegou
+    const upcoming = events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      return eventDate > now;
+    });
     
     return { upcoming, live };
   };
@@ -56,7 +65,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
       {/* Eventos ao Vivo */}
       {live.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">🔴 Ao Vivo</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">🔴 Acontecendo Agora</h2>
           <div className="space-y-6">
             {live.map((event) => (
               <EventCard
@@ -73,7 +82,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 likes={event.likes_count || 0}
                 comments={event.comments_count || 0}
                 isLiked={event.is_liked || false}
-                isLive={event.is_live}
+                isLive={true}
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}
@@ -106,7 +115,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 likes={event.likes_count || 0}
                 comments={event.comments_count || 0}
                 isLiked={event.is_liked || false}
-                isLive={event.is_live}
+                isLive={false}
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}

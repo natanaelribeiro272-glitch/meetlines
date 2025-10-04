@@ -82,7 +82,7 @@ export function EventCard({
             {isLive && (
               <span className="flex items-center gap-1 text-destructive font-medium">
                 <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
-                AO VIVO
+                ACONTECENDO AGORA
               </span>
             )}
           </div>

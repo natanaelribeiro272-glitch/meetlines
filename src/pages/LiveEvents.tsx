@@ -12,7 +12,11 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
   const { events, loading, toggleLike } = useEvents();
   
   // Filter only live events
-  const liveEvents = events.filter(event => event.is_live);
+  const now = new Date();
+  const liveEvents = events.filter(event => {
+    const eventDate = new Date(event.event_date);
+    return eventDate <= now;
+  });
 
   if (loading) {
     return (
@@ -66,7 +70,7 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
                 likes={event.likes_count || 0}
                 comments={event.comments_count || 0}
                 isLiked={event.is_liked || false}
-                isLive={event.is_live}
+                isLive={new Date(event.event_date) <= now}
                 onClick={() => onEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
               />
