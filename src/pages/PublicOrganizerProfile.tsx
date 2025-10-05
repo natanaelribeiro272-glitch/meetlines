@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { ThemeProvider } from "@/hooks/useTheme";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -238,6 +237,12 @@ export default function PublicOrganizerProfile() {
           return;
         }
 
+        // Aplicar o tema do organizador IMEDIATAMENTE
+        const organizerTheme = organizerData.preferred_theme || 'dark';
+        const root = document.documentElement;
+        root.classList.remove('dark', 'light');
+        root.classList.add(organizerTheme);
+
         // Verificar se é o próprio perfil
         if (user && organizerData.user_id === user.id) {
           setIsOwnProfile(true);
@@ -326,6 +331,14 @@ export default function PublicOrganizerProfile() {
     };
 
     fetchOrganizerData();
+
+    // Cleanup: restaurar tema ao sair da página
+    return () => {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      const root = document.documentElement;
+      root.classList.remove('dark', 'light');
+      root.classList.add(savedTheme);
+    };
   }, [slug, user, navigate]);
 
   // Realtime updates para perfil do organizador
@@ -464,11 +477,8 @@ export default function PublicOrganizerProfile() {
     return null;
   }
 
-  const organizerTheme = organizer.preferred_theme || 'dark';
-
   return (
-    <ThemeProvider forcedTheme={organizerTheme}>
-      <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
         className="relative h-[200px] overflow-hidden"
@@ -821,7 +831,6 @@ export default function PublicOrganizerProfile() {
           Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
         </p>
       </footer>
-      </div>
-    </ThemeProvider>
+    </div>
   );
 }

@@ -34,17 +34,19 @@ export default function EventPublicPage() {
 
         // Try multiple strategies to resolve organizer
         let organizerId: string | null = null;
+        let organizerTheme: string = 'dark';
         const deSlug = organizerSlug.replace(/-/g, ' ');
 
         // 1) Exact match by organizers.username
         const { data: orgByUsername, error: orgError } = await supabase
           .from("organizers")
-          .select("id, page_title, user_id")
+          .select("id, page_title, user_id, preferred_theme")
           .eq("username", organizerSlug)
           .maybeSingle();
         if (orgError) throw orgError;
         if (orgByUsername) {
           organizerId = orgByUsername.id;
+          organizerTheme = orgByUsername.preferred_theme || 'dark';
         }
 
         // 2) Match by profiles.display_name (user-friendly name used in share)
@@ -58,11 +60,14 @@ export default function EventPublicPage() {
           if (profileMatch) {
             const { data: orgByUser, error: orgByUserErr } = await supabase
               .from("organizers")
-              .select("id, user_id")
+              .select("id, user_id, preferred_theme")
               .eq("user_id", profileMatch.user_id)
               .maybeSingle();
             if (orgByUserErr && orgByUserErr.code !== 'PGRST116') throw orgByUserErr;
-            if (orgByUser) organizerId = orgByUser.id;
+            if (orgByUser) {
+              organizerId = orgByUser.id;
+              organizerTheme = orgByUser.preferred_theme || 'dark';
+            }
           }
         }
 
@@ -70,11 +75,14 @@ export default function EventPublicPage() {
         if (!organizerId) {
           const { data: orgByTitle, error: orgByTitleErr } = await supabase
             .from("organizers")
-            .select("id, page_title")
+            .select("id, page_title, preferred_theme")
             .ilike("page_title", `%${deSlug}%`)
             .maybeSingle();
           if (orgByTitleErr && orgByTitleErr.code !== 'PGRST116') throw orgByTitleErr;
-          if (orgByTitle) organizerId = orgByTitle.id;
+          if (orgByTitle) {
+            organizerId = orgByTitle.id;
+            organizerTheme = orgByTitle.preferred_theme || 'dark';
+          }
         }
 
         if (!organizerId) {
@@ -82,6 +90,11 @@ export default function EventPublicPage() {
           toast.error("Organizador não encontrado");
           return;
         }
+
+        // Aplicar tema do organizador
+        const root = document.documentElement;
+        root.classList.remove('dark', 'light');
+        root.classList.add(organizerTheme);
 
         // Fetch this organizer's events and find by slugified title on the client (case-insensitive)
         const { data: events, error: eventsError } = await supabase
@@ -108,6 +121,14 @@ export default function EventPublicPage() {
     };
 
     resolveEvent();
+
+    // Cleanup: restaurar tema ao sair da página
+    return () => {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      const root = document.documentElement;
+      root.classList.remove('dark', 'light');
+      root.classList.add(savedTheme);
+    };
   }, [organizerSlug, eventSlug]);
 
   if (loading) {

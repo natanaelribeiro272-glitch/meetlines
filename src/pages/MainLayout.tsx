@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import AuthPage from "./AuthPage";
 import Home from "./Home";
@@ -28,6 +29,7 @@ export default function MainLayout() {
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const { user, userRole, loading } = useAuth();
+  const { setTheme } = useTheme();
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -35,6 +37,27 @@ export default function MainLayout() {
       navigate("/auth", { replace: true });
     }
   }, [user, loading, navigate]);
+
+  // Aplicar tema do organizador quando ele faz login
+  useEffect(() => {
+    const applyOrganizerTheme = async () => {
+      if (!user || loading || userRole !== "organizer") return;
+
+      // Buscar preferência de tema do organizador
+      const { data: organizer } = await supabase
+        .from("organizers")
+        .select("preferred_theme")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (organizer?.preferred_theme) {
+        const theme = organizer.preferred_theme as 'dark' | 'light';
+        setTheme(theme);
+      }
+    };
+
+    applyOrganizerTheme();
+  }, [user, userRole, loading, setTheme]);
 
   // Verificar se organizador completou onboarding
   useEffect(() => {
