@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 interface AuthPageProps {
   onLogin: (userType: "user" | "organizer") => void;
 }
@@ -27,6 +28,7 @@ export default function AuthPage({
     signIn,
     user
   } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -83,6 +85,22 @@ export default function AuthPage({
   };
   return <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
+        {/* Theme Toggle */}
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-8 w-8"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
         {/* User Type Toggle */}
         <div className="flex items-center justify-center">
           <div className="flex bg-surface rounded-lg p-1 border border-border">

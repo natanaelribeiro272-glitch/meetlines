@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -149,6 +150,7 @@ interface OrganizerData {
   show_playlist?: boolean;
   show_location?: boolean;
   show_website?: boolean;
+  preferred_theme?: 'dark' | 'light';
   profile?: {
     display_name?: string;
     avatar_url?: string;
@@ -462,8 +464,11 @@ export default function PublicOrganizerProfile() {
     return null;
   }
 
+  const organizerTheme = organizer.preferred_theme || 'dark';
+
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <ThemeProvider forcedTheme={organizerTheme}>
+      <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div 
         className="relative h-[200px] overflow-hidden"
@@ -816,6 +821,7 @@ export default function PublicOrganizerProfile() {
           Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
         </p>
       </footer>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }

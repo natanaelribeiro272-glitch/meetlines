@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Upload, User, Link as LinkIcon, CheckCircle, MessageCircle, Instagram, Music, MapPin, Globe, Mail, Lock } from "lucide-react";
+import { Upload, User, Link as LinkIcon, CheckCircle, MessageCircle, Instagram, Music, MapPin, Globe, Mail, Lock, Palette } from "lucide-react";
 
 interface NavState {
   email?: string;
@@ -47,8 +47,11 @@ export default function OrganizerOnboarding() {
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [locationUrl, setLocationUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  
+  // Step 4: Preferência de tema
+  const [preferredTheme, setPreferredTheme] = useState<"dark" | "light">("dark");
 
-  const totalSteps = 4; // 0..3
+  const totalSteps = 5; // 0..4
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   useEffect(() => {
@@ -121,6 +124,10 @@ export default function OrganizerOnboarding() {
       return;
     }
     setCurrentStep(3);
+  };
+
+  const handleStep3Next = () => {
+    setCurrentStep(4);
   };
 
   const handleComplete = async () => {
@@ -210,7 +217,8 @@ export default function OrganizerOnboarding() {
           show_instagram: !!instagramUrl,
           show_playlist: !!playlistUrl,
           show_location: !!locationUrl,
-          show_website: !!websiteUrl
+          show_website: !!websiteUrl,
+          preferred_theme: preferredTheme
         })
         .select()
         .maybeSingle();
@@ -359,7 +367,7 @@ export default function OrganizerOnboarding() {
               <div className="text-center mb-6">
                 <LinkIcon className="h-12 w-12 mx-auto text-primary mb-2" />
                 <h3 className="text-lg font-semibold">Links e Redes Sociais</h3>
-                <p className="text-sm text-muted-foreground">Selecione as redes que deseja adicionar</p>
+                <p className="text-sm text-muted-foreground">Selecione as redes que deseja adicionar (opcional)</p>
               </div>
 
               {/* Ícones clicáveis */}
@@ -518,6 +526,76 @@ export default function OrganizerOnboarding() {
 
               <div className="flex gap-2 mt-6">
                 <Button variant="outline" onClick={() => setCurrentStep(2)} className="w-full">
+                  Voltar
+                </Button>
+                <Button onClick={handleStep3Next} className="w-full">
+                  Próxima Etapa
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: Preferência de Tema */}
+          {currentStep === 4 && (
+            <div className="space-y-4">
+              <div className="text-center mb-6">
+                <Palette className="h-12 w-12 mx-auto text-primary mb-2" />
+                <h3 className="text-lg font-semibold">Escolha o Tema da Sua Página</h3>
+                <p className="text-sm text-muted-foreground">
+                  Selecione como seus visitantes verão sua página
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setPreferredTheme("dark")}
+                  className={`p-6 rounded-lg border-2 transition-all ${
+                    preferredTheme === "dark"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="w-full h-24 bg-gradient-to-br from-gray-900 to-gray-800 rounded-md flex items-center justify-center">
+                      <div className="text-white text-xs font-medium">Modo Escuro</div>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-sm">Dark Mode</p>
+                      <p className="text-xs text-muted-foreground">Visual moderno e elegante</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPreferredTheme("light")}
+                  className={`p-6 rounded-lg border-2 transition-all ${
+                    preferredTheme === "light"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="w-full h-24 bg-gradient-to-br from-blue-400 via-pink-400 to-orange-400 rounded-md flex items-center justify-center">
+                      <div className="text-white text-xs font-medium">Modo Claro</div>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-sm">Light Mode</p>
+                      <p className="text-xs text-muted-foreground">Visual colorido e vibrante</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-xs text-muted-foreground text-center">
+                  💡 Seus visitantes sempre verão sua página no tema que você escolher aqui
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setCurrentStep(3)} className="w-full">
                   Voltar
                 </Button>
                 <Button onClick={handleComplete} className="w-full" disabled={isLoading}>

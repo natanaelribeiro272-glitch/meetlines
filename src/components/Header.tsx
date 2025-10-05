@@ -1,8 +1,10 @@
-import { MapPin } from "lucide-react";
+import { MapPin, Sun, Moon } from "lucide-react";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { Button } from "./ui/button";
 interface HeaderProps {
   title?: string;
   showLocation?: boolean;
@@ -16,6 +18,7 @@ export function Header({
   userType
 }: HeaderProps) {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,7 +47,21 @@ export function Header({
             </div>}
         </div>
 
-        {showNotifications && <NotificationDropdown onUnauthorizedClick={handleNotificationClick} />}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-8 w-8"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+          {showNotifications && <NotificationDropdown onUnauthorizedClick={handleNotificationClick} />}
+        </div>
       </div>
     </header>;
 }
