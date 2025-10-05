@@ -437,6 +437,7 @@ export type Database = {
           page_subtitle: string | null
           page_title: string
           playlist_url: string | null
+          preferred_theme: string | null
           primary_color: string | null
           public_page_visible: boolean | null
           show_contact: boolean | null
@@ -468,6 +469,7 @@ export type Database = {
           page_subtitle?: string | null
           page_title: string
           playlist_url?: string | null
+          preferred_theme?: string | null
           primary_color?: string | null
           public_page_visible?: boolean | null
           show_contact?: boolean | null
@@ -499,6 +501,7 @@ export type Database = {
           page_subtitle?: string | null
           page_title?: string
           playlist_url?: string | null
+          preferred_theme?: string | null
           primary_color?: string | null
           public_page_visible?: boolean | null
           show_contact?: boolean | null
