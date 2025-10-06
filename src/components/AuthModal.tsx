@@ -80,7 +80,6 @@ export function AuthModal({ open, onOpenChange, actionDescription, onSuccess }: 
           password: signupPassword,
         });
         if (signInError) {
-          // As a last resort, show a friendly message without mentioning email confirmation
           toast.error("Não foi possível entrar automaticamente. Tente fazer login.");
           return;
         }
@@ -88,6 +87,14 @@ export function AuthModal({ open, onOpenChange, actionDescription, onSuccess }: 
 
       toast.success("Conta criada com sucesso!");
       onOpenChange(false);
+      
+      // Redirect to appropriate onboarding based on role
+      if (signupRole === "organizer") {
+        window.location.href = "/organizer-onboarding";
+      } else {
+        window.location.href = "/user-onboarding";
+      }
+      
       if (onSuccess) onSuccess();
     } catch (error: any) {
       console.error("Signup error:", error);

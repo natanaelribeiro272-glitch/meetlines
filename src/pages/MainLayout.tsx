@@ -59,27 +59,42 @@ export default function MainLayout() {
     applyOrganizerTheme();
   }, [user, userRole, loading, setTheme]);
 
-  // Verificar se organizador completou onboarding
+  // Verificar se user completou onboarding
   useEffect(() => {
-    const checkOrganizerOnboarding = async () => {
+    const checkUserOnboarding = async () => {
       if (!user || loading || userRole === null) return;
-      
-      if (userRole !== "organizer") return;
 
-      // Verificar se já tem organizer criado
-      const { data: organizer } = await supabase
-        .from("organizers")
-        .select("id, username")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      try {
+        // Check if profile has username set
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("user_id", user.id)
+          .single();
 
-      // Se não tem organizer OU não tem username, redirecionar para onboarding
-      if (!organizer || !organizer.username) {
-        navigate("/organizer-onboarding", { replace: true });
+        // Redirect based on role and profile completion
+        if (userRole === "organizer") {
+          const { data: organizer } = await supabase
+            .from("organizers")
+            .select("id, username")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!organizer || !organizer.username) {
+            navigate("/organizer-onboarding", { replace: true });
+          }
+        } else if (userRole === "user") {
+          // If user doesn't have username, redirect to user onboarding
+          if (!profile || !profile.username) {
+            navigate("/user-onboarding", { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error("Error checking onboarding:", error);
       }
     };
 
-    checkOrganizerOnboarding();
+    checkUserOnboarding();
   }, [user, userRole, loading, navigate]);
 
   const handleLogin = (type: "user" | "organizer") => {
