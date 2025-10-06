@@ -119,7 +119,7 @@ export function EventCard({
             </div>
           </div>
 
-          {isLive && locationLink}
+          {isLive &&}
         </div>
         
         {/* Registration Badge */}
