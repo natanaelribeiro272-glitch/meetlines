@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit } from "lucide-react";
+import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit, StopCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -215,6 +215,33 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     }, 'cancelar presença');
   };
 
+  const handleEndEvent = async () => {
+    if (!eventId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ 
+          is_live: false,
+          status: 'completed'
+        })
+        .eq('id', eventId);
+
+      if (error) {
+        console.error('Error ending event:', error);
+        toast.error('Erro ao encerrar evento');
+        return;
+      }
+
+      toast.success('Evento encerrado com sucesso!');
+      // Refresh page to show updated status
+      window.location.reload();
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erro ao encerrar evento');
+    }
+  };
+
   const handleFindFriendsClick = () => {
     requireAuth(() => {
       if (onFindFriends) onFindFriends();
@@ -354,6 +381,17 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         <div className="absolute top-4 right-4 flex gap-2">
           {isOrganizer && (
             <>
+              {event.is_live && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="bg-destructive/90 backdrop-blur-sm hover:bg-destructive"
+                  onClick={handleEndEvent}
+                >
+                  <StopCircle className="h-4 w-4 mr-1" />
+                  Encerrar
+                </Button>
+              )}
               {onEdit && (
                 <Button
                   variant="ghost"
