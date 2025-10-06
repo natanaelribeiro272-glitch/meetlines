@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { AuthModal } from "@/components/AuthModal";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
@@ -30,6 +31,8 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   const [hasConfirmedAttendance, setHasConfirmedAttendance] = useState(false);
   const [checkingAttendance, setCheckingAttendance] = useState(true);
   const [confirmingAttendance, setConfirmingAttendance] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalAction, setAuthModalAction] = useState("");
   
   const isOrganizer = user && event?.organizer?.user_id === user.id;
 
@@ -64,9 +67,8 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
   const requireAuth = (action: () => void, actionName: string) => {
     if (!user) {
-      const currentPath = location.pathname;
-      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
-      toast.info(`Faça login para ${actionName}`);
+      setAuthModalAction(`para ${actionName}`);
+      setAuthModalOpen(true);
       return;
     }
     action();
@@ -659,6 +661,13 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        actionDescription={authModalAction}
+      />
     </div>
   );
 }

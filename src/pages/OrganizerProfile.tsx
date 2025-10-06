@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { AuthModal } from "@/components/AuthModal";
 import { useOrganizerDetails, OrganizerEvent } from "@/hooks/useOrganizerDetails";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useFollowers } from "@/hooks/useFollowers";
@@ -22,6 +23,8 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalAction, setAuthModalAction] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,9 +72,8 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
 
   const handlePhotoClick = (index: number) => {
     if (!user) {
-      const currentPath = location.pathname;
-      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
-      toast.info('Faça login para ver as fotos ampliadas');
+      setAuthModalAction("para ver as fotos ampliadas");
+      setAuthModalOpen(true);
       return;
     }
     setCurrentPhotoIndex(index);
@@ -80,9 +82,8 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
 
   const handleGalleryClick = () => {
     if (!user) {
-      const currentPath = location.pathname;
-      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
-      toast.info('Faça login para ver todas as fotos');
+      setAuthModalAction("para ver todas as fotos");
+      setAuthModalOpen(true);
       return;
     }
     setGalleryOpen(true);
@@ -259,6 +260,13 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        actionDescription={authModalAction}
+      />
     </>
   );
 }
@@ -274,6 +282,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
   const [allEvents, setAllEvents] = useState<OrganizerEvent[]>([]);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [removingCover, setRemovingCover] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalAction, setAuthModalAction] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
   const { updateOrganizerProfile } = useOrganizer();
@@ -590,8 +600,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
               className="flex-1 max-w-[200px]" 
               onClick={async () => {
                 if (!user) {
-                  const currentPath = location.pathname;
-                  navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+                  setAuthModalAction("para seguir este organizador");
+                  setAuthModalOpen(true);
                 } else {
                   await toggleFollow();
                 }
@@ -897,6 +907,13 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
         </p>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        actionDescription={authModalAction}
+      />
     </div>
   );
 }
