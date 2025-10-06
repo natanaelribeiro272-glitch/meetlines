@@ -58,7 +58,7 @@ export function AuthModal({ open, onOpenChange, actionDescription, onSuccess }: 
 
     try {
       const redirectUrl = `${window.location.origin}/`;
-      
+
       const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
@@ -73,13 +73,20 @@ export function AuthModal({ open, onOpenChange, actionDescription, onSuccess }: 
 
       if (error) throw error;
 
-      // Check if email confirmation is required
-      if (data.user && !data.session) {
-        toast.info("Verifique seu email para confirmar sua conta.");
-      } else {
-        toast.success("Conta criada com sucesso!");
+      // If Supabase didn't return a session (some configs), perform an immediate login
+      if (!data.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: signupEmail,
+          password: signupPassword,
+        });
+        if (signInError) {
+          // As a last resort, show a friendly message without mentioning email confirmation
+          toast.error("Não foi possível entrar automaticamente. Tente fazer login.");
+          return;
+        }
       }
-      
+
+      toast.success("Conta criada com sucesso!");
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error: any) {
