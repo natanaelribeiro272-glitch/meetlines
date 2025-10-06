@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download } from "lucide-react";
+import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
@@ -15,8 +16,12 @@ import { getPublicBaseUrl } from "@/config/site";
 function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId: string }) {
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchPhotos = async () => {
@@ -50,8 +55,8 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
 
   if (loading) {
     return (
-      <div className="grid grid-cols-3 gap-2">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-2 gap-2">
+        {[1, 2, 3, 4].map((i) => (
           <Skeleton key={i} className="aspect-square rounded-lg" />
         ))}
       </div>
@@ -66,13 +71,34 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
     );
   }
 
-  const handleDownload = async (photoUrl: string, photoCaption: string) => {
+  const handlePhotoClick = (index: number) => {
     if (!user) {
-      toast.error('Faça login para baixar fotos');
-      navigate('/auth');
+      const currentPath = location.pathname;
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      toast.info('Faça login para ver as fotos ampliadas');
       return;
     }
+    setCurrentPhotoIndex(index);
+    setViewerOpen(true);
+  };
 
+  const handleGalleryClick = () => {
+    if (!user) {
+      const currentPath = location.pathname;
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      toast.info('Faça login para ver todas as fotos');
+      return;
+    }
+    setGalleryOpen(true);
+  };
+
+  const handleGalleryPhotoClick = (index: number) => {
+    setCurrentPhotoIndex(index);
+    setGalleryOpen(false);
+    setViewerOpen(true);
+  };
+
+  const handleDownload = async (photoUrl: string, photoCaption: string) => {
     try {
       const response = await fetch(photoUrl);
       const blob = await response.blob();
@@ -91,37 +117,153 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
     }
   };
 
+  const goToPrevious = () => {
+    setCurrentPhotoIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
+  };
+
+  const displayedPhotos = photos.slice(0, 3);
+  const remainingCount = photos.length - 3;
+
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {photos.slice(0, 6).map((photo) => (
-        <div key={photo.id} className="aspect-square bg-surface rounded-lg overflow-hidden relative group">
-          <img 
-            src={photo.photo_url} 
-            alt={photo.caption || "Foto do evento"} 
-            className="w-full h-full object-cover hover:scale-105 transition-transform"
-          />
-          <button
-            onClick={() => handleDownload(photo.photo_url, photo.caption)}
-            className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Baixar foto"
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        {displayedPhotos.map((photo, index) => (
+          <div 
+            key={photo.id} 
+            className="aspect-square bg-surface rounded-lg overflow-hidden relative group cursor-pointer"
+            onClick={() => handlePhotoClick(index)}
           >
-            <Download className="w-4 h-4" />
-          </button>
-        </div>
-      ))}
-      {photos.length > 6 && (
-        <div className="aspect-square bg-surface rounded-lg overflow-hidden relative">
-          <img 
-            src={photos[6].photo_url} 
-            alt="Mais fotos" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">+{photos.length - 6}</span>
+            <img 
+              src={photo.photo_url} 
+              alt={photo.caption || "Foto do evento"} 
+              className="w-full h-full object-cover hover:scale-105 transition-transform"
+            />
           </div>
-        </div>
-      )}
-    </div>
+        ))}
+        {remainingCount > 0 && (
+          <div 
+            className="aspect-square bg-surface rounded-lg overflow-hidden relative cursor-pointer"
+            onClick={handleGalleryClick}
+          >
+            <img 
+              src={photos[3].photo_url} 
+              alt="Mais fotos" 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60 hover:bg-black/70 transition-colors flex items-center justify-center">
+              <span className="text-white font-bold text-2xl">+{remainingCount + 1}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Gallery Dialog */}
+      <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Todas as fotos ({photos.length})</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setGalleryOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {photos.map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className="aspect-square bg-surface rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => handleGalleryPhotoClick(index)}
+                >
+                  <img
+                    src={photo.photo_url}
+                    alt={photo.caption || `Foto ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Viewer Dialog */}
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="max-w-4xl w-full h-[90vh] p-0 bg-black">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Close button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white"
+              onClick={() => setViewerOpen(false)}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+
+            {/* Download button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-16 z-50 bg-black/50 hover:bg-black/70 text-white"
+              onClick={() => handleDownload(photos[currentPhotoIndex].photo_url, photos[currentPhotoIndex].caption)}
+            >
+              <Download className="h-6 w-6" />
+            </Button>
+
+            {/* Previous button */}
+            {photos.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-4 z-50 bg-black/50 hover:bg-black/70 text-white"
+                onClick={goToPrevious}
+              >
+                <ChevronLeft className="h-8 w-8" />
+              </Button>
+            )}
+
+            {/* Next button */}
+            {photos.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 z-50 bg-black/50 hover:bg-black/70 text-white"
+                onClick={goToNext}
+              >
+                <ChevronRight className="h-8 w-8" />
+              </Button>
+            )}
+
+            {/* Photo */}
+            <img
+              src={photos[currentPhotoIndex]?.photo_url}
+              alt={photos[currentPhotoIndex]?.caption || "Foto do evento"}
+              className="max-h-full max-w-full object-contain"
+            />
+
+            {/* Photo counter */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
+              {currentPhotoIndex + 1} / {photos.length}
+            </div>
+
+            {/* Caption */}
+            {photos[currentPhotoIndex]?.caption && (
+              <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg text-sm max-w-md text-center">
+                {photos[currentPhotoIndex].caption}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
