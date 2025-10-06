@@ -18,13 +18,16 @@ import OrganizerEventsList from "@/components/OrganizerEventsList";
 import OrganizerSettings from "@/components/OrganizerSettings";
 import CreateEvent from "@/pages/CreateEvent";
 import EventRegistrations from "@/pages/EventRegistrations";
+import EventAttendances from "@/pages/EventAttendances";
 import { getPublicBaseUrl } from "@/config/site";
 
 export default function OrganizerPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showRegistrations, setShowRegistrations] = useState(false);
+  const [showAttendances, setShowAttendances] = useState(false);
   const [selectedEventIdForRegistrations, setSelectedEventIdForRegistrations] = useState<string | null>(null);
+  const [selectedEventIdForAttendances, setSelectedEventIdForAttendances] = useState<string | null>(null);
   const [showAddPhotos, setShowAddPhotos] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -245,6 +248,10 @@ export default function OrganizerPage() {
 
   if (showRegistrations) {
     return <EventRegistrations onBack={() => setShowRegistrations(false)} eventId={selectedEventIdForRegistrations || undefined} />;
+  }
+
+  if (showAttendances) {
+    return <EventAttendances onBack={() => setShowAttendances(false)} eventId={selectedEventIdForAttendances || undefined} />;
   }
 
   // Profile tab content
@@ -654,6 +661,10 @@ export default function OrganizerPage() {
               onManageRegistrations={(eventId) => {
                 setSelectedEventIdForRegistrations(eventId);
                 setShowRegistrations(true);
+              }}
+              onViewAttendances={(eventId) => {
+                setSelectedEventIdForAttendances(eventId);
+                setShowAttendances(true);
               }}
             />
           </TabsContent>

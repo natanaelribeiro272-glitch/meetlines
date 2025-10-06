@@ -17,9 +17,10 @@ import event2 from "@/assets/event-2.jpg";
 interface OrganizerEventsListProps {
   onCreateEvent: () => void;
   onManageRegistrations?: (eventId: string) => void;
+  onViewAttendances?: (eventId: string) => void;
 }
 
-export default function OrganizerEventsList({ onCreateEvent, onManageRegistrations }: OrganizerEventsListProps) {
+export default function OrganizerEventsList({ onCreateEvent, onManageRegistrations, onViewAttendances }: OrganizerEventsListProps) {
   const { events, loading, updateEvent, deleteEvent } = useOrganizer();
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
@@ -277,11 +278,28 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                   </div>
                   
                   <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                    {event.requires_registration && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => onManageRegistrations?.(event.id)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver Cadastros
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => onViewAttendances?.(event.id)}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      Ver Confirmações
+                    </Button>
                     <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Gerenciar
+                        <Button variant="ghost" size="sm">
+                          <Settings className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
