@@ -578,6 +578,19 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
               Encontrar Amigos no Evento
             </Button>
           )}
+          
+          {/* End Event button (apenas para organizador em evento ao vivo) */}
+          {event.is_live && isOrganizer && (
+            <Button 
+              variant="destructive" 
+              className="w-full" 
+              size="lg"
+              onClick={handleEndEvent}
+            >
+              <StopCircle className="h-4 w-4 mr-2" />
+              Encerrar Evento
+            </Button>
+          )}
         </div>
 
         {/* Engagement Stats */}
