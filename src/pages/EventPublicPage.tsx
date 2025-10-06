@@ -5,6 +5,7 @@ import EventDetails from "./EventDetails";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 // Helper to create URL-friendly slugs (same rules used in share)
 const slugify = (text: string) =>
@@ -20,8 +21,10 @@ const slugify = (text: string) =>
 export default function EventPublicPage() {
   const { organizerSlug, eventSlug } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [eventId, setEventId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUserOrganizer, setIsUserOrganizer] = useState(false);
 
   useEffect(() => {
     const resolveEvent = async () => {
@@ -112,6 +115,19 @@ export default function EventPublicPage() {
         }
 
         setEventId(match.id);
+
+        // Check if logged user is the organizer
+        if (user) {
+          const { data: organizer } = await supabase
+            .from('organizers')
+            .select('user_id')
+            .eq('id', match.organizer_id)
+            .single();
+          
+          if (organizer && organizer.user_id === user.id) {
+            setIsUserOrganizer(true);
+          }
+        }
       } catch (e) {
         console.error("Error resolving event by slug:", e);
         toast.error("Erro ao carregar evento");
@@ -129,7 +145,7 @@ export default function EventPublicPage() {
       root.classList.remove('dark', 'light');
       root.classList.add(savedTheme);
     };
-  }, [organizerSlug, eventSlug]);
+  }, [organizerSlug, eventSlug, user]);
 
   if (loading) {
     return (
@@ -163,9 +179,11 @@ export default function EventPublicPage() {
     <EventDetails
       onBack={() => navigate("/")}
       eventId={eventId}
-      onRegister={() => navigate("/")}
-      onManageRegistrations={() => navigate("/")}
-      onFindFriends={() => navigate("/")}
+      onRegister={() => navigate(`/event/${eventId}/register`)}
+      onManageRegistrations={isUserOrganizer ? () => navigate(`/event/${eventId}/registrations`) : undefined}
+      onViewAttendances={isUserOrganizer ? () => navigate(`/event/${eventId}/attendances`) : undefined}
+      onEdit={isUserOrganizer ? (id: string) => navigate(`/event/edit/${id}`) : undefined}
+      onFindFriends={() => navigate(`/event/${eventId}/find-friends`)}
     />
   );
 }
