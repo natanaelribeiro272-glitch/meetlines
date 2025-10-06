@@ -769,46 +769,68 @@ export default function PublicOrganizerProfile() {
         {activeTab === "eventos" && organizer.show_events && (
           <div className="space-y-4">
             {events.length > 0 ? (
-              events.map((event) => (
-                <Card key={event.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
-                  <div className="relative">
-                    <img 
-                      src={event.image_url || '/placeholder.svg'} 
-                      alt={event.title} 
-                      className="w-full h-32 object-cover" 
-                    />
-                    {event.is_live && (
-                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
-                        <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
-                        AO VIVO
-                      </Badge>
-                    )}
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground mb-1">{event.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <Calendar className="h-3 w-3" />
-                      <span>{formatEventDate(event.event_date)}</span>
+              events.map((event) => {
+                // Create slugs for the event URL
+                const createSlug = (text: string) => {
+                  return text
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim();
+                };
+
+                const organizerSlug = createSlug(organizer.username || organizer.page_title);
+                const eventSlug = createSlug(event.title);
+                const eventUrl = `/${organizerSlug}/${eventSlug}`;
+
+                return (
+                  <Card 
+                    key={event.id} 
+                    className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => navigate(eventUrl)}
+                  >
+                    <div className="relative">
+                      <img 
+                        src={event.image_url || '/placeholder.svg'} 
+                        alt={event.title} 
+                        className="w-full h-32 object-cover" 
+                      />
+                      {event.is_live && (
+                        <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+                          <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
+                          AO VIVO
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      <span>{event.location}</span>
-                      <Users className="h-3 w-3 ml-auto" />
-                      <span>{event.current_attendees}</span>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Heart className="h-3 w-3" />
-                        <span>{event.likes_count || 0}</span>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-foreground mb-1">{event.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatEventDate(event.event_date)}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="h-3 w-3" />
-                        <span>{event.comments_count || 0}</span>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span>{event.location}</span>
+                        <Users className="h-3 w-3 ml-auto" />
+                        <span>{event.current_attendees}</span>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Heart className="h-3 w-3" />
+                          <span>{event.likes_count || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MessageCircle className="h-3 w-3" />
+                          <span>{event.comments_count || 0}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             ) : (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Nenhum evento disponível no momento.</p>
