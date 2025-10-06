@@ -536,7 +536,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
                   size="lg"
                   onClick={() => window.open(event.location_link, '_blank')}
                 >
-                  Link da Live
+                  Endereço
                 </Button>
               )
             ) : (
