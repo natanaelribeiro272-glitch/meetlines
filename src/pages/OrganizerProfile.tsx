@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId: string }) {
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const { user } = useAuth();
@@ -77,6 +78,22 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
     setViewerOpen(true);
   };
 
+  const handleGalleryClick = () => {
+    if (!user) {
+      const currentPath = location.pathname;
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      toast.info('Faça login para ver todas as fotos');
+      return;
+    }
+    setGalleryOpen(true);
+  };
+
+  const handleGalleryPhotoClick = (index: number) => {
+    setCurrentPhotoIndex(index);
+    setGalleryOpen(false);
+    setViewerOpen(true);
+  };
+
   const handleDownload = async (photoUrl: string, photoCaption: string) => {
     try {
       const response = await fetch(photoUrl);
@@ -104,8 +121,8 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
     setCurrentPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
   };
 
-  const displayedPhotos = photos.slice(0, 4);
-  const remainingCount = photos.length - 4;
+  const displayedPhotos = photos.slice(0, 3);
+  const remainingCount = photos.length - 3;
 
   return (
     <>
@@ -121,14 +138,57 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
               alt={photo.caption || "Foto do evento"} 
               className="w-full h-full object-cover hover:scale-105 transition-transform"
             />
-            {index === 3 && remainingCount > 0 && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <span className="text-white font-bold text-2xl">+{remainingCount}</span>
-              </div>
-            )}
           </div>
         ))}
+        {remainingCount > 0 && (
+          <div 
+            className="aspect-square bg-surface rounded-lg overflow-hidden relative cursor-pointer"
+            onClick={handleGalleryClick}
+          >
+            <img 
+              src={photos[3].photo_url} 
+              alt="Mais fotos" 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60 hover:bg-black/70 transition-colors flex items-center justify-center">
+              <span className="text-white font-bold text-2xl">+{remainingCount + 1}</span>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Gallery Dialog */}
+      <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Todas as fotos ({photos.length})</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setGalleryOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {photos.map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className="aspect-square bg-surface rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => handleGalleryPhotoClick(index)}
+                >
+                  <img
+                    src={photo.photo_url}
+                    alt={photo.caption || `Foto ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Photo Viewer Dialog */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
