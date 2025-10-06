@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Edit3, Share2, MapPin, Upload, User, Settings, List, Camera, Instagram, Phone, Music, Globe, Image, Trash2 } from "lucide-react";
+import { Edit3, Share2, MapPin, Upload, User, Settings, List, Camera, Instagram, Phone, Music, Globe, Image, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
@@ -449,11 +449,24 @@ export default function OrganizerPage() {
                         {organizerData?.username && (
                           <p className="text-sm text-muted-foreground">@{organizerData.username}</p>
                         )}
-                        <p className="text-sm text-muted-foreground">{editableProfile.description || 'Sua descrição'}</p>
                       </>
                     )}
                   </div>
-                  
+
+                  {/* Botão para visualizar página pública */}
+                  {organizerData?.username && !isEditing && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/${organizerData.username}`, '_blank')}
+                      className="mb-2"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ver Página
+                    </Button>
+                  )}
+                 </div>
+                   
                   {!isEditing ? (
                     <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                       <Edit3 className="h-4 w-4" />
@@ -630,7 +643,6 @@ export default function OrganizerPage() {
                       />
                     </div>
                   </div>
-                </div>
                 </div>
               </div>
           </TabsContent>
