@@ -59,7 +59,7 @@ export function AuthModal({ open, onOpenChange, actionDescription, onSuccess }: 
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
@@ -73,7 +73,13 @@ export function AuthModal({ open, onOpenChange, actionDescription, onSuccess }: 
 
       if (error) throw error;
 
-      toast.success("Conta criada com sucesso! Verifique seu email.");
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        toast.info("Verifique seu email para confirmar sua conta.");
+      } else {
+        toast.success("Conta criada com sucesso!");
+      }
+      
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error: any) {
