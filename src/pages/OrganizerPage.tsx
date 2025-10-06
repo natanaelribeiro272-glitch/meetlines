@@ -18,6 +18,7 @@ import OrganizerEventsList from "@/components/OrganizerEventsList";
 import OrganizerSettings from "@/components/OrganizerSettings";
 import CreateEvent from "@/pages/CreateEvent";
 import EventRegistrations from "@/pages/EventRegistrations";
+import { getPublicBaseUrl } from "@/config/site";
 
 export default function OrganizerPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -458,7 +459,7 @@ export default function OrganizerPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(`/${organizerData.username}`, '_blank')}
+                      onClick={() => window.open(`${getPublicBaseUrl()}/${organizerData.username}`, '_blank')}
                       className="mb-2"
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
