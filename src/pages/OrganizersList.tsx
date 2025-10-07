@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Search, Star, Users, Calendar } from "lucide-react";
+import { ArrowLeft, Search, Users, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -50,11 +50,6 @@ export default function OrganizersList({
     const matchesCategory = selectedCategory === "todos" || (organizer.category || '') === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-  const renderStars = (rating: number) => {
-    return Array.from({
-      length: 5
-    }, (_, i) => <Star key={i} className={`h-3 w-3 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />);
-  };
   if (loading) {
     return <div className="min-h-screen bg-background">
         <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -140,15 +135,11 @@ export default function OrganizersList({
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      <span>{(organizer.stats?.followers_count || 0).toLocaleString()}</span>
+                      <span>{(organizer.stats?.followers_count || 0).toLocaleString()} seguidores</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       <span>{organizer.stats?.events_count || 0} eventos</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {renderStars(organizer.stats?.average_rating || 0)}
-                      <span className="ml-1">{(organizer.stats?.average_rating || 0).toFixed(1)}</span>
                     </div>
                   </div>
                   

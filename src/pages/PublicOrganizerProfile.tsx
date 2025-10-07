@@ -695,7 +695,7 @@ export default function PublicOrganizerProfile() {
         
         {/* Stats */}
         {organizer.show_statistics && (
-          <div className="flex justify-center gap-6 mb-4">
+          <div className="flex justify-center gap-8 mb-4">
             <div className="text-center">
               <p className="text-lg font-semibold text-foreground">
                 {organizer.stats?.followers_count?.toLocaleString() || '0'}
@@ -707,12 +707,6 @@ export default function PublicOrganizerProfile() {
                 {organizer.stats?.events_count || events.length}
               </p>
               <p className="text-sm text-muted-foreground">Eventos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">
-                {organizer.stats?.average_rating?.toFixed(1) || '0.0'}
-              </p>
-              <p className="text-sm text-muted-foreground">Avaliação</p>
             </div>
           </div>
         )}

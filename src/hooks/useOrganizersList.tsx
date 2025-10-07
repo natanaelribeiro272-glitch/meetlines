@@ -20,7 +20,6 @@ export interface OrganizerListData {
   stats?: {
     followers_count: number;
     events_count: number;
-    average_rating: number;
   };
   verified?: boolean;
   category?: string;
@@ -41,8 +40,7 @@ export function useOrganizersList() {
           *,
           stats:organizer_stats(
             followers_count,
-            events_count,
-            average_rating
+            events_count
           )
         `)
         .eq('is_page_active', true)
@@ -69,8 +67,7 @@ export function useOrganizersList() {
               ? organizer.stats[0] 
               : {
                   followers_count: 0,
-                  events_count: 0,
-                  average_rating: 0
+                  events_count: 0
                 }
           };
         })
