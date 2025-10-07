@@ -33,6 +33,7 @@ export interface EventData {
   category?: string;
   registrations_count?: number;
   confirmed_attendees_count?: number;
+  unique_attendees_count?: number;
 }
 
 export function useEvents(categoryFilter?: string, searchQuery?: string) {
@@ -126,6 +127,14 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
             .eq('event_id', event.id)
             .eq('attendance_confirmed', true);
 
+          // Contar usuários únicos (para evitar duplicação)
+          const { data: uniqueUsersData } = await supabase
+            .from('event_registrations')
+            .select('user_id')
+            .eq('event_id', event.id);
+          
+          const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+
           // Verificar se o usuário curtiu (se logado)
           let isLiked = false;
           if (user) {
@@ -153,6 +162,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
             is_liked: isLiked,
             registrations_count: registrationsCount || 0,
             confirmed_attendees_count: confirmedAttendeesCount || 0,
+            unique_attendees_count: uniqueAttendeesCount || 0,
           };
         })
       );
@@ -301,12 +311,21 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
           .eq('event_id', eventId)
           .eq('attendance_confirmed', true);
 
+        // Contar usuários únicos
+        const { data: uniqueUsersData } = await supabase
+          .from('event_registrations')
+          .select('user_id')
+          .eq('event_id', eventId);
+        
+        const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+
         setEvents(prev => prev.map(ev => 
           ev.id === eventId 
             ? { 
                 ...ev, 
                 registrations_count: registrationsCount || 0,
                 confirmed_attendees_count: confirmedAttendeesCount || 0,
+                unique_attendees_count: uniqueAttendeesCount || 0,
               }
             : ev
         ));
@@ -327,12 +346,21 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
           .eq('event_id', eventId)
           .eq('attendance_confirmed', true);
 
+        // Contar usuários únicos
+        const { data: uniqueUsersData } = await supabase
+          .from('event_registrations')
+          .select('user_id')
+          .eq('event_id', eventId);
+        
+        const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+
         setEvents(prev => prev.map(ev => 
           ev.id === eventId 
             ? { 
                 ...ev, 
                 registrations_count: registrationsCount || 0,
                 confirmed_attendees_count: confirmedAttendeesCount || 0,
+                unique_attendees_count: uniqueAttendeesCount || 0,
               }
             : ev
         ));

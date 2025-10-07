@@ -47,6 +47,7 @@ export interface EventDetailsData {
   comments?: EventComment[];
   registrations_count?: number;
   confirmed_attendees_count?: number;
+  unique_attendees_count?: number;
 }
 
 export function useEventDetails(eventId: string | null) {
@@ -111,6 +112,14 @@ export function useEventDetails(eventId: string | null) {
         .eq('event_id', eventId)
         .eq('attendance_confirmed', true);
 
+      // Contar usuários únicos (para evitar duplicação)
+      const { data: uniqueUsersData } = await supabase
+        .from('event_registrations')
+        .select('user_id')
+        .eq('event_id', eventId);
+      
+      const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+
       // Verificar se o usuário curtiu
       let isLiked = false;
       if (user) {
@@ -168,6 +177,7 @@ export function useEventDetails(eventId: string | null) {
         comments: commentsWithProfiles,
         registrations_count: registrationsCount || 0,
         confirmed_attendees_count: confirmedAttendeesCount || 0,
+        unique_attendees_count: uniqueAttendeesCount || 0,
         // Calculate is_live based on event date and status (same logic as EventFeed)
         is_live: (() => {
           const eventDate = new Date(eventData.event_date);
@@ -349,10 +359,19 @@ export function useEventDetails(eventId: string | null) {
           .eq('event_id', eventId)
           .eq('attendance_confirmed', true);
 
+        // Contar usuários únicos
+        const { data: uniqueUsersData } = await supabase
+          .from('event_registrations')
+          .select('user_id')
+          .eq('event_id', eventId);
+        
+        const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+
         setEvent(prev => prev ? {
           ...prev,
           registrations_count: registrationsCount || 0,
           confirmed_attendees_count: confirmedAttendeesCount || 0,
+          unique_attendees_count: uniqueAttendeesCount || 0,
         } : prev);
       })
       .on('postgres_changes', {
@@ -373,10 +392,19 @@ export function useEventDetails(eventId: string | null) {
           .eq('event_id', eventId)
           .eq('attendance_confirmed', true);
 
+        // Contar usuários únicos
+        const { data: uniqueUsersData } = await supabase
+          .from('event_registrations')
+          .select('user_id')
+          .eq('event_id', eventId);
+        
+        const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+
         setEvent(prev => prev ? {
           ...prev,
           registrations_count: registrationsCount || 0,
           confirmed_attendees_count: confirmedAttendeesCount || 0,
+          unique_attendees_count: uniqueAttendeesCount || 0,
         } : prev);
       })
       .subscribe();

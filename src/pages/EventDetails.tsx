@@ -478,7 +478,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-primary" />
               <span className="text-foreground">
-                {((event.registrations_count || 0) + (event.confirmed_attendees_count || 0))} {event.is_live ? 'pessoas no evento' : 'pessoas interessadas'}
+                {event.unique_attendees_count || 0} {event.is_live ? 'pessoas no evento' : 'pessoas interessadas'}
               </span>
             </div>
           </div>
