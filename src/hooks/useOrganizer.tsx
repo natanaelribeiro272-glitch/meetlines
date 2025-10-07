@@ -41,6 +41,7 @@ interface Event {
   description?: string;
   image_url?: string;
   event_date: string;
+  end_date?: string;
   location: string;
   location_link?: string;
   max_attendees?: number;

@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Users, MapPin, Calendar } from "lucide-react";
+import { Heart, MessageCircle, Users, MapPin, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -9,6 +9,7 @@ interface EventCardProps {
   organizerName: string;
   organizerAvatar?: string;
   date: string;
+  endDate?: string;
   location: string;
   locationLink?: string;
   estimatedAttendees: number;
@@ -33,6 +34,7 @@ export function EventCard({
   organizerName,
   organizerAvatar,
   date,
+  endDate,
   location,
   locationLink,
   estimatedAttendees,
@@ -76,14 +78,22 @@ export function EventCard({
           }}
         >
           <p className="text-sm font-medium text-foreground hover:text-primary transition-colors">{organizerName}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            <span>{date}</span>
-            {isLive && (
-              <span className="flex items-center gap-1 text-destructive font-medium">
-                <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
-                ACONTECENDO AGORA
-              </span>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              <span>{date}</span>
+              {isLive && (
+                <span className="flex items-center gap-1 text-destructive font-medium">
+                  <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
+                  ACONTECENDO AGORA
+                </span>
+              )}
+            </div>
+            {endDate && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
+                <Clock className="h-3 w-3" />
+                <span>Encerra: {endDate}</span>
+              </div>
             )}
           </div>
         </div>

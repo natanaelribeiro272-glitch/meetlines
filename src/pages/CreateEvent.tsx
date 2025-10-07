@@ -73,6 +73,8 @@ export default function CreateEvent({
     description: "",
     date: "",
     time: "",
+    endDate: "",
+    endTime: "",
     location: "",
     address: "",
     locationLink: "",
@@ -112,11 +114,22 @@ export default function CreateEvent({
             const dateStr = eventDate.toISOString().split('T')[0];
             const timeStr = eventDate.toTimeString().slice(0, 5);
             
+            // Parse end date and time if exists
+            let endDateStr = "";
+            let endTimeStr = "";
+            if (data.end_date) {
+              const endDate = new Date(data.end_date);
+              endDateStr = endDate.toISOString().split('T')[0];
+              endTimeStr = endDate.toTimeString().slice(0, 5);
+            }
+            
             setEventData({
               title: data.title || "",
               description: data.description || "",
               date: dateStr,
               time: timeStr,
+              endDate: endDateStr,
+              endTime: endTimeStr,
               location: data.location || "",
               address: data.is_live ? "" : data.location || "",
               locationLink: data.location_link || "",
@@ -200,6 +213,12 @@ export default function CreateEvent({
 
       // Combine date and time
       const eventDateTime = new Date(`${eventData.date}T${eventData.time}`);
+      
+      // Combine end date and time if provided
+      let eventEndDateTime = null;
+      if (eventData.endDate && eventData.endTime) {
+        eventEndDateTime = new Date(`${eventData.endDate}T${eventData.endTime}`);
+      }
 
       // Update public notes if changed
       if (publicNotes !== profile?.notes) {
@@ -216,6 +235,7 @@ export default function CreateEvent({
             title: eventData.title,
             description: eventData.description,
             event_date: eventDateTime.toISOString(),
+            end_date: eventEndDateTime ? eventEndDateTime.toISOString() : null,
             location: eventType === "live" ? "Online" : eventData.address,
             location_link: eventData.locationLink || null,
             image_url: imageUrl || eventImage,
@@ -236,6 +256,7 @@ export default function CreateEvent({
           title: eventData.title,
           description: eventData.description,
           event_date: eventDateTime.toISOString(),
+          end_date: eventEndDateTime ? eventEndDateTime.toISOString() : null,
           location: eventType === "live" ? "Online" : eventData.address,
           location_link: eventData.locationLink || null,
           image_url: imageUrl,
@@ -364,15 +385,35 @@ export default function CreateEvent({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="date">Data</Label>
-                  <Input id="date" type="date" value={eventData.date} onChange={e => handleInputChange("date", e.target.value)} required />
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Início do Evento</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="date" className="text-xs text-muted-foreground">Data</Label>
+                    <Input id="date" type="date" value={eventData.date} onChange={e => handleInputChange("date", e.target.value)} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="time" className="text-xs text-muted-foreground">Horário</Label>
+                    <Input id="time" type="time" value={eventData.time} onChange={e => handleInputChange("time", e.target.value)} required />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="time">Horário</Label>
-                  <Input id="time" type="time" value={eventData.time} onChange={e => handleInputChange("time", e.target.value)} required />
+              </div>
+
+              <div className="pt-2 border-t">
+                <Label className="text-sm font-medium mb-2 block">Encerramento Automático (Opcional)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="endDate" className="text-xs text-muted-foreground">Data</Label>
+                    <Input id="endDate" type="date" value={eventData.endDate} onChange={e => handleInputChange("endDate", e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="endTime" className="text-xs text-muted-foreground">Horário</Label>
+                    <Input id="endTime" type="time" value={eventData.endTime} onChange={e => handleInputChange("endTime", e.target.value)} />
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Se definido, o evento será encerrado automaticamente neste horário
+                </p>
               </div>
             </CardContent>
           </Card>

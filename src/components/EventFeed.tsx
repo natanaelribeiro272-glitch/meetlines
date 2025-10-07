@@ -12,6 +12,16 @@ const formatEventDate = (dateString: string) => {
   return `${dayName}, ${hours}:${minutes}`;
 };
 
+const formatEndDate = (dateString: string | null) => {
+  if (!dateString) return undefined;
+  const date = new Date(dateString);
+  const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const dayName = days[date.getDay()];
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${dayName}, ${hours}:${minutes}`;
+};
+
 interface EventFeedProps {
   onEventClick: (eventId: string) => void;
   onOrganizerClick: (organizerId: string) => void;
@@ -76,6 +86,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 organizerName={event.organizer?.profile?.display_name || event.organizer?.page_title || 'Organizador'}
                 organizerAvatar={event.organizer?.profile?.avatar_url}
                 date={formatEventDate(event.event_date)}
+                endDate={formatEndDate(event.end_date)}
                 location={event.location}
                 locationLink={event.location_link || undefined}
                 estimatedAttendees={(event.registrations_count || 0) + (event.confirmed_attendees_count || 0)}
@@ -109,6 +120,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 organizerName={event.organizer?.profile?.display_name || event.organizer?.page_title || 'Organizador'}
                 organizerAvatar={event.organizer?.profile?.avatar_url}
                 date={formatEventDate(event.event_date)}
+                endDate={formatEndDate(event.end_date)}
                 location={event.location}
                 locationLink={event.location_link || undefined}
                 estimatedAttendees={(event.registrations_count || 0) + (event.confirmed_attendees_count || 0)}
