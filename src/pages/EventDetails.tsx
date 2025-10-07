@@ -24,7 +24,7 @@ interface EventDetailsProps {
 
 export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit, onManageRegistrations, onViewAttendances }: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [newComment, setNewComment] = useState("");
@@ -574,8 +574,8 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             </Button>
           )}
           
-          {/* Find Friends button (apenas para eventos ao vivo) */}
-          {event.is_live && !isOrganizer && (
+          {/* Find Friends button (apenas para eventos ao vivo e usuários comuns) */}
+          {event.is_live && !isOrganizer && userRole === 'user' && (
             <Button 
               variant="live" 
               className="w-full" 

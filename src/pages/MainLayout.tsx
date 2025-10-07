@@ -199,7 +199,14 @@ export default function MainLayout() {
           return null;
         }
       case "friends":
-        return <FindFriends onBack={() => setActiveTab("home")} />;
+        // Apenas usuários comuns podem acessar "Encontrar Amigos"
+        if (userRole === "user") {
+          return <FindFriends onBack={() => setActiveTab("home")} />;
+        } else {
+          // Redirecionar organizadores de volta ao feed
+          setActiveTab("home");
+          return null;
+        }
       case "profile":
         // Different profile pages for different user types
         return userRole === "organizer" ? (
