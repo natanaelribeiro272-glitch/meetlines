@@ -73,6 +73,7 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
                 isLive={new Date(event.event_date) <= now}
                 onClick={() => onEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
+                showJoinButton={true}
               />
             ))}
           </div>

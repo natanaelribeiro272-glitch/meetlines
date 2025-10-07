@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit, StopCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit, StopCircle, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +35,17 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   const [authModalAction, setAuthModalAction] = useState("");
   
   const isOrganizer = user && event?.organizer?.user_id === user.id;
+
+  // Detectar se é um evento online baseado no link
+  const isOnlineEvent = event?.location_link && (
+    event.location_link.includes('meet.google') ||
+    event.location_link.includes('zoom.us') ||
+    event.location_link.includes('youtube.com') ||
+    event.location_link.includes('twitch.tv') ||
+    event.location_link.includes('teams.microsoft') ||
+    event.location_link.includes('streamyard') ||
+    event.location_link.includes('jitsi')
+  );
 
   // Check if user has already confirmed attendance
   useEffect(() => {
@@ -529,27 +540,24 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
             >
               {isOrganizer ? 'Ver Presenças Confirmadas' : hasConfirmedAttendance ? 'Cancelar Presença' : confirmingAttendance ? 'Confirmando...' : 'Confirmar Presença'}
             </Button>
-            {event.is_live ? (
-              event.location_link && (
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => window.open(event.location_link, '_blank')}
-                >
-                  Endereço
-                </Button>
-              )
-            ) : (
-              event.location_link && (
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => window.open(event.location_link, '_blank')}
-                >
-                  <MapPin className="h-4 w-4" />
-                  Mapa
-                </Button>
-              )
+            {event.location_link && (
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => window.open(event.location_link, '_blank')}
+              >
+                {isOnlineEvent ? (
+                  <>
+                    <Video className="h-4 w-4" />
+                    Entrar
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="h-4 w-4" />
+                    Mapa
+                  </>
+                )}
+              </Button>
             )}
           </div>
           

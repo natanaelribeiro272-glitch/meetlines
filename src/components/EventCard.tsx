@@ -26,6 +26,7 @@ interface EventCardProps {
   isOwnEvent?: boolean;
   onRegister?: () => void;
   onManageRegistrations?: () => void;
+  showJoinButton?: boolean;
 }
 
 export function EventCard({
@@ -51,7 +52,18 @@ export function EventCard({
   isOwnEvent = false,
   onRegister,
   onManageRegistrations,
+  showJoinButton = false,
 }: EventCardProps) {
+  // Verificar se é um evento online (link de streaming)
+  const isOnlineEvent = locationLink && (
+    locationLink.includes('meet.google') ||
+    locationLink.includes('zoom.us') ||
+    locationLink.includes('youtube.com') ||
+    locationLink.includes('twitch.tv') ||
+    locationLink.includes('teams.microsoft') ||
+    locationLink.includes('streamyard') ||
+    locationLink.includes('jitsi')
+  );
   return (
     <div className="event-card bg-card rounded-lg overflow-hidden shadow-card cursor-pointer" onClick={onClick}>
       {/* Header - Organizer info */}
@@ -155,7 +167,7 @@ export function EventCard({
             </div>
           </div>
 
-          {isLive && locationLink && (
+          {showJoinButton && isLive && isOnlineEvent && (
             <Button 
               variant="live" 
               size="sm" 
