@@ -359,7 +359,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="relative">
         <img
@@ -612,7 +612,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         </div>
 
         {/* Comments Section */}
-        <div className="space-y-4">
+        <div className="space-y-4 pb-6">
           <h3 className="font-semibold text-foreground">Comentários</h3>
           
           {/* Add comment */}
