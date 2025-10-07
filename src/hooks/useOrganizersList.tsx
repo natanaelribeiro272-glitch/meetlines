@@ -51,24 +51,36 @@ export function useOrganizersList() {
       // Para cada organizador, buscar seu perfil
       const processedOrganizers = await Promise.all(
         (organizersData || []).map(async (organizer) => {
-          // Buscar perfil do organizador
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, avatar_url, bio')
-            .eq('user_id', organizer.user_id)
-            .maybeSingle();
+          // Buscar perfil e contagens em paralelo para garantir dados corretos
+          const [profileRes, followersRes, eventsRes] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('display_name, avatar_url, bio')
+              .eq('user_id', organizer.user_id)
+              .maybeSingle(),
+            supabase
+              .from('followers')
+              .select('id', { count: 'exact', head: true })
+              .eq('organizer_id', organizer.id),
+            supabase
+              .from('events')
+              .select('id', { count: 'exact', head: true })
+              .eq('organizer_id', organizer.id),
+          ]);
+
+          const profile = profileRes.data;
+          const followers_count = followersRes.count ?? 0;
+          const events_count = eventsRes.count ?? 0;
 
           return {
             ...organizer,
             profile,
             verified: Math.random() > 0.5, // Mock - pode ser implementado depois
             category: organizer.page_subtitle || "Entretenimento", // Mock - pode ser adicionado ao banco
-            stats: Array.isArray(organizer.stats) && organizer.stats.length > 0 
-              ? organizer.stats[0] 
-              : {
-                  followers_count: 0,
-                  events_count: 0
-                }
+            stats: {
+              followers_count,
+              events_count
+            }
           };
         })
       );
@@ -115,6 +127,60 @@ export function useOrganizersList() {
           page_description: o.page_description ?? org.page_description,
           updated_at: o.updated_at ?? org.updated_at
         } : org));
+      })
+      // Atualizar contagem de seguidores em tempo real
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'followers' }, (payload) => {
+        const f = payload.new as any;
+        setOrganizers(prev => prev.map(org => {
+          if (org.id === f.organizer_id) {
+            const current = org.stats?.followers_count ?? 0;
+            return {
+              ...org,
+              stats: { followers_count: current + 1, events_count: org.stats?.events_count ?? 0 }
+            };
+          }
+          return org;
+        }));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'followers' }, (payload) => {
+        const f = payload.old as any;
+        setOrganizers(prev => prev.map(org => {
+          if (org.id === f.organizer_id) {
+            const current = org.stats?.followers_count ?? 0;
+            return {
+              ...org,
+              stats: { followers_count: Math.max(0, current - 1), events_count: org.stats?.events_count ?? 0 }
+            };
+          }
+          return org;
+        }));
+      })
+      // Atualizar contagem de eventos em tempo real
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'events' }, (payload) => {
+        const e = payload.new as any;
+        setOrganizers(prev => prev.map(org => {
+          if (org.id === e.organizer_id) {
+            const current = org.stats?.events_count ?? 0;
+            return {
+              ...org,
+              stats: { followers_count: org.stats?.followers_count ?? 0, events_count: current + 1 }
+            };
+          }
+          return org;
+        }));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'events' }, (payload) => {
+        const e = payload.old as any;
+        setOrganizers(prev => prev.map(org => {
+          if (org.id === e.organizer_id) {
+            const current = org.stats?.events_count ?? 0;
+            return {
+              ...org,
+              stats: { followers_count: org.stats?.followers_count ?? 0, events_count: Math.max(0, current - 1) }
+            };
+          }
+          return org;
+        }));
       })
       .subscribe();
 
