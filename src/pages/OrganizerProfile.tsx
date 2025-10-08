@@ -17,7 +17,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 // Componente auxiliar para fotos de evento
-function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId: string }) {
+function EventPhotoGrid({
+  eventId,
+  organizerId
+}: {
+  eventId: string;
+  organizerId: string;
+}) {
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -25,21 +31,20 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalAction, setAuthModalAction] = useState("");
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const { data, error } = await supabase
-          .from('organizer_photos')
-          .select('*')
-          .eq('organizer_id', organizerId)
-          .eq('event_id', eventId)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
-
+        const {
+          data,
+          error
+        } = await supabase.from('organizer_photos').select('*').eq('organizer_id', organizerId).eq('event_id', eventId).eq('is_active', true).order('created_at', {
+          ascending: false
+        });
         if (error) throw error;
         setPhotos(data || []);
       } catch (error) {
@@ -48,28 +53,18 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
         setLoading(false);
       }
     };
-
     fetchPhotos();
   }, [eventId, organizerId]);
-
   if (loading) {
-    return (
-      <div className="grid grid-cols-2 gap-2">
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="aspect-square rounded-lg" />
-        ))}
-      </div>
-    );
+    return <div className="grid grid-cols-2 gap-2">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+      </div>;
   }
-
   if (photos.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-4">
+    return <p className="text-sm text-muted-foreground text-center py-4">
         Nenhuma foto deste evento ainda
-      </p>
-    );
+      </p>;
   }
-
   const handlePhotoClick = (index: number) => {
     if (!user) {
       setAuthModalAction("para ver as fotos ampliadas");
@@ -79,7 +74,6 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
     setCurrentPhotoIndex(index);
     setViewerOpen(true);
   };
-
   const handleGalleryClick = () => {
     if (!user) {
       setAuthModalAction("para ver todas as fotos");
@@ -88,13 +82,11 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
     }
     setGalleryOpen(true);
   };
-
   const handleGalleryPhotoClick = (index: number) => {
     setCurrentPhotoIndex(index);
     setGalleryOpen(false);
     setViewerOpen(true);
   };
-
   const handleDownload = async (photoUrl: string, photoCaption: string) => {
     try {
       const response = await fetch(photoUrl);
@@ -113,49 +105,25 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
       toast.error('Erro ao baixar a foto');
     }
   };
-
   const goToPrevious = () => {
-    setCurrentPhotoIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1));
+    setCurrentPhotoIndex(prev => prev > 0 ? prev - 1 : photos.length - 1);
   };
-
   const goToNext = () => {
-    setCurrentPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
+    setCurrentPhotoIndex(prev => prev < photos.length - 1 ? prev + 1 : 0);
   };
-
   const displayedPhotos = photos.slice(0, 3);
   const remainingCount = photos.length - 3;
-
-  return (
-    <>
+  return <>
       <div className="grid grid-cols-2 gap-2">
-        {displayedPhotos.map((photo, index) => (
-          <div 
-            key={photo.id} 
-            className="aspect-square bg-surface rounded-lg overflow-hidden relative group cursor-pointer"
-            onClick={() => handlePhotoClick(index)}
-          >
-            <img 
-              src={photo.photo_url} 
-              alt={photo.caption || "Foto do evento"} 
-              className="w-full h-full object-cover hover:scale-105 transition-transform"
-            />
-          </div>
-        ))}
-        {remainingCount > 0 && (
-          <div 
-            className="aspect-square bg-surface rounded-lg overflow-hidden relative cursor-pointer"
-            onClick={handleGalleryClick}
-          >
-            <img 
-              src={photos[3].photo_url} 
-              alt="Mais fotos" 
-              className="w-full h-full object-cover"
-            />
+        {displayedPhotos.map((photo, index) => <div key={photo.id} className="aspect-square bg-surface rounded-lg overflow-hidden relative group cursor-pointer" onClick={() => handlePhotoClick(index)}>
+            <img src={photo.photo_url} alt={photo.caption || "Foto do evento"} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+          </div>)}
+        {remainingCount > 0 && <div className="aspect-square bg-surface rounded-lg overflow-hidden relative cursor-pointer" onClick={handleGalleryClick}>
+            <img src={photos[3].photo_url} alt="Mais fotos" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/60 hover:bg-black/70 transition-colors flex items-center justify-center">
               <span className="text-white font-bold text-2xl">+{remainingCount + 1}</span>
             </div>
-          </div>
-        )}
+          </div>}
       </div>
 
       {/* Gallery Dialog */}
@@ -164,28 +132,14 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Todas as fotos ({photos.length})</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setGalleryOpen(false)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setGalleryOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              {photos.map((photo, index) => (
-                <div
-                  key={photo.id}
-                  className="aspect-square bg-surface rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => handleGalleryPhotoClick(index)}
-                >
-                  <img
-                    src={photo.photo_url}
-                    alt={photo.caption || `Foto ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+              {photos.map((photo, index) => <div key={photo.id} className="aspect-square bg-surface rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleGalleryPhotoClick(index)}>
+                  <img src={photo.photo_url} alt={photo.caption || `Foto ${index + 1}`} className="w-full h-full object-cover" />
+                </div>)}
             </div>
           </div>
         </DialogContent>
@@ -196,55 +150,27 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
         <DialogContent className="max-w-4xl w-full h-[90vh] p-0 bg-black">
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Close button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white"
-              onClick={() => setViewerOpen(false)}
-            >
+            <Button variant="ghost" size="icon" className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white" onClick={() => setViewerOpen(false)}>
               <X className="h-6 w-6" />
             </Button>
 
             {/* Download button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-16 z-50 bg-black/50 hover:bg-black/70 text-white"
-              onClick={() => handleDownload(photos[currentPhotoIndex].photo_url, photos[currentPhotoIndex].caption)}
-            >
+            <Button variant="ghost" size="icon" className="absolute top-4 right-16 z-50 bg-black/50 hover:bg-black/70 text-white" onClick={() => handleDownload(photos[currentPhotoIndex].photo_url, photos[currentPhotoIndex].caption)}>
               <Download className="h-6 w-6" />
             </Button>
 
             {/* Previous button */}
-            {photos.length > 1 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute left-4 z-50 bg-black/50 hover:bg-black/70 text-white"
-                onClick={goToPrevious}
-              >
+            {photos.length > 1 && <Button variant="ghost" size="icon" className="absolute left-4 z-50 bg-black/50 hover:bg-black/70 text-white" onClick={goToPrevious}>
                 <ChevronLeft className="h-8 w-8" />
-              </Button>
-            )}
+              </Button>}
 
             {/* Next button */}
-            {photos.length > 1 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-4 z-50 bg-black/50 hover:bg-black/70 text-white"
-                onClick={goToNext}
-              >
+            {photos.length > 1 && <Button variant="ghost" size="icon" className="absolute right-4 z-50 bg-black/50 hover:bg-black/70 text-white" onClick={goToNext}>
                 <ChevronRight className="h-8 w-8" />
-              </Button>
-            )}
+              </Button>}
 
             {/* Photo */}
-            <img
-              src={photos[currentPhotoIndex]?.photo_url}
-              alt={photos[currentPhotoIndex]?.caption || "Foto do evento"}
-              className="max-h-full max-w-full object-contain"
-            />
+            <img src={photos[currentPhotoIndex]?.photo_url} alt={photos[currentPhotoIndex]?.caption || "Foto do evento"} className="max-h-full max-w-full object-contain" />
 
             {/* Photo counter */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
@@ -252,32 +178,27 @@ function EventPhotoGrid({ eventId, organizerId }: { eventId: string; organizerId
             </div>
 
             {/* Caption */}
-            {photos[currentPhotoIndex]?.caption && (
-              <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg text-sm max-w-md text-center">
+            {photos[currentPhotoIndex]?.caption && <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg text-sm max-w-md text-center">
                 {photos[currentPhotoIndex].caption}
-              </div>
-            )}
+              </div>}
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Auth Modal */}
-      <AuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        actionDescription={authModalAction}
-      />
-    </>
-  );
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
+    </>;
 }
-
 interface OrganizerProfileProps {
   onBack: () => void;
   organizerId?: string;
   onEventClick?: (eventId: string) => void;
 }
-
-export default function OrganizerProfile({ onBack, organizerId, onEventClick }: OrganizerProfileProps) {
+export default function OrganizerProfile({
+  onBack,
+  organizerId,
+  onEventClick
+}: OrganizerProfileProps) {
   const [activeTab, setActiveTab] = useState("eventos");
   const [allEvents, setAllEvents] = useState<OrganizerEvent[]>([]);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -285,38 +206,47 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalAction, setAuthModalAction] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { organizer, events, customLinks, loading } = useOrganizerDetails(organizerId);
-  const { updateOrganizerProfile } = useOrganizer();
-  const { user } = useAuth();
+  const {
+    organizer,
+    events,
+    customLinks,
+    loading
+  } = useOrganizerDetails(organizerId);
+  const {
+    updateOrganizerProfile
+  } = useOrganizer();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isFollowing, loading: followLoading, toggleFollow } = useFollowers(organizerId);
+  const {
+    isFollowing,
+    loading: followLoading,
+    toggleFollow
+  } = useFollowers(organizerId);
 
   // Buscar todos os eventos para a aba de fotos
   useEffect(() => {
     const fetchAllEvents = async () => {
       if (!organizerId) return;
-      
-      const { data: eventsData } = await supabase
-        .from('events')
-        .select('*')
-        .eq('organizer_id', organizerId)
-        .order('event_date', { ascending: false });
-      
+      const {
+        data: eventsData
+      } = await supabase.from('events').select('*').eq('organizer_id', organizerId).order('event_date', {
+        ascending: false
+      });
       setAllEvents(eventsData || []);
     };
-    
     if (activeTab === 'fotos') {
       fetchAllEvents();
     }
   }, [organizerId, activeTab]);
-
   const handleShare = () => {
     if (!organizer) return;
-    
+
     // Gerar URL pública usando apenas o username
     const publicUrl = `${getPublicBaseUrl()}/${organizer.username}`;
-    
+
     // Copiar para clipboard
     navigator.clipboard.writeText(publicUrl).then(() => {
       toast.success('Link copiado!', {
@@ -326,18 +256,15 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
       toast.error('Erro ao copiar link');
     });
   };
-
   const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
-
     try {
       setUploadingCover(true);
 
       // Verificar se é um formato de imagem suportado
       const fileType = file.type.toLowerCase();
       const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-      
       if (!supportedFormats.includes(fileType)) {
         toast.error('Formato não suportado', {
           description: 'Por favor, use imagens JPG, PNG ou WEBP. Se você está no iPhone, abra a foto no app Fotos e compartilhe > Salvar imagem para converter automaticamente para JPG.'
@@ -359,23 +286,26 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
       const fileExt = file.name.split('.').pop()?.toLowerCase();
       const timestamp = Date.now();
       const fileName = `${user.id}/cover-${timestamp}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('user-uploads')
-        .upload(fileName, file, { upsert: true });
-
+      const {
+        error: uploadError
+      } = await supabase.storage.from('user-uploads').upload(fileName, file, {
+        upsert: true
+      });
       if (uploadError) throw uploadError;
 
       // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-uploads')
-        .getPublicUrl(fileName);
+      const {
+        data: {
+          publicUrl
+        }
+      } = supabase.storage.from('user-uploads').getPublicUrl(fileName);
 
       // Atualizar perfil do organizador
-      await updateOrganizerProfile({ cover_image_url: publicUrl });
-      
+      await updateOrganizerProfile({
+        cover_image_url: publicUrl
+      });
       toast.success('Capa atualizada com sucesso!');
-      
+
       // Recarregar dados
       window.location.reload();
     } catch (error) {
@@ -385,18 +315,17 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
       setUploadingCover(false);
     }
   };
-
   const handleRemoveCover = async () => {
     if (!user) return;
-
     try {
       setRemovingCover(true);
-      
+
       // Remover URL da capa do perfil
-      await updateOrganizerProfile({ cover_image_url: null });
-      
+      await updateOrganizerProfile({
+        cover_image_url: null
+      });
       toast.success('Capa removida com sucesso!');
-      
+
       // Recarregar dados
       window.location.reload();
     } catch (error) {
@@ -416,10 +345,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${dayName}, ${hours}:${minutes}`;
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background pb-20">
+    return <div className="min-h-screen bg-background pb-20">
         <div className="flex items-center gap-4 p-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
@@ -431,135 +358,91 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
           <Skeleton className="h-6 w-48 mx-auto" />
           <Skeleton className="h-4 w-64 mx-auto" />
           <div className="flex justify-center gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="text-center">
+            {[1, 2, 3].map(i => <div key={i} className="text-center">
                 <Skeleton className="h-6 w-12 mx-auto mb-1" />
                 <Skeleton className="h-3 w-16 mx-auto" />
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!organizer) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Organizador não encontrado</p>
           <Button variant="outline" onClick={onBack}>
             Voltar
           </Button>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  const tabs = [
-    { id: "eventos", label: "Eventos", icon: Calendar },
-    { id: "links", label: "Links", icon: ExternalLink },
-    { id: "fotos", label: "Fotos", icon: Camera }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background pb-20">
+  const tabs = [{
+    id: "eventos",
+    label: "Eventos",
+    icon: Calendar
+  }, {
+    id: "links",
+    label: "Links",
+    icon: ExternalLink
+  }, {
+    id: "fotos",
+    label: "Fotos",
+    icon: Camera
+  }];
+  return <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
-      <div 
-        className="relative h-[200px] overflow-hidden"
-        style={{
-          backgroundImage: organizer.cover_image_url 
-            ? `url(${organizer.cover_image_url})`
-            : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
+      <div className="relative h-[200px] overflow-hidden" style={{
+      backgroundImage: organizer.cover_image_url ? `url(${organizer.cover_image_url})` : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }}>
         {/* Overlay escuro sobre toda a capa para dar contraste */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 0
-          }}
-        />
+        <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 0
+      }} />
         
         {/* Gradiente suave de transição na parte inferior */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 pointer-events-none"
-          style={{
-            height: '120px',
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 40%, transparent 100%)',
-            zIndex: 1
-          }}
-        />
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{
+        height: '120px',
+        background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 40%, transparent 100%)',
+        zIndex: 1
+      }} />
         
-        <div className="flex items-center justify-between p-4 relative" style={{ zIndex: 10 }}>
+        <div className="flex items-center justify-between p-4 relative" style={{
+        zIndex: 10
+      }}>
           <Button variant="ghost" size="icon" onClick={onBack} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
             <ArrowLeft className="h-5 w-5 text-white" />
           </Button>
-          <h1 className="text-lg font-semibold text-white">Organizador</h1>
+          
           <Button variant="ghost" size="icon" onClick={handleShare} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
             <Share2 className="h-5 w-5 text-white" />
           </Button>
         </div>
 
         {/* Botão para alterar capa (visível apenas para o próprio organizador) */}
-        {user && organizer.user_id === user.id && (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-              onChange={handleCoverUpload}
-              className="hidden"
-            />
-            <div className="absolute top-4 right-4 flex gap-2" style={{ zIndex: 10 }}>
-              {organizer.cover_image_url && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleRemoveCover}
-                  disabled={removingCover}
-                  className="bg-red-500/80 hover:bg-red-600/90 backdrop-blur-sm text-white"
-                  title="Remover capa"
-                >
-                  {removingCover ? (
-                    <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Camera className="h-5 w-5" />
-                  )}
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingCover}
-                className="bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white"
-                title={organizer.cover_image_url ? "Alterar capa" : "Adicionar capa"}
-              >
-                {uploadingCover ? (
-                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Camera className="h-5 w-5" />
-                )}
+        {user && organizer.user_id === user.id && <>
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" onChange={handleCoverUpload} className="hidden" />
+            <div className="absolute top-4 right-4 flex gap-2" style={{
+          zIndex: 10
+        }}>
+              {organizer.cover_image_url && <Button variant="ghost" size="icon" onClick={handleRemoveCover} disabled={removingCover} className="bg-red-500/80 hover:bg-red-600/90 backdrop-blur-sm text-white" title="Remover capa">
+                  {removingCover ? <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera className="h-5 w-5" />}
+                </Button>}
+              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={uploadingCover} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white" title={organizer.cover_image_url ? "Alterar capa" : "Adicionar capa"}>
+                {uploadingCover ? <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera className="h-5 w-5" />}
               </Button>
             </div>
-          </>
-        )}
+          </>}
       </div>
 
       {/* Profile Info - fora da área da capa */}
       <div className="px-4 pb-6 text-center -mt-24 relative z-10">
         <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
-          {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
-            <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
-          ) : (
-            <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+          {organizer.avatar_url || organizer.profile?.avatar_url ? <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} /> : <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
               {organizer.page_title.charAt(0)}
-            </AvatarFallback>
-          )}
+            </AvatarFallback>}
         </Avatar>
         
         <h2 className="text-2xl font-bold text-foreground mb-2">
@@ -586,98 +469,61 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
         </div>
 
         {/* Follow button */}
-        {!user || (organizer.user_id !== user.id) ? (
-          <div className="flex justify-center gap-3">
-            <Button 
-              variant="glow" 
-              size="lg" 
-              className="flex-1 max-w-[200px]" 
-              onClick={async () => {
-                if (!user) {
-                  setAuthModalAction("para seguir este organizador");
-                  setAuthModalOpen(true);
-                } else {
-                  await toggleFollow();
-                }
-              }}
-              disabled={followLoading}
-            >
-              {followLoading ? (
-                'Carregando...'
-              ) : isFollowing ? (
-                <>
+        {!user || organizer.user_id !== user.id ? <div className="flex justify-center gap-3">
+            <Button variant="glow" size="lg" className="flex-1 max-w-[200px]" onClick={async () => {
+          if (!user) {
+            setAuthModalAction("para seguir este organizador");
+            setAuthModalOpen(true);
+          } else {
+            await toggleFollow();
+          }
+        }} disabled={followLoading}>
+              {followLoading ? 'Carregando...' : isFollowing ? <>
                   <UserCheck className="h-4 w-4 mr-2" />
                   Seguindo
-                </>
-              ) : (
-                <>
+                </> : <>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Seguir
-                </>
-              )}
+                </>}
             </Button>
             <Button variant="outline" size="lg" onClick={handleShare}>
               <Share2 className="h-4 w-4 mr-2" />
               Compartilhar
             </Button>
-          </div>
-        ) : (
-          <div className="flex justify-center">
+          </div> : <div className="flex justify-center">
             <Button variant="outline" size="lg" onClick={handleShare}>
               <Share2 className="h-4 w-4 mr-2" />
               Compartilhar minha página
             </Button>
-          </div>
-        )}
+          </div>}
       </div>
 
       {/* Tabs */}
-      <div className="px-4 mb-6 -mt-4 relative" style={{ zIndex: 10 }}>
+      <div className="px-4 mb-6 -mt-4 relative" style={{
+      zIndex: 10
+    }}>
         <div className="flex gap-2 justify-center">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${
-                  activeTab === tab.id
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-surface border-border text-muted-foreground hover:text-foreground hover:border-primary/50"
-                }`}
-              >
+          {tabs.map(tab => {
+          const Icon = tab.icon;
+          return <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${activeTab === tab.id ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground hover:border-primary/50"}`}>
                 <Icon className="h-4 w-4" />
                 <span className="text-sm font-medium">{tab.label}</span>
-              </button>
-            );
-          })}
+              </button>;
+        })}
         </div>
       </div>
 
       {/* Content */}
       <div className="px-4 max-w-md mx-auto">
         {/* Eventos Tab */}
-        {activeTab === "eventos" && (
-          <div className="space-y-4">
-            {events.length > 0 ? (
-              events.map((event) => (
-                <Card 
-                  key={event.id} 
-                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => onEventClick?.(event.id)}
-                >
+        {activeTab === "eventos" && <div className="space-y-4">
+            {events.length > 0 ? events.map(event => <Card key={event.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onEventClick?.(event.id)}>
                   <div className="relative">
-                    <img 
-                      src={event.image_url || '/placeholder.svg'} 
-                      alt={event.title} 
-                      className="w-full h-32 object-cover" 
-                    />
-                    {event.is_live && (
-                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+                    <img src={event.image_url || '/placeholder.svg'} alt={event.title} className="w-full h-32 object-cover" />
+                    {event.is_live && <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
                         <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
                         AO VIVO
-                      </Badge>
-                    )}
+                      </Badge>}
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-foreground mb-1">{event.title}</h3>
@@ -702,32 +548,20 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8">
+                </Card>) : <div className="text-center py-8">
                 <p className="text-muted-foreground">Nenhum evento criado ainda.</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Os eventos aparecerão aqui assim que forem criados.
                 </p>
-              </div>
-            )}
-          </div>
-        )}
+              </div>}
+          </div>}
 
         {/* Links Tab */}
-        {activeTab === "links" && (
-          <div className="space-y-3">
+        {activeTab === "links" && <div className="space-y-3">
             {/* Social Links */}
-            {organizer.show_whatsapp && organizer.whatsapp_url && (
-              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+            {organizer.show_whatsapp && organizer.whatsapp_url && <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.whatsapp_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.whatsapp_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500 text-white">
                       <MessageCircle className="h-5 w-5" />
                     </div>
@@ -738,18 +572,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
-            {organizer.show_instagram && organizer.instagram_url && (
-              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+            {organizer.show_instagram && organizer.instagram_url && <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.instagram_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white">
                       <Instagram className="h-5 w-5" />
                     </div>
@@ -760,18 +587,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
-            {organizer.show_playlist && organizer.playlist_url && (
-              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+            {organizer.show_playlist && organizer.playlist_url && <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.playlist_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.playlist_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-600 text-white">
                       <Music className="h-5 w-5" />
                     </div>
@@ -782,18 +602,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
-            {organizer.show_location && organizer.location_url && (
-              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+            {organizer.show_location && organizer.location_url && <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.location_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.location_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500 text-white">
                       <MapPin className="h-5 w-5" />
                     </div>
@@ -804,18 +617,11 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
-            {organizer.show_website && organizer.website_url && (
-              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+            {organizer.show_website && organizer.website_url && <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={organizer.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
+                  <a href={organizer.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-600 text-white">
                       <Globe className="h-5 w-5" />
                     </div>
@@ -826,23 +632,15 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Custom Links */}
-            {customLinks.length > 0 && customLinks.map((link) => (
-              <Card key={link.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+            {customLinks.length > 0 && customLinks.map(link => <Card key={link.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full"
-                  >
-                    <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                      style={{ backgroundColor: link.color }}
-                    >
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{
+                backgroundColor: link.color
+              }}>
                       {link.icon || link.title.charAt(0)}
                     </div>
                     <div className="flex-1">
@@ -852,35 +650,25 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
 
             {/* Empty state */}
-            {!organizer.show_whatsapp && !organizer.show_instagram && !organizer.show_playlist && 
-             !organizer.show_location && !organizer.show_website && customLinks.length === 0 && (
-              <div className="text-center py-8">
+            {!organizer.show_whatsapp && !organizer.show_instagram && !organizer.show_playlist && !organizer.show_location && !organizer.show_website && customLinks.length === 0 && <div className="text-center py-8">
                 <p className="text-muted-foreground">Nenhum link adicionado ainda.</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Os links aparecerão aqui quando forem adicionados.
                 </p>
-              </div>
-            )}
-          </div>
-        )}
+              </div>}
+          </div>}
 
         {/* Fotos Tab */}
-        {activeTab === "fotos" && (
-          <div className="space-y-6">
-            {allEvents.length === 0 ? (
-              <div className="text-center py-8">
+        {activeTab === "fotos" && <div className="space-y-6">
+            {allEvents.length === 0 ? <div className="text-center py-8">
                 <div className="mb-4">
                   <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground">O organizador ainda não adicionou fotos.</p>
                 </div>
-              </div>
-            ) : (
-              allEvents.map((event) => (
-                <div key={event.id} className="space-y-3">
+              </div> : allEvents.map(event => <div key={event.id} className="space-y-3">
                   <div>
                     <h3 className="font-semibold text-foreground">{event.title}</h3>
                     <p className="text-sm text-muted-foreground">
@@ -888,11 +676,8 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
                     </p>
                   </div>
                   <EventPhotoGrid eventId={event.id} organizerId={organizer.id} />
-                </div>
-              ))
-            )}
-          </div>
-        )}
+                </div>)}
+          </div>}
       </div>
 
       {/* Footer */}
@@ -903,11 +688,6 @@ export default function OrganizerProfile({ onBack, organizerId, onEventClick }: 
       </footer>
 
       {/* Auth Modal */}
-      <AuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        actionDescription={authModalAction}
-      />
-    </div>
-  );
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
+    </div>;
 }
