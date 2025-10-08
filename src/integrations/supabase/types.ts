@@ -706,6 +706,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_username_available: {
+        Args: { current_organizer_id: string; username_to_check: string }
+        Returns: boolean
+      }
       update_organizer_stats: {
         Args: { org_id: string }
         Returns: undefined

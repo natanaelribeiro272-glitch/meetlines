@@ -56,8 +56,11 @@ export default function OrganizerPage() {
   });
   const [editableProfile, setEditableProfile] = useState({
     title: "",
-    description: ""
+    description: "",
+    username: ""
   });
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [defaultLinks, setDefaultLinks] = useState({
     instagram: { url: "", visible: false },
     whatsapp: { url: "", visible: false },
@@ -108,7 +111,8 @@ export default function OrganizerPage() {
       });
       setEditableProfile({
         title: organizerData.page_title || "",
-        description: organizerData.page_description || ""
+        description: organizerData.page_description || "",
+        username: organizerData.username || ""
       });
     }
   }, [organizerData, events]);
@@ -441,9 +445,50 @@ export default function OrganizerPage() {
                           className="text-xl font-bold bg-transparent border-border"
                           placeholder="Nome do perfil"
                         />
-                        {organizerData?.username && (
-                          <p className="text-sm text-muted-foreground">@{organizerData.username}</p>
-                        )}
+                        <div className="space-y-1">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                            <Input
+                              value={editableProfile.username}
+                              onChange={async (e) => {
+                                const newUsername = e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '');
+                                setEditableProfile(prev => ({ ...prev, username: newUsername }));
+                                
+                                if (newUsername.length >= 3 && newUsername !== organizerData?.username) {
+                                  setIsCheckingUsername(true);
+                                  setUsernameError(null);
+                                  
+                                  const { data, error } = await supabase.rpc('check_username_available', {
+                                    username_to_check: newUsername,
+                                    current_organizer_id: organizerData?.id
+                                  });
+                                  
+                                  setIsCheckingUsername(false);
+                                  
+                                  if (error) {
+                                    setUsernameError('Erro ao verificar username');
+                                  } else if (!data) {
+                                    setUsernameError('Username já está em uso');
+                                  }
+                                }
+                              }}
+                              className="text-sm bg-transparent border-border pl-7"
+                              placeholder="username"
+                            />
+                          </div>
+                          {isCheckingUsername && (
+                            <p className="text-xs text-muted-foreground">Verificando disponibilidade...</p>
+                          )}
+                          {usernameError && (
+                            <p className="text-xs text-destructive">{usernameError}</p>
+                          )}
+                          {!usernameError && !isCheckingUsername && editableProfile.username && editableProfile.username !== organizerData?.username && (
+                            <p className="text-xs text-green-600">Username disponível!</p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Mínimo 3 caracteres. Apenas letras minúsculas, números, ponto e underline.
+                          </p>
+                        </div>
                         <Textarea
                           value={editableProfile.description}
                           onChange={(e) => setEditableProfile(prev => ({ ...prev, description: e.target.value }))}
@@ -482,12 +527,30 @@ export default function OrganizerPage() {
                     </Button>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <Button variant="default" size="sm" onClick={async () => {
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        disabled={!!usernameError || isCheckingUsername || editableProfile.username.length < 3}
+                        onClick={async () => {
                         try {
+                          // Validar username antes de salvar
+                          if (editableProfile.username !== organizerData?.username) {
+                            const { data: isAvailable, error: checkError } = await supabase.rpc('check_username_available', {
+                              username_to_check: editableProfile.username,
+                              current_organizer_id: organizerData?.id
+                            });
+                            
+                            if (checkError || !isAvailable) {
+                              toast.error('Username já está em uso');
+                              return;
+                            }
+                          }
+                          
                           // Atualizar na tabela organizers
                           await updateOrganizerProfile({
                             page_title: editableProfile.title,
-                            page_description: editableProfile.description
+                            page_description: editableProfile.description,
+                            username: editableProfile.username
                           });
                           
                           // Atualizar também na tabela profiles para sincronizar
@@ -502,10 +565,10 @@ export default function OrganizerPage() {
                           }
                           
                           setIsEditing(false);
-                          toast.success('Perfil atualizado em todos os lugares!');
+                          setUsernameError(null);
                         } catch (error) {
                           console.error('Error updating profile:', error);
-                          toast.error('Erro ao atualizar perfil');
+                          // O toast de erro já foi mostrado pelo updateOrganizerProfile
                         }
                       }}>
                         Salvar
@@ -513,8 +576,10 @@ export default function OrganizerPage() {
                       <Button variant="outline" size="sm" onClick={() => {
                         setEditableProfile({
                           title: organizerData?.page_title || "",
-                          description: organizerData?.page_description || ""
+                          description: organizerData?.page_description || "",
+                          username: organizerData?.username || ""
                         });
+                        setUsernameError(null);
                         setIsEditing(false);
                       }}>
                         Cancelar

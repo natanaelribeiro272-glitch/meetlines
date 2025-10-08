@@ -145,13 +145,23 @@ export function useOrganizer() {
         .update(updates)
         .eq('id', organizerData.id);
 
-      if (error) throw error;
+      if (error) {
+        // Verificar se é erro de username duplicado
+        if (error.code === '23505' && error.message.includes('username')) {
+          toast.error('Este username já está em uso. Escolha outro.');
+          throw error;
+        }
+        throw error;
+      }
 
       setOrganizerData(prev => prev ? { ...prev, ...updates } : null);
       toast.success('Perfil atualizado com sucesso!');
     } catch (error: any) {
       console.error('Error updating organizer profile:', error);
-      toast.error('Erro ao atualizar perfil');
+      if (!error.message.includes('username')) {
+        toast.error('Erro ao atualizar perfil');
+      }
+      throw error;
     }
   };
 
