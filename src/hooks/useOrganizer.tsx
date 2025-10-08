@@ -33,6 +33,7 @@ interface OrganizerData {
   notify_new_registrations?: boolean;
   notify_event_reminders?: boolean;
   public_page_visible?: boolean;
+  category?: string;
 }
 
 interface Event {

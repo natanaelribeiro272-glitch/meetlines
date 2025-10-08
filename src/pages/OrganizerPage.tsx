@@ -652,6 +652,37 @@ export default function OrganizerPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Categoria Section */}
+                <div className="space-y-4 bg-card rounded-lg p-4">
+                  <h3 className="font-semibold text-foreground">Categoria do Perfil</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Categoria</Label>
+                    <Select 
+                      value={organizerData?.category || ""}
+                      onValueChange={(value) => updateOrganizerProfile({ category: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="festas">Festas</SelectItem>
+                        <SelectItem value="eventos">Eventos</SelectItem>
+                        <SelectItem value="encontros">Encontros</SelectItem>
+                        <SelectItem value="lives">Lives</SelectItem>
+                        <SelectItem value="geek">Geek</SelectItem>
+                        <SelectItem value="esporte">Esporte</SelectItem>
+                        <SelectItem value="saúde">Saúde</SelectItem>
+                        <SelectItem value="igreja">Igreja</SelectItem>
+                        <SelectItem value="outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      A categoria ajuda os usuários a encontrar seu perfil
+                    </p>
+                  </div>
+                </div>
               </div>
           </TabsContent>
 

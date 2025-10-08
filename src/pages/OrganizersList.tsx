@@ -27,23 +27,32 @@ export default function OrganizersList({
     id: "todos",
     label: "Todos"
   }, {
-    id: "Eletrônica",
-    label: "Eletrônica"
+    id: "festas",
+    label: "Festas"
   }, {
-    id: "Rock",
-    label: "Rock"
+    id: "eventos",
+    label: "Eventos"
   }, {
-    id: "Pop",
-    label: "Pop"
+    id: "encontros",
+    label: "Encontros"
   }, {
-    id: "Hip-Hop",
-    label: "Hip-Hop"
+    id: "lives",
+    label: "Lives"
   }, {
-    id: "Jazz",
-    label: "Jazz"
+    id: "geek",
+    label: "Geek"
   }, {
-    id: "Sertanejo",
-    label: "Sertanejo"
+    id: "esporte",
+    label: "Esporte"
+  }, {
+    id: "saúde",
+    label: "Saúde"
+  }, {
+    id: "igreja",
+    label: "Igreja"
+  }, {
+    id: "outro",
+    label: "Outro"
   }];
   const filteredOrganizers = organizers.filter(organizer => {
     const matchesSearch = organizer.page_title.toLowerCase().includes(searchQuery.toLowerCase()) || (organizer.profile?.bio || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -143,11 +152,13 @@ export default function OrganizersList({
                     </div>
                   </div>
                   
-                  <div className="mt-2">
-                    <Badge variant="outline" className="text-xs">
-                      {organizer.category || 'Entretenimento'}
-                    </Badge>
-                  </div>
+                  {organizer.category && (
+                    <div className="mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        {organizer.category.charAt(0).toUpperCase() + organizer.category.slice(1)}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>)}
