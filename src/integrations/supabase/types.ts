@@ -61,6 +61,54 @@ export type Database = {
           },
         ]
       }
+      event_claim_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          organizer_id: string
+          platform_event_id: string
+          reviewed_at: string | null
+          reviewed_by_admin_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          organizer_id: string
+          platform_event_id: string
+          reviewed_at?: string | null
+          reviewed_by_admin_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          organizer_id?: string
+          platform_event_id?: string
+          reviewed_at?: string | null
+          reviewed_by_admin_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_claim_requests_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "organizers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_claim_requests_platform_event_id_fkey"
+            columns: ["platform_event_id"]
+            isOneToOne: false
+            referencedRelation: "platform_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_comments: {
         Row: {
           content: string
@@ -527,6 +575,71 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_events: {
+        Row: {
+          category: string | null
+          claimed_by_organizer_id: string | null
+          created_at: string | null
+          created_by_admin_id: string
+          description: string | null
+          end_date: string | null
+          event_date: string
+          id: string
+          image_url: string | null
+          location: string
+          location_link: string | null
+          max_attendees: number | null
+          organizer_name: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          claimed_by_organizer_id?: string | null
+          created_at?: string | null
+          created_by_admin_id: string
+          description?: string | null
+          end_date?: string | null
+          event_date: string
+          id?: string
+          image_url?: string | null
+          location: string
+          location_link?: string | null
+          max_attendees?: number | null
+          organizer_name: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          claimed_by_organizer_id?: string | null
+          created_at?: string | null
+          created_by_admin_id?: string
+          description?: string | null
+          end_date?: string | null
+          event_date?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          location_link?: string | null
+          max_attendees?: number | null
+          organizer_name?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_events_claimed_by_organizer_id_fkey"
+            columns: ["claimed_by_organizer_id"]
+            isOneToOne: false
+            referencedRelation: "organizers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
@@ -650,6 +763,33 @@ export type Database = {
         }
         Relationships: []
       }
+      support_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_admin_reply: boolean | null
+          message: string
+          read: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_admin_reply?: boolean | null
+          message: string
+          read?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_admin_reply?: boolean | null
+          message?: string
+          read?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_likes: {
         Row: {
           created_at: string
@@ -701,6 +841,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -708,6 +869,13 @@ export type Database = {
     Functions: {
       check_username_available: {
         Args: { current_organizer_id: string; username_to_check: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
         Returns: boolean
       }
       update_organizer_stats: {
@@ -720,6 +888,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       relationship_status:
         | "solteiro"
         | "namorando"
@@ -855,6 +1024,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       relationship_status: [
         "solteiro",
         "namorando",
