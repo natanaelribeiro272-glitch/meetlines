@@ -12,6 +12,10 @@ import AuthPage from "./pages/AuthPage";
 import OrganizerOnboarding from "./pages/OrganizerOnboarding";
 import UserOnboarding from "./pages/UserOnboarding";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminCreatePlatformEvent from "./pages/AdminCreatePlatformEvent";
+import AdminClaimRequests from "./pages/AdminClaimRequests";
+import AdminSupport from "./pages/AdminSupport";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +32,11 @@ const App = () => (
               <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
               <Route path="/organizer-onboarding" element={<OrganizerOnboarding />} />
               <Route path="/user-onboarding" element={<UserOnboarding />} />
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />
+              <Route path="/admin/claims" element={<AdminClaimRequests />} />
+              <Route path="/admin/support" element={<AdminSupport />} />
               {/* Public event share route: domain.com/@username/event-slug */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
               {/* Public organizer profile: domain.com/@username */}

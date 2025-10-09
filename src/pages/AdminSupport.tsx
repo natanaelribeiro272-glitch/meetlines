@@ -68,25 +68,47 @@ export default function AdminSupport() {
 
   const fetchMessages = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: messages, error } = await supabase
         .from('support_messages')
-        .select(`
-          *,
-          profiles (display_name, avatar_url)
-        `)
+        .select('*')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
+      // Get unique user IDs
+      const userIds = [...new Set(messages?.map(m => m.user_id) || [])];
+      
+      // Fetch profiles for all users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      // Group messages by user
       const grouped: GroupedMessages = {};
-      data?.forEach((msg: SupportMessage) => {
+      messages?.forEach((msg) => {
+        const profile = profilesMap.get(msg.user_id);
         if (!grouped[msg.user_id]) {
           grouped[msg.user_id] = {
-            user: msg.profiles,
+            user: {
+              display_name: profile?.display_name || 'Usuário',
+              avatar_url: profile?.avatar_url || ''
+            },
             messages: []
           };
         }
-        grouped[msg.user_id].messages.push(msg);
+        grouped[msg.user_id].messages.push({
+          ...msg,
+          profiles: {
+            display_name: profile?.display_name || 'Usuário',
+            avatar_url: profile?.avatar_url || ''
+          }
+        });
       });
 
       setGroupedMessages(grouped);

@@ -1,6 +1,7 @@
-import { MapPin, Sun, Moon } from "lucide-react";
+import { MapPin, Sun, Moon, Shield } from "lucide-react";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ export function Header({
   userType
 }: HeaderProps) {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,6 +50,17 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin')}
+              className="h-8 w-8"
+              title="Painel Admin"
+            >
+              <Shield className="h-4 w-4 text-primary" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
