@@ -1,4 +1,16 @@
-import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit, StopCircle, Video, Link as LinkIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Users,
+  Heart,
+  MessageCircle,
+  Share2,
+  Calendar,
+  Edit,
+  StopCircle,
+  Video,
+  Link as LinkIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +34,15 @@ interface EventDetailsProps {
   onViewAttendances?: () => void;
 }
 
-export default function EventDetails({ onBack, eventId, onRegister, onFindFriends, onEdit, onManageRegistrations, onViewAttendances }: EventDetailsProps) {
+export default function EventDetails({
+  onBack,
+  eventId,
+  onRegister,
+  onFindFriends,
+  onEdit,
+  onManageRegistrations,
+  onViewAttendances,
+}: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
@@ -36,19 +56,19 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   const [isOrganizerUser, setIsOrganizerUser] = useState(false);
   const [organizerId, setOrganizerId] = useState<string | null>(null);
   const [requestingClaim, setRequestingClaim] = useState(false);
-  
+
   const isOrganizer = user && event?.organizer?.user_id === user.id;
 
   // Detectar se é um evento online baseado no link
-  const isOnlineEvent = event?.location_link && (
-    event.location_link.includes('meet.google') ||
-    event.location_link.includes('zoom.us') ||
-    event.location_link.includes('youtube.com') ||
-    event.location_link.includes('twitch.tv') ||
-    event.location_link.includes('teams.microsoft') ||
-    event.location_link.includes('streamyard') ||
-    event.location_link.includes('jitsi')
-  );
+  const isOnlineEvent =
+    event?.location_link &&
+    (event.location_link.includes("meet.google") ||
+      event.location_link.includes("zoom.us") ||
+      event.location_link.includes("youtube.com") ||
+      event.location_link.includes("twitch.tv") ||
+      event.location_link.includes("teams.microsoft") ||
+      event.location_link.includes("streamyard") ||
+      event.location_link.includes("jitsi"));
 
   // Verificar se o usuário é organizador
   useEffect(() => {
@@ -59,18 +79,14 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
       }
 
       try {
-        const { data, error } = await supabase
-          .from('organizers')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const { data, error } = await supabase.from("organizers").select("id").eq("user_id", user.id).maybeSingle();
 
         if (!error && data) {
           setIsOrganizerUser(true);
           setOrganizerId(data.id);
         }
       } catch (error) {
-        console.error('Error checking organizer:', error);
+        console.error("Error checking organizer:", error);
       }
     };
 
@@ -87,17 +103,17 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
       try {
         const { data, error } = await supabase
-          .from('event_registrations')
-          .select('attendance_confirmed')
-          .eq('event_id', eventId)
-          .eq('user_id', user.id)
+          .from("event_registrations")
+          .select("attendance_confirmed")
+          .eq("event_id", eventId)
+          .eq("user_id", user.id)
           .maybeSingle();
 
         if (!error && data) {
           setHasConfirmedAttendance(data.attendance_confirmed || false);
         }
       } catch (error) {
-        console.error('Error checking attendance:', error);
+        console.error("Error checking attendance:", error);
       } finally {
         setCheckingAttendance(false);
       }
@@ -118,10 +134,10 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   // Função auxiliar para formatizar data
   const formatEventDate = (dateString: string) => {
     const date = new Date(dateString);
-    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const dayName = days[date.getDay()];
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
     return `${dayName}, ${hours}:${minutes}`;
   };
 
@@ -131,7 +147,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     const diff = now.getTime() - date.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
-    
+
     if (days > 0) return `${days}d`;
     if (hours > 0) return `${hours}h`;
     return "agora";
@@ -139,176 +155,174 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    
+
     requireAuth(async () => {
       await addComment(newComment);
       setNewComment("");
-    }, 'comentar');
+    }, "comentar");
   };
 
   const handleLike = () => {
     requireAuth(() => {
       toggleLike();
-    }, 'curtir este evento');
+    }, "curtir este evento");
   };
 
   const handleConfirmPresence = async () => {
     requireAuth(async () => {
       if (!user || !eventId) return;
-      
+
       setConfirmingAttendance(true);
-      
+
       try {
         // Check if user has registration
         const { data: existingReg, error: checkError } = await supabase
-          .from('event_registrations')
-          .select('id, attendance_confirmed')
-          .eq('event_id', eventId)
-          .eq('user_id', user.id)
+          .from("event_registrations")
+          .select("id, attendance_confirmed")
+          .eq("event_id", eventId)
+          .eq("user_id", user.id)
           .maybeSingle();
 
         if (checkError) {
-          console.error('Error checking registration:', checkError);
-          toast.error('Erro ao verificar registro');
+          console.error("Error checking registration:", checkError);
+          toast.error("Erro ao verificar registro");
           return;
         }
 
         if (existingReg) {
           // Update existing registration
           const { error: updateError } = await supabase
-            .from('event_registrations')
-            .update({ 
+            .from("event_registrations")
+            .update({
               attendance_confirmed: true,
-              attendance_confirmed_at: new Date().toISOString()
+              attendance_confirmed_at: new Date().toISOString(),
             })
-            .eq('id', existingReg.id);
+            .eq("id", existingReg.id);
 
           if (updateError) {
-            console.error('Error updating attendance:', updateError);
-            toast.error('Erro ao confirmar presença');
+            console.error("Error updating attendance:", updateError);
+            toast.error("Erro ao confirmar presença");
             return;
           }
         } else {
           // Create new registration with confirmed attendance
           const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('user_id', user.id)
+            .from("profiles")
+            .select("display_name")
+            .eq("user_id", user.id)
             .single();
 
-          const { error: insertError } = await supabase
-            .from('event_registrations')
-            .insert({
-              event_id: eventId,
-              user_id: user.id,
-              user_name: profile?.display_name || user.email?.split('@')[0] || 'Usuário',
-              user_email: user.email || '',
-              attendance_confirmed: true,
-              attendance_confirmed_at: new Date().toISOString()
-            });
+          const { error: insertError } = await supabase.from("event_registrations").insert({
+            event_id: eventId,
+            user_id: user.id,
+            user_name: profile?.display_name || user.email?.split("@")[0] || "Usuário",
+            user_email: user.email || "",
+            attendance_confirmed: true,
+            attendance_confirmed_at: new Date().toISOString(),
+          });
 
           if (insertError) {
-            console.error('Error creating registration:', insertError);
-            toast.error('Erro ao confirmar presença');
+            console.error("Error creating registration:", insertError);
+            toast.error("Erro ao confirmar presença");
             return;
           }
         }
 
         setHasConfirmedAttendance(true);
-        toast.success('Presença confirmada com sucesso!');
+        toast.success("Presença confirmada com sucesso!");
       } catch (error) {
-        console.error('Error:', error);
-        toast.error('Erro ao confirmar presença');
+        console.error("Error:", error);
+        toast.error("Erro ao confirmar presença");
       } finally {
         setConfirmingAttendance(false);
       }
-    }, 'confirmar presença');
+    }, "confirmar presença");
   };
 
   const handleCancelAttendance = async () => {
     requireAuth(async () => {
       if (!user || !eventId) return;
-      
+
       setConfirmingAttendance(true);
-      
+
       try {
         const { error } = await supabase
-          .from('event_registrations')
-          .update({ 
+          .from("event_registrations")
+          .update({
             attendance_confirmed: false,
-            attendance_confirmed_at: null
+            attendance_confirmed_at: null,
           })
-          .eq('event_id', eventId)
-          .eq('user_id', user.id);
+          .eq("event_id", eventId)
+          .eq("user_id", user.id);
 
         if (error) {
-          console.error('Error canceling attendance:', error);
-          toast.error('Erro ao cancelar presença');
+          console.error("Error canceling attendance:", error);
+          toast.error("Erro ao cancelar presença");
           return;
         }
 
         setHasConfirmedAttendance(false);
-        toast.success('Confirmação de presença cancelada');
+        toast.success("Confirmação de presença cancelada");
       } catch (error) {
-        console.error('Error:', error);
-        toast.error('Erro ao cancelar presença');
+        console.error("Error:", error);
+        toast.error("Erro ao cancelar presença");
       } finally {
         setConfirmingAttendance(false);
       }
-    }, 'cancelar presença');
+    }, "cancelar presença");
   };
 
   const handleEndEvent = async () => {
     if (!eventId) return;
-    
+
     try {
       const { error } = await supabase
-        .from('events')
-        .update({ 
+        .from("events")
+        .update({
           is_live: false,
-          status: 'completed'
+          status: "completed",
         })
-        .eq('id', eventId);
+        .eq("id", eventId);
 
       if (error) {
-        console.error('Error ending event:', error);
-        toast.error('Erro ao encerrar evento');
+        console.error("Error ending event:", error);
+        toast.error("Erro ao encerrar evento");
         return;
       }
 
-      toast.success('Evento encerrado com sucesso!');
+      toast.success("Evento encerrado com sucesso!");
       // Refresh page to show updated status
       window.location.reload();
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Erro ao encerrar evento');
+      console.error("Error:", error);
+      toast.error("Erro ao encerrar evento");
     }
   };
 
   const handleFindFriendsClick = () => {
     requireAuth(() => {
       if (onFindFriends) onFindFriends();
-    }, 'encontrar amigos');
+    }, "encontrar amigos");
   };
 
   const handleShare = async () => {
     if (!eventId || !event) {
-      toast.error('Evento não encontrado');
+      toast.error("Evento não encontrado");
       return;
     }
 
     // Para platform events, usar um formato de URL diferente
     if (event.is_platform_event) {
       const eventUrl = `${getPublicBaseUrl()}/platform-event/${eventId}`;
-      
+
       try {
-        if (typeof navigator !== 'undefined' && (navigator as any).share) {
+        if (typeof navigator !== "undefined" && (navigator as any).share) {
           await (navigator as any).share({
             title: event.title,
             text: `Confira este evento: ${event.title}`,
             url: eventUrl,
           });
-          toast.success('Evento compartilhado!');
+          toast.success("Evento compartilhado!");
           return;
         }
       } catch (error) {
@@ -318,7 +332,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
       try {
         if (navigator.clipboard && window.isSecureContext) {
           await navigator.clipboard.writeText(eventUrl);
-          toast.success('Link copiado para a área de transferência!');
+          toast.success("Link copiado para a área de transferência!");
           return;
         }
       } catch (error) {
@@ -326,17 +340,17 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
       }
 
       try {
-        const textarea = document.createElement('textarea');
+        const textarea = document.createElement("textarea");
         textarea.value = eventUrl;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
         document.body.appendChild(textarea);
         textarea.select();
-        const successful = document.execCommand('copy');
+        const successful = document.execCommand("copy");
         document.body.removeChild(textarea);
         if (successful) {
-          toast.success('Link copiado!');
+          toast.success("Link copiado!");
           return;
         }
       } catch (error) {
@@ -344,10 +358,10 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
       }
 
       try {
-        window.prompt('Copie o link do evento:', eventUrl);
-        toast.info('Link exibido para copiar.');
+        window.prompt("Copie o link do evento:", eventUrl);
+        toast.info("Link exibido para copiar.");
       } catch (error) {
-        toast.error('Não foi possível gerar o link automaticamente.');
+        toast.error("Não foi possível gerar o link automaticamente.");
       }
       return;
     }
@@ -356,15 +370,15 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     const createSlug = (text: string) => {
       return text
         .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-        .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
-        .replace(/\s+/g, '-') // Substitui espaços por hífens
-        .replace(/-+/g, '-') // Remove hífens duplicados
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .replace(/[^\w\s-]/g, "") // Remove caracteres especiais
+        .replace(/\s+/g, "-") // Substitui espaços por hífens
+        .replace(/-+/g, "-") // Remove hífens duplicados
         .trim();
     };
 
-    const organizerName = event.organizer?.profile?.display_name || event.organizer?.page_title || 'organizador';
+    const organizerName = event.organizer?.profile?.display_name || event.organizer?.page_title || "organizador";
     const eventName = event.title;
 
     const organizerSlug = createSlug(organizerName);
@@ -374,13 +388,13 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
     // 1) Tenta compartilhamento nativo
     try {
-      if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
         await (navigator as any).share({
           title: event.title,
           text: `Confira este evento: ${event.title}`,
           url: eventUrl,
         });
-        toast.success('Evento compartilhado!');
+        toast.success("Evento compartilhado!");
         return;
       }
     } catch (error) {
@@ -391,7 +405,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(eventUrl);
-        toast.success('Link copiado para a área de transferência!');
+        toast.success("Link copiado para a área de transferência!");
         return;
       }
     } catch (error) {
@@ -400,17 +414,17 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
     // 3) Fallback legado usando document.execCommand('copy')
     try {
-      const textarea = document.createElement('textarea');
+      const textarea = document.createElement("textarea");
       textarea.value = eventUrl;
-      textarea.setAttribute('readonly', '');
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
       document.body.appendChild(textarea);
       textarea.select();
-      const successful = document.execCommand('copy');
+      const successful = document.execCommand("copy");
       document.body.removeChild(textarea);
       if (successful) {
-        toast.success('Link copiado!');
+        toast.success("Link copiado!");
         return;
       }
     } catch (error) {
@@ -419,56 +433,54 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
 
     // 4) Último recurso: exibe prompt para o usuário copiar manualmente
     try {
-      window.prompt('Copie o link do evento:', eventUrl);
-      toast.info('Link exibido para copiar.');
+      window.prompt("Copie o link do evento:", eventUrl);
+      toast.info("Link exibido para copiar.");
     } catch (error) {
-      toast.error('Não foi possível gerar o link automaticamente.');
+      toast.error("Não foi possível gerar o link automaticamente.");
     }
   };
 
   const handleClaimEvent = async () => {
     if (!user || !organizerId || !eventId) {
-      toast.error('Você precisa ser um organizador para solicitar associação');
+      toast.error("Você precisa ser um organizador para solicitar associação");
       return;
     }
 
     setRequestingClaim(true);
-    
+
     try {
       // Verificar se já existe uma solicitação pendente
       const { data: existingRequest } = await supabase
-        .from('event_claim_requests')
-        .select('id, status')
-        .eq('platform_event_id', eventId)
-        .eq('organizer_id', organizerId)
+        .from("event_claim_requests")
+        .select("id, status")
+        .eq("platform_event_id", eventId)
+        .eq("organizer_id", organizerId)
         .maybeSingle();
 
       if (existingRequest) {
-        if (existingRequest.status === 'pending') {
-          toast.info('Você já tem uma solicitação pendente para este evento');
-        } else if (existingRequest.status === 'approved') {
-          toast.info('Este evento já foi aprovado para você');
-        } else if (existingRequest.status === 'rejected') {
-          toast.error('Sua solicitação anterior foi rejeitada');
+        if (existingRequest.status === "pending") {
+          toast.info("Você já tem uma solicitação pendente para este evento");
+        } else if (existingRequest.status === "approved") {
+          toast.info("Este evento já foi aprovado para você");
+        } else if (existingRequest.status === "rejected") {
+          toast.error("Sua solicitação anterior foi rejeitada");
         }
         return;
       }
 
       // Criar nova solicitação
-      const { error } = await supabase
-        .from('event_claim_requests')
-        .insert({
-          platform_event_id: eventId,
-          organizer_id: organizerId,
-          message: 'Solicitação de associação ao evento'
-        });
+      const { error } = await supabase.from("event_claim_requests").insert({
+        platform_event_id: eventId,
+        organizer_id: organizerId,
+        message: "Solicitação de associação ao evento",
+      });
 
       if (error) throw error;
 
-      toast.success('Solicitação enviada! Aguarde aprovação do administrador.');
+      toast.success("Solicitação enviada! Aguarde aprovação do administrador.");
     } catch (error: any) {
-      console.error('Error claiming event:', error);
-      toast.error('Erro ao solicitar associação: ' + error.message);
+      console.error("Error claiming event:", error);
+      toast.error("Erro ao solicitar associação: " + error.message);
     } finally {
       setRequestingClaim(false);
     }
@@ -506,13 +518,9 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="relative">
-        <img
-          src={event.image_url || '/placeholder.svg'}
-          alt={event.title}
-          className="w-full h-80 object-cover"
-        />
+        <img src={event.image_url || "/placeholder.svg"} alt={event.title} className="w-full h-80 object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
-        
+
         {/* Back button */}
         <Button
           variant="ghost"
@@ -576,23 +584,23 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         {/* Event Info */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-2">{event.title}</h1>
-          
+
           <div className="flex items-center gap-3 mb-4">
             <Avatar className="h-10 w-10">
               {event.organizer?.profile?.avatar_url ? (
                 <AvatarImage src={event.organizer.profile.avatar_url} />
               ) : (
                 <AvatarFallback className="bg-surface">
-                  {(event.organizer?.profile?.display_name || event.organizer?.page_title || 'O').charAt(0)}
+                  {(event.organizer?.profile?.display_name || event.organizer?.page_title || "O").charAt(0)}
                 </AvatarFallback>
               )}
             </Avatar>
             <div>
               <p className="font-medium text-foreground">
-                {event.organizer?.profile?.display_name || event.organizer?.page_title || 'Organizador'}
+                {event.organizer?.profile?.display_name || event.organizer?.page_title || "Organizador"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {event.is_platform_event ? 'Evento da Plataforma' : 'Organizador'}
+                {event.is_platform_event ? "Evento criado automaticamente" : "Organizador"}
               </p>
             </div>
           </div>
@@ -600,14 +608,9 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
           {/* Botão de solicitar associação para organizadores */}
           {event.is_platform_event && isOrganizerUser && (
             <div className="mb-4">
-              <Button
-                onClick={handleClaimEvent}
-                disabled={requestingClaim}
-                variant="outline"
-                className="w-full"
-              >
+              <Button onClick={handleClaimEvent} disabled={requestingClaim} variant="outline" className="w-full">
                 <LinkIcon className="h-4 w-4 mr-2" />
-                {requestingClaim ? 'Enviando...' : 'Solicitar Associação'}
+                {requestingClaim ? "Enviando..." : "Solicitar Associação"}
               </Button>
               <p className="text-xs text-muted-foreground mt-2 text-center">
                 Você pode solicitar para vincular este evento ao seu perfil de organizador
@@ -620,18 +623,18 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
               <Calendar className="h-5 w-5 text-primary" />
               <span className="text-foreground">{formatEventDate(event.event_date)}</span>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-foreground">{event.location}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-primary" />
               <span className="text-foreground">
-                {event.unique_attendees_count || 0} {event.is_live ? 'pessoas no evento' : 'pessoas interessadas'}
+                {event.unique_attendees_count || 0} {event.is_live ? "pessoas no evento" : "pessoas interessadas"}
               </span>
             </div>
           </div>
@@ -658,7 +661,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         {/* Description */}
         <div className="mb-6">
           <h3 className="font-semibold text-foreground mb-2">Sobre o evento</h3>
-          <p className="text-muted-foreground leading-relaxed">{event.description || 'Sem descrição disponível'}</p>
+          <p className="text-muted-foreground leading-relaxed">{event.description || "Sem descrição disponível"}</p>
         </div>
 
         {/* Public Notes from Organizer */}
@@ -673,32 +676,40 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         <div className="space-y-3 mb-6">
           {/* Botão de Comprar Ingresso - Só aparece se tiver link e for pago */}
           {event.ticket_link && (
-            <Button 
-              variant="default" 
-              className="w-full bg-green-600 hover:bg-green-700 text-white" 
-              size="lg" 
-              onClick={() => window.open(event.ticket_link, '_blank')}
+            <Button
+              variant="default"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              size="lg"
+              onClick={() => window.open(event.ticket_link, "_blank")}
             >
               💳 Comprar Ingresso
             </Button>
           )}
-          
+
           <div className="flex gap-3">
-            <Button 
+            <Button
               variant={hasConfirmedAttendance ? "outline" : "glow"}
-              className="flex-1" 
-              size="lg" 
-              onClick={isOrganizer && onViewAttendances ? onViewAttendances : (hasConfirmedAttendance ? handleCancelAttendance : handleConfirmPresence)}
+              className="flex-1"
+              size="lg"
+              onClick={
+                isOrganizer && onViewAttendances
+                  ? onViewAttendances
+                  : hasConfirmedAttendance
+                    ? handleCancelAttendance
+                    : handleConfirmPresence
+              }
               disabled={confirmingAttendance || checkingAttendance}
             >
-              {isOrganizer ? 'Ver Presenças Confirmadas' : hasConfirmedAttendance ? 'Cancelar Presença' : confirmingAttendance ? 'Confirmando...' : 'Confirmar Presença'}
+              {isOrganizer
+                ? "Ver Presenças Confirmadas"
+                : hasConfirmedAttendance
+                  ? "Cancelar Presença"
+                  : confirmingAttendance
+                    ? "Confirmando..."
+                    : "Confirmar Presença"}
             </Button>
             {event.location_link && (
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => window.open(event.location_link, '_blank')}
-              >
+              <Button variant="outline" size="lg" onClick={() => window.open(event.location_link, "_blank")}>
                 {isOnlineEvent ? (
                   <>
                     <Video className="h-4 w-4" />
@@ -713,41 +724,31 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
               </Button>
             )}
           </div>
-          
+
           {/* Registration button - only if organizer enabled registrations */}
           {event.requires_registration && (
-            <Button 
-              variant="secondary" 
-              className="w-full" 
+            <Button
+              variant="secondary"
+              className="w-full"
               size="lg"
               onClick={isOrganizer && onManageRegistrations ? onManageRegistrations : onRegister}
             >
               <Users className="h-4 w-4 mr-2" />
-              {isOrganizer ? 'Ver Cadastros no Evento' : 'Fazer Cadastro no Evento'}
+              {isOrganizer ? "Ver Cadastros no Evento" : "Fazer Cadastro no Evento"}
             </Button>
           )}
-          
+
           {/* Find Friends button (apenas para eventos ao vivo e usuários comuns) */}
-          {event.is_live && !isOrganizer && userRole === 'user' && (
-            <Button 
-              variant="live" 
-              className="w-full" 
-              size="lg"
-              onClick={handleFindFriendsClick}
-            >
+          {event.is_live && !isOrganizer && userRole === "user" && (
+            <Button variant="live" className="w-full" size="lg" onClick={handleFindFriendsClick}>
               <Users className="h-4 w-4 mr-2" />
               Encontrar Amigos no Evento
             </Button>
           )}
-          
+
           {/* End Event button (apenas para organizador em evento ao vivo) */}
           {event.is_live && isOrganizer && (
-            <Button 
-              variant="destructive" 
-              className="w-full" 
-              size="lg"
-              onClick={handleEndEvent}
-            >
+            <Button variant="destructive" className="w-full" size="lg" onClick={handleEndEvent}>
               <StopCircle className="h-4 w-4 mr-2" />
               Encerrar Evento
             </Button>
@@ -757,14 +758,13 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         {/* Engagement Stats */}
         <div className="flex items-center justify-between py-4 border-t border-border">
           <div className="flex items-center gap-6">
-            <button 
-              className="flex items-center gap-2 transition-smooth hover:scale-110"
-              onClick={handleLike}
-            >
-              <Heart className={`h-5 w-5 ${event.is_liked ? 'text-destructive fill-current' : 'text-muted-foreground'}`} />
+            <button className="flex items-center gap-2 transition-smooth hover:scale-110" onClick={handleLike}>
+              <Heart
+                className={`h-5 w-5 ${event.is_liked ? "text-destructive fill-current" : "text-muted-foreground"}`}
+              />
               <span className="text-sm text-muted-foreground">{event.likes_count || 0}</span>
             </button>
-            
+
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">{event.comments_count || 0} comentários</span>
@@ -775,7 +775,7 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
         {/* Comments Section */}
         <div className="space-y-4 pb-6">
           <h3 className="font-semibold text-foreground">Comentários</h3>
-          
+
           {/* Add comment */}
           <div className="flex gap-3">
             <Avatar className="h-8 w-8">
@@ -788,9 +788,9 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
               />
-              <Button 
-                variant="glow" 
-                size="sm" 
+              <Button
+                variant="glow"
+                size="sm"
                 className="mt-2"
                 onClick={handleAddComment}
                 disabled={!newComment.trim()}
@@ -809,39 +809,31 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
                     <AvatarImage src={comment.user.avatar_url} />
                   ) : (
                     <AvatarFallback className="bg-surface text-xs">
-                      {(comment.user?.display_name || 'U').charAt(0)}
+                      {(comment.user?.display_name || "U").charAt(0)}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-foreground text-sm">
-                      {comment.user?.display_name || 'Usuário'}
+                      {comment.user?.display_name || "Usuário"}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTimeAgo(comment.created_at)}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.created_at)}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
                 </div>
               </div>
             ))}
-            
+
             {comments.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">
-                Seja o primeiro a comentar!
-              </p>
+              <p className="text-center text-muted-foreground py-4">Seja o primeiro a comentar!</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Auth Modal */}
-      <AuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        actionDescription={authModalAction}
-      />
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
     </div>
   );
 }
