@@ -48,6 +48,8 @@ export interface EventDetailsData {
   registrations_count?: number;
   confirmed_attendees_count?: number;
   unique_attendees_count?: number;
+  is_platform_event?: boolean;
+  organizer_name?: string;
 }
 
 export function useEventDetails(eventId: string | null) {
@@ -62,8 +64,12 @@ export function useEventDetails(eventId: string | null) {
     try {
       setLoading(true);
       
-      // Buscar evento com informações do organizador
-      const { data: eventData, error } = await supabase
+      // Tentar buscar primeiro em events, depois em platform_events
+      let eventData: any = null;
+      let isPlatformEvent = false;
+      
+      // Buscar em events regulares
+      const { data: regularEventData, error: regularError } = await supabase
         .from('events')
         .select(`
           *,
@@ -77,52 +83,103 @@ export function useEventDetails(eventId: string | null) {
         .eq('id', eventId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (regularEventData) {
+        eventData = regularEventData;
+      } else {
+        // Se não encontrou em events, buscar em platform_events
+        const { data: platformEventData, error: platformError } = await supabase
+          .from('platform_events')
+          .select('*')
+          .eq('id', eventId)
+          .maybeSingle();
+
+        if (platformEventData) {
+          eventData = {
+            ...platformEventData,
+            is_platform_event: true,
+            organizer_id: 'platform',
+            organizer: {
+              id: 'platform',
+              page_title: platformEventData.organizer_name,
+              user_id: 'platform',
+              avatar_url: null,
+              profile: {
+                display_name: platformEventData.organizer_name,
+                avatar_url: null
+              }
+            },
+            current_attendees: 0,
+            is_live: false,
+          };
+          isPlatformEvent = true;
+        }
+      }
+
       if (!eventData) return;
 
-      // Buscar perfil do organizador
-      const { data: organizerProfile } = await supabase
-        .from('profiles')
-        .select('display_name, avatar_url, notes')
-        .eq('user_id', eventData.organizer.user_id)
-        .maybeSingle();
-
-      // Contar curtidas
-      const { count: likesCount } = await supabase
-        .from('event_likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', eventId);
-
-      // Contar comentários
-      const { count: commentsCount } = await supabase
-        .from('event_comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', eventId);
-
-      // Contar cadastros totais
-      const { count: registrationsCount } = await supabase
-        .from('event_registrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', eventId);
-
-      // Contar presenças confirmadas
-      const { count: confirmedAttendeesCount } = await supabase
-        .from('event_registrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', eventId)
-        .eq('attendance_confirmed', true);
-
-      // Contar usuários únicos (para evitar duplicação)
-      const { data: uniqueUsersData } = await supabase
-        .from('event_registrations')
-        .select('user_id')
-        .eq('event_id', eventId);
+      let organizerProfile = null;
       
-      const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+      // Se for evento regular, buscar perfil do organizador
+      if (!isPlatformEvent) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url, notes')
+          .eq('user_id', eventData.organizer.user_id)
+          .maybeSingle();
+        
+        organizerProfile = profile;
+      }
 
-      // Verificar se o usuário curtiu
+      // Contar curtidas (apenas para eventos regulares)
+      let likesCount = 0;
+      if (!isPlatformEvent) {
+        const { count } = await supabase
+          .from('event_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId);
+        likesCount = count || 0;
+      }
+
+      // Contar comentários (apenas para eventos regulares)
+      let commentsCount = 0;
+      if (!isPlatformEvent) {
+        const { count } = await supabase
+          .from('event_comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId);
+        commentsCount = count || 0;
+      }
+
+      // Contar cadastros (apenas para eventos regulares)
+      let registrationsCount = 0;
+      let confirmedAttendeesCount = 0;
+      let uniqueAttendeesCount = 0;
+      
+      if (!isPlatformEvent) {
+        const { count: regCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId);
+
+        const { count: confCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('attendance_confirmed', true);
+
+        const { data: uniqueUsersData } = await supabase
+          .from('event_registrations')
+          .select('user_id')
+          .eq('event_id', eventId);
+        
+        registrationsCount = regCount || 0;
+        confirmedAttendeesCount = confCount || 0;
+        uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
+      }
+
+      // Verificar se o usuário curtiu (apenas para eventos regulares)
       let isLiked = false;
-      if (user) {
+      if (!isPlatformEvent && user) {
         const { data: likeData } = await supabase
           .from('event_likes')
           .select('id')
@@ -133,6 +190,40 @@ export function useEventDetails(eventId: string | null) {
         isLiked = !!likeData;
       }
 
+      setEvent({
+        ...eventData,
+        is_platform_event: isPlatformEvent,
+        organizer: isPlatformEvent ? eventData.organizer : {
+          ...eventData.organizer,
+          profile: {
+            display_name: organizerProfile?.display_name,
+            avatar_url: eventData.organizer.avatar_url || organizerProfile?.avatar_url,
+            notes: organizerProfile?.notes
+          }
+        },
+        likes_count: likesCount,
+        comments_count: commentsCount,
+        is_liked: isLiked,
+        registrations_count: registrationsCount,
+        confirmed_attendees_count: confirmedAttendeesCount,
+        unique_attendees_count: uniqueAttendeesCount,
+      });
+
+      // Buscar comentários (apenas para eventos regulares)
+      if (!isPlatformEvent) {
+        fetchComments();
+      }
+    } catch (error) {
+      console.error('Error fetching event details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchComments = async () => {
+    if (!eventId) return;
+    
+    try {
       // Buscar comentários
       const { data: commentsData } = await supabase
         .from('event_comments')

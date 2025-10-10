@@ -34,6 +34,8 @@ export interface EventData {
   registrations_count?: number;
   confirmed_attendees_count?: number;
   unique_attendees_count?: number;
+  is_platform_event?: boolean;
+  organizer_name?: string;
 }
 
 export function useEvents(categoryFilter?: string, searchQuery?: string) {
@@ -46,9 +48,11 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
       setLoading(true);
       
       let eventsData: any;
+      let platformEventsData: any;
       let error: any;
+      let platformError: any;
 
-      // Buscar eventos com informações do organizador
+      // Buscar eventos regulares com informações do organizador
       if (categoryFilter && categoryFilter !== 'todos') {
         // Query com filtro de categoria
         // @ts-ignore - Evitar recursão infinita de tipos do Supabase
@@ -69,6 +73,17 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
         
         eventsData = response.data;
         error = response.error;
+
+        // Buscar platform_events com filtro de categoria
+        const platformResponse = await supabase
+          .from('platform_events')
+          .select('*')
+          .eq('status', 'upcoming')
+          .eq('category', categoryFilter)
+          .order('event_date', { ascending: true });
+        
+        platformEventsData = platformResponse.data;
+        platformError = platformResponse.error;
       } else {
         // Query sem filtro de categoria
         // @ts-ignore - Evitar recursão infinita de tipos do Supabase
@@ -88,11 +103,22 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
         
         eventsData = response.data;
         error = response.error;
+
+        // Buscar platform_events sem filtro
+        const platformResponse = await supabase
+          .from('platform_events')
+          .select('*')
+          .eq('status', 'upcoming')
+          .order('event_date', { ascending: true });
+        
+        platformEventsData = platformResponse.data;
+        platformError = platformResponse.error;
       }
 
       if (error) throw error;
+      if (platformError) throw platformError;
 
-      // Para cada evento, buscar estatísticas de curtidas e comentários
+      // Para cada evento regular, buscar estatísticas de curtidas e comentários
       const eventsWithStats = await Promise.all(
         (eventsData || []).map(async (event: any) => {
           // Buscar perfil do organizador
@@ -150,6 +176,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
 
           return {
             ...event,
+            is_platform_event: false,
             organizer: {
               ...event.organizer,
               profile: {
@@ -167,11 +194,41 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
         })
       );
 
+      // Processar platform_events
+      const platformEventsWithStats = (platformEventsData || []).map((platformEvent: any) => ({
+        ...platformEvent,
+        is_platform_event: true,
+        organizer_id: 'platform',
+        organizer: {
+          id: 'platform',
+          page_title: platformEvent.organizer_name,
+          user_id: 'platform',
+          avatar_url: null,
+          profile: {
+            display_name: platformEvent.organizer_name,
+            avatar_url: null
+          }
+        },
+        current_attendees: 0,
+        is_live: false,
+        likes_count: 0,
+        comments_count: 0,
+        is_liked: false,
+        registrations_count: 0,
+        confirmed_attendees_count: 0,
+        unique_attendees_count: 0,
+      }));
+
+      // Combinar eventos regulares e platform_events
+      const allEvents = [...eventsWithStats, ...platformEventsWithStats].sort((a, b) => 
+        new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+      );
+
       // Aplicar filtro de pesquisa no lado do cliente
-      let filteredEvents = eventsWithStats;
+      let filteredEvents = allEvents;
       if (searchQuery && searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase().trim();
-        filteredEvents = eventsWithStats.filter(event => {
+        filteredEvents = allEvents.filter(event => {
           const titleMatch = event.title.toLowerCase().includes(query);
           const descriptionMatch = event.description?.toLowerCase().includes(query);
           const organizerNameMatch = event.organizer?.page_title.toLowerCase().includes(query);

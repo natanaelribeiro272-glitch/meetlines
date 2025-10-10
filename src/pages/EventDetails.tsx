@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit, StopCircle, Video } from "lucide-react";
+import { ArrowLeft, MapPin, Users, Heart, MessageCircle, Share2, Calendar, Edit, StopCircle, Video, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +33,9 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
   const [confirmingAttendance, setConfirmingAttendance] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalAction, setAuthModalAction] = useState("");
+  const [isOrganizerUser, setIsOrganizerUser] = useState(false);
+  const [organizerId, setOrganizerId] = useState<string | null>(null);
+  const [requestingClaim, setRequestingClaim] = useState(false);
   
   const isOrganizer = user && event?.organizer?.user_id === user.id;
 
@@ -46,6 +49,33 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
     event.location_link.includes('streamyard') ||
     event.location_link.includes('jitsi')
   );
+
+  // Verificar se o usuário é organizador
+  useEffect(() => {
+    const checkIfOrganizer = async () => {
+      if (!user) {
+        setIsOrganizerUser(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('organizers')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          setIsOrganizerUser(true);
+          setOrganizerId(data.id);
+        }
+      } catch (error) {
+        console.error('Error checking organizer:', error);
+      }
+    };
+
+    checkIfOrganizer();
+  }, [user]);
 
   // Check if user has already confirmed attendance
   useEffect(() => {
@@ -267,7 +297,62 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
       return;
     }
 
-    // Criar slugs amigáveis para URL
+    // Para platform events, usar um formato de URL diferente
+    if (event.is_platform_event) {
+      const eventUrl = `${getPublicBaseUrl()}/platform-event/${eventId}`;
+      
+      try {
+        if (typeof navigator !== 'undefined' && (navigator as any).share) {
+          await (navigator as any).share({
+            title: event.title,
+            text: `Confira este evento: ${event.title}`,
+            url: eventUrl,
+          });
+          toast.success('Evento compartilhado!');
+          return;
+        }
+      } catch (error) {
+        // Ignora e tenta fallback
+      }
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(eventUrl);
+          toast.success('Link copiado para a área de transferência!');
+          return;
+        }
+      } catch (error) {
+        // Ignora e tenta próximo fallback
+      }
+
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = eventUrl;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (successful) {
+          toast.success('Link copiado!');
+          return;
+        }
+      } catch (error) {
+        // Ignora e tenta último recurso
+      }
+
+      try {
+        window.prompt('Copie o link do evento:', eventUrl);
+        toast.info('Link exibido para copiar.');
+      } catch (error) {
+        toast.error('Não foi possível gerar o link automaticamente.');
+      }
+      return;
+    }
+
+    // Criar slugs amigáveis para URL (eventos regulares)
     const createSlug = (text: string) => {
       return text
         .toLowerCase()
@@ -338,6 +423,54 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
       toast.info('Link exibido para copiar.');
     } catch (error) {
       toast.error('Não foi possível gerar o link automaticamente.');
+    }
+  };
+
+  const handleClaimEvent = async () => {
+    if (!user || !organizerId || !eventId) {
+      toast.error('Você precisa ser um organizador para solicitar associação');
+      return;
+    }
+
+    setRequestingClaim(true);
+    
+    try {
+      // Verificar se já existe uma solicitação pendente
+      const { data: existingRequest } = await supabase
+        .from('event_claim_requests')
+        .select('id, status')
+        .eq('platform_event_id', eventId)
+        .eq('organizer_id', organizerId)
+        .maybeSingle();
+
+      if (existingRequest) {
+        if (existingRequest.status === 'pending') {
+          toast.info('Você já tem uma solicitação pendente para este evento');
+        } else if (existingRequest.status === 'approved') {
+          toast.info('Este evento já foi aprovado para você');
+        } else if (existingRequest.status === 'rejected') {
+          toast.error('Sua solicitação anterior foi rejeitada');
+        }
+        return;
+      }
+
+      // Criar nova solicitação
+      const { error } = await supabase
+        .from('event_claim_requests')
+        .insert({
+          platform_event_id: eventId,
+          organizer_id: organizerId,
+          message: 'Solicitação de associação ao evento'
+        });
+
+      if (error) throw error;
+
+      toast.success('Solicitação enviada! Aguarde aprovação do administrador.');
+    } catch (error: any) {
+      console.error('Error claiming event:', error);
+      toast.error('Erro ao solicitar associação: ' + error.message);
+    } finally {
+      setRequestingClaim(false);
     }
   };
 
@@ -458,9 +591,29 @@ export default function EventDetails({ onBack, eventId, onRegister, onFindFriend
               <p className="font-medium text-foreground">
                 {event.organizer?.profile?.display_name || event.organizer?.page_title || 'Organizador'}
               </p>
-              <p className="text-sm text-muted-foreground">Organizador</p>
+              <p className="text-sm text-muted-foreground">
+                {event.is_platform_event ? 'Evento da Plataforma' : 'Organizador'}
+              </p>
             </div>
           </div>
+
+          {/* Botão de solicitar associação para organizadores */}
+          {event.is_platform_event && isOrganizerUser && (
+            <div className="mb-4">
+              <Button
+                onClick={handleClaimEvent}
+                disabled={requestingClaim}
+                variant="outline"
+                className="w-full"
+              >
+                <LinkIcon className="h-4 w-4 mr-2" />
+                {requestingClaim ? 'Enviando...' : 'Solicitar Associação'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Você pode solicitar para vincular este evento ao seu perfil de organizador
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="flex items-center gap-3">
