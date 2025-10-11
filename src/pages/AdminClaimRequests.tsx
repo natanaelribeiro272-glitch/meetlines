@@ -6,8 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, ExternalLink, Calendar, MapPin, User, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -21,12 +23,17 @@ interface ClaimRequest {
     title: string;
     organizer_name: string;
     event_date: string;
+    location: string;
+    image_url: string | null;
+    description: string | null;
   };
   organizers: {
     id: string;
     username: string;
     page_title: string;
-    avatar_url: string;
+    avatar_url: string | null;
+    page_description: string | null;
+    category: string | null;
   };
 }
 
@@ -52,8 +59,8 @@ export default function AdminClaimRequests() {
         .from('event_claim_requests')
         .select(`
           *,
-          platform_events (id, title, organizer_name, event_date),
-          organizers (id, username, page_title, avatar_url)
+          platform_events (id, title, organizer_name, event_date, location, image_url, description),
+          organizers (id, username, page_title, avatar_url, page_description, category)
         `)
         .order('created_at', { ascending: false });
 
@@ -137,21 +144,50 @@ export default function AdminClaimRequests() {
       </div>
 
       {loading ? (
-        <div>Carregando...</div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Skeleton className="h-20" />
+                  <Skeleton className="h-20" />
+                </div>
+                <Skeleton className="h-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : requests.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            Nenhuma solicitação encontrada
+        <Card className="border-2 border-dashed">
+          <CardContent className="py-16 text-center">
+            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <h3 className="text-lg font-semibold mb-2">Nenhuma solicitação ainda</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Quando organizadores solicitarem associação a eventos da plataforma, eles aparecerão aqui para você aprovar ou rejeitar.
+            </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {requests.map((request) => (
-            <Card key={request.id}>
+            <Card key={request.id} className="overflow-hidden">
+              {request.platform_events.image_url && (
+                <div className="h-48 overflow-hidden">
+                  <img 
+                    src={request.platform_events.image_url} 
+                    alt={request.platform_events.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl">{request.platform_events.title}</CardTitle>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1 flex-1">
+                    <CardTitle className="text-2xl">{request.platform_events.title}</CardTitle>
                     <CardDescription>
                       Solicitado em {format(new Date(request.created_at), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                     </CardDescription>
@@ -159,63 +195,105 @@ export default function AdminClaimRequests() {
                   <Badge variant={
                     request.status === 'pending' ? 'default' :
                     request.status === 'approved' ? 'secondary' : 'destructive'
-                  }>
-                    {request.status === 'pending' ? 'Pendente' :
-                     request.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                  } className="text-sm">
+                    {request.status === 'pending' ? '⏳ Pendente' :
+                     request.status === 'approved' ? '✓ Aprovado' : '✗ Rejeitado'}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Evento</p>
-                    <p className="font-medium">{request.platform_events.title}</p>
-                    <p className="text-sm">{format(new Date(request.platform_events.event_date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+              <CardContent className="space-y-6">
+                {/* Event Details */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
+                    Detalhes do Evento
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                      <span className="text-sm">
+                        {format(new Date(request.platform_events.event_date), "d 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                      <span className="text-sm">{request.platform_events.location}</span>
+                    </div>
+                    {request.platform_events.description && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {request.platform_events.description}
+                      </p>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Organizador Solicitante</p>
-                    <div className="flex items-center gap-2">
-                      {request.organizers.avatar_url && (
-                        <img src={request.organizers.avatar_url} alt="" className="w-8 h-8 rounded-full" />
-                      )}
-                      <div>
-                        <p className="font-medium">{request.organizers.page_title}</p>
-                        <p className="text-sm text-muted-foreground">@{request.organizers.username}</p>
+                </div>
+
+                {/* Organizer Profile */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
+                    Organizador Solicitante
+                  </h3>
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={request.organizers.avatar_url || ''} />
+                      <AvatarFallback>
+                        <User className="h-8 w-8" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold text-lg">{request.organizers.page_title}</p>
+                        {request.organizers.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {request.organizers.category}
+                          </Badge>
+                        )}
                       </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        @{request.organizers.username}
+                      </p>
+                      {request.organizers.page_description && (
+                        <p className="text-sm text-muted-foreground">
+                          {request.organizers.page_description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
 
+                {/* Request Message */}
                 {request.message && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Mensagem</p>
-                    <p className="text-sm bg-muted p-3 rounded">{request.message}</p>
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
+                    <div className="flex gap-2 mb-2">
+                      <MessageSquare className="h-4 w-4 text-blue-500 mt-0.5" />
+                      <p className="text-sm font-medium text-blue-500">Mensagem do Organizador</p>
+                    </div>
+                    <p className="text-sm pl-6">{request.message}</p>
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2 pt-2">
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={() => navigate(`/@${request.organizers.username}`)}
+                    className="flex-1 min-w-[200px]"
                   >
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    Ver Perfil
+                    Ver Perfil Completo
                   </Button>
                   
                   {request.status === 'pending' && (
                     <>
                       <Button
-                        size="sm"
                         onClick={() => handleApprove(request.id, request.platform_events.id, request.organizers.id)}
+                        className="flex-1 min-w-[150px]"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Aprovar
                       </Button>
                       <Button
                         variant="destructive"
-                        size="sm"
                         onClick={() => handleReject(request.id)}
+                        className="flex-1 min-w-[150px]"
                       >
                         <XCircle className="mr-2 h-4 w-4" />
                         Rejeitar
