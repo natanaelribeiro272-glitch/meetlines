@@ -253,31 +253,6 @@ export function useEventDetails(eventId: string | null) {
         })
       );
 
-      const eventWithStats = {
-        ...eventData,
-        organizer: {
-          ...eventData.organizer,
-          profile: {
-            ...organizerProfile,
-            avatar_url: eventData.organizer.avatar_url || organizerProfile?.avatar_url
-          }
-        },
-        likes_count: likesCount || 0,
-        comments_count: commentsCount || 0,
-        is_liked: isLiked,
-        comments: commentsWithProfiles,
-        registrations_count: registrationsCount || 0,
-        confirmed_attendees_count: confirmedAttendeesCount || 0,
-        unique_attendees_count: uniqueAttendeesCount || 0,
-        // Calculate is_live based on event date and status (same logic as EventFeed)
-        is_live: (() => {
-          const eventDate = new Date(eventData.event_date);
-          const now = new Date();
-          return eventDate <= now && eventData.status !== 'completed';
-        })(),
-      };
-
-      setEvent(eventWithStats);
       setComments(commentsWithProfiles);
     } catch (error) {
       console.error('Error fetching event details:', error);

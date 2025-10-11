@@ -127,11 +127,14 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Eventos da Plataforma</CardTitle>
-            <CardDescription>Crie eventos oficiais não associados a organizadores</CardDescription>
+            <CardDescription>Gerencie todos os eventos oficiais da plataforma</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
+            <Button onClick={() => navigate('/admin/platform-events')} className="w-full" variant="outline">
+              Ver Todos os Eventos
+            </Button>
             <Button onClick={() => navigate('/admin/create-platform-event')} className="w-full">
-              Criar Evento da Plataforma
+              Criar Novo Evento
             </Button>
           </CardContent>
         </Card>

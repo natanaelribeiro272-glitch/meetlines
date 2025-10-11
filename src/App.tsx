@@ -15,6 +15,9 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCreatePlatformEvent from "./pages/AdminCreatePlatformEvent";
 import AdminClaimRequests from "./pages/AdminClaimRequests";
+import AdminPlatformEvents from "./pages/AdminPlatformEvents";
+import AdminEditPlatformEvent from "./pages/AdminEditPlatformEvent";
+import AdminPlatformEventRegistrations from "./pages/AdminPlatformEventRegistrations";
 import AdminSupport from "./pages/AdminSupport";
 
 const queryClient = new QueryClient();
@@ -33,9 +36,12 @@ const App = () => (
               <Route path="/organizer-onboarding" element={<OrganizerOnboarding />} />
               <Route path="/user-onboarding" element={<UserOnboarding />} />
               {/* Admin routes */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />
-              <Route path="/admin/claims" element={<AdminClaimRequests />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />
+            <Route path="/admin/claims" element={<AdminClaimRequests />} />
+            <Route path="/admin/platform-events" element={<AdminPlatformEvents />} />
+            <Route path="/admin/platform-event/:eventId/edit" element={<AdminEditPlatformEvent />} />
+            <Route path="/admin/platform-event/:eventId/registrations" element={<AdminPlatformEventRegistrations />} />
               <Route path="/admin/support" element={<AdminSupport />} />
               {/* Public event share route: domain.com/@username/event-slug */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
