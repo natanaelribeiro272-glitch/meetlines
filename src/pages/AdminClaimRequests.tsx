@@ -40,18 +40,20 @@ interface ClaimRequest {
 export default function AdminClaimRequests() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [requests, setRequests] = useState<ClaimRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!adminLoading && !isAdmin) {
       navigate('/');
       return;
     }
 
-    fetchRequests();
-  }, [isAdmin, navigate]);
+    if (isAdmin) {
+      fetchRequests();
+    }
+  }, [isAdmin, adminLoading, navigate]);
 
   const fetchRequests = async () => {
     try {
@@ -129,7 +131,7 @@ export default function AdminClaimRequests() {
     }
   };
 
-  if (!isAdmin) return null;
+  if (adminLoading || !isAdmin) return null;
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
