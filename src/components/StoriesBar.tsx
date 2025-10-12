@@ -249,14 +249,39 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
         .getPublicUrl(filePath);
 
       // Create story
-      const { error: insertError } = await supabase
+      const { data: insertData, error: insertError } = await supabase
         .from('stories')
         .insert({
           user_id: user.id,
           image_url: publicUrl
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
+
+      // Optimistically update UI so the + disappears and click opens viewer
+      setCurrentUserStory(prev => {
+        const base = prev ?? {
+          user_id: user.id,
+          user_name: user?.user_metadata?.display_name || 'Você',
+          user_avatar: user?.user_metadata?.avatar_url || '',
+          stories: [],
+          hasUnviewed: true,
+        };
+        const newStories = [
+          {
+            id: insertData?.id || `${Date.now()}`,
+            user_id: user.id,
+            image_url: publicUrl,
+            created_at: insertData?.created_at || new Date().toISOString(),
+            user_name: base.user_name,
+            user_avatar: base.user_avatar,
+          },
+          ...base.stories,
+        ];
+        return { ...base, stories: newStories, hasUnviewed: true };
+      });
 
       toast.success('Story publicado!');
       loadStories();
@@ -286,7 +311,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                 {currentUserStory && currentUserStory.stories.length > 0 ? (
                   // Has story - show clickable circle to view
                   <div 
-                    className="rounded-full p-[3px] bg-gradient-to-tr from-yellow-400 to-pink-600 cursor-pointer"
+                    className="rounded-full p-[3px] bg-green-500 cursor-pointer"
                     onClick={() => openStoryViewer(currentUserStory.stories, 0)}
                   >
                     <div className="bg-background rounded-full p-[2px]">
