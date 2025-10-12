@@ -33,7 +33,7 @@ export default function AuthPage({
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      const redirectTo = searchParams.get('redirect') || '/';
+      const redirectTo = searchParams.get('redirect') || '/home';
       navigate(redirectTo);
     }
   }, [user, navigate, searchParams]);
@@ -48,7 +48,7 @@ export default function AuthPage({
         if (!error) {
           // Login bem-sucedido - aguardar role ser carregada
           // O MainLayout vai fazer o redirecionamento apropriado
-          const redirectTo = searchParams.get('redirect') || '/';
+          const redirectTo = searchParams.get('redirect') || '/home';
           navigate(redirectTo);
         }
       } else {
