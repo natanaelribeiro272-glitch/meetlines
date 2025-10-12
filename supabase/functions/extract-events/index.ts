@@ -78,6 +78,10 @@ Deno.serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
+    // Get current date for filtering
+    const currentDate = new Date().toISOString();
+    console.log('Current date for filtering:', currentDate);
+
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -90,11 +94,15 @@ Deno.serve(async (req) => {
           {
             role: 'system',
             content: `Você é um assistente especializado em extrair informações de eventos de dados JSON ou HTML. 
-            Extraia o máximo de informações possível sobre eventos e retorne um array JSON com os seguintes campos para cada evento:
+            
+            IMPORTANTE: Extraia APENAS eventos que ainda não aconteceram. A data atual de referência é: ${currentDate}
+            NÃO inclua eventos com datas anteriores à data atual.
+            
+            Extraia o máximo de informações possível sobre eventos FUTUROS e retorne um array JSON com os seguintes campos para cada evento:
             - title (obrigatório)
             - description (opcional)
             - organizer_name (obrigatório)
-            - event_date (obrigatório, formato ISO 8601)
+            - event_date (obrigatório, formato ISO 8601, DEVE SER >= ${currentDate})
             - end_date (opcional, formato ISO 8601)
             - location (obrigatório)
             - location_link (opcional)
@@ -104,12 +112,12 @@ Deno.serve(async (req) => {
             - ticket_link (opcional)
             - max_attendees (opcional, número)
             
-            Se não conseguir extrair eventos, retorne um array vazio.
+            Se não conseguir extrair eventos futuros, retorne um array vazio.
             Retorne APENAS o JSON, sem texto adicional.`
           },
           {
             role: 'user',
-            content: `Extraia todos os eventos destes dados:\n\n${apiData.substring(0, 50000)}`
+            content: `Extraia todos os eventos FUTUROS (a partir de ${currentDate}) destes dados:\n\n${apiData.substring(0, 50000)}`
           }
         ],
       }),
@@ -156,10 +164,30 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Extracted ${events.length} events, inserting into database`);
+    console.log(`Extracted ${events.length} events, filtering and inserting into database`);
+
+    // Filter out past events and insert only future ones
+    const currentDateObj = new Date();
+    const futureEvents = events.filter((event: any) => {
+      const eventDate = new Date(event.event_date);
+      return eventDate >= currentDateObj;
+    });
+
+    console.log(`Filtered to ${futureEvents.length} future events`);
+
+    if (futureEvents.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Nenhum evento futuro encontrado nos dados fornecidos',
+          count: 0 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Insert events into platform_events with auto_generated flag
-    const eventsToInsert = events.map((event: any) => ({
+    const eventsToInsert = futureEvents.map((event: any) => ({
       title: event.title,
       description: event.description || null,
       organizer_name: event.organizer_name,
