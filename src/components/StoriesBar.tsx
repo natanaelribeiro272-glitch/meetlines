@@ -283,40 +283,51 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
             {/* Current user - add story */}
             <div className="flex flex-col items-center gap-1 min-w-[70px]">
               <div className="relative">
-                <div 
-                  className={`rounded-full p-[3px] ${currentUserStory ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' : 'bg-gray-600'}`}
-                  onClick={() => {
-                    if (currentUserStory && currentUserStory.stories.length > 0) {
-                      openStoryViewer(currentUserStory.stories, 0);
-                    }
-                  }}
-                >
-                  <div className="bg-background rounded-full p-[2px]">
-                    <label htmlFor="story-upload" className="cursor-pointer">
+                {currentUserStory && currentUserStory.stories.length > 0 ? (
+                  // Has story - show clickable circle to view
+                  <div 
+                    className="rounded-full p-[3px] bg-gradient-to-tr from-yellow-400 to-pink-600 cursor-pointer"
+                    onClick={() => openStoryViewer(currentUserStory.stories, 0)}
+                  >
+                    <div className="bg-background rounded-full p-[2px]">
                       <Avatar className="h-14 w-14">
                         <AvatarImage src={user?.user_metadata?.avatar_url} />
                         <AvatarFallback>Eu</AvatarFallback>
                       </Avatar>
-                    </label>
+                    </div>
                   </div>
-                </div>
-                <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1 z-10">
-                  <label htmlFor="story-upload" className="cursor-pointer">
-                    {uploading ? (
-                      <Loader2 className="h-3 w-3 text-white animate-spin" />
-                    ) : (
-                      <Plus className="h-3 w-3 text-white" />
-                    )}
-                  </label>
-                </div>
-                <input
-                  id="story-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleUploadStory}
-                  disabled={uploading}
-                />
+                ) : (
+                  // No story - show upload button
+                  <>
+                    <div className="rounded-full p-[3px] bg-gray-600">
+                      <div className="bg-background rounded-full p-[2px]">
+                        <label htmlFor="story-upload" className="cursor-pointer">
+                          <Avatar className="h-14 w-14">
+                            <AvatarImage src={user?.user_metadata?.avatar_url} />
+                            <AvatarFallback>Eu</AvatarFallback>
+                          </Avatar>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1 z-10">
+                      <label htmlFor="story-upload" className="cursor-pointer">
+                        {uploading ? (
+                          <Loader2 className="h-3 w-3 text-white animate-spin" />
+                        ) : (
+                          <Plus className="h-3 w-3 text-white" />
+                        )}
+                      </label>
+                    </div>
+                    <input
+                      id="story-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUploadStory}
+                      disabled={uploading}
+                    />
+                  </>
+                )}
               </div>
               <span className="text-xs text-muted-foreground text-center line-clamp-1">Seu story</span>
             </div>
