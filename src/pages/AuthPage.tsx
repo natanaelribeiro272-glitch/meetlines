@@ -143,7 +143,7 @@ export default function AuthPage({
             </div>
             
             {/* Features Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {features.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
