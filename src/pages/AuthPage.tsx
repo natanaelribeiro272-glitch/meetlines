@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Sun, Moon, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Sun, Moon, Users, MapPin, Grid3x3, Radar, Share2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +33,7 @@ export default function AuthPage({
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      const redirectTo = searchParams.get('redirect') || '/home';
+      const redirectTo = searchParams.get('redirect') || '/';
       navigate(redirectTo);
     }
   }, [user, navigate, searchParams]);
@@ -48,7 +48,7 @@ export default function AuthPage({
         if (!error) {
           // Login bem-sucedido - aguardar role ser carregada
           // O MainLayout vai fazer o redirecionamento apropriado
-          const redirectTo = searchParams.get('redirect') || '/home';
+          const redirectTo = searchParams.get('redirect') || '/';
           navigate(redirectTo);
         }
       } else {
@@ -83,19 +83,42 @@ export default function AuthPage({
       [field]: value
     }));
   };
-  return <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
+  const features = [
+    { icon: Users, text: "Conecte-se com pessoas de interesses em comum" },
+    { icon: Calendar, text: "Encontre eventos na sua cidade" },
+    { icon: Grid3x3, text: "Organizado por categorias" },
+    { icon: Radar, text: "Encontre pessoas num raio de 100 metros" },
+    { icon: Share2, text: "Rede social de interação e eventos" },
+    { icon: MapPin, text: "Veja quem está próximo em tempo real" }
+  ];
+
+  return <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-4xl space-y-8">
+        {/* Funcionalidades do App */}
+        <div className="text-center space-y-4">
+          <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl md:text-5xl">MeetLines</h1>
+          <p className="text-lg text-muted-foreground">Conecte-se com pessoas e descubra eventos incríveis</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div key={index} className="flex items-start gap-3 p-4 rounded-lg bg-card/50 border border-border/50">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-left">{feature.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Auth Form */}
+        <div className="w-full max-w-sm mx-auto space-y-6">
         {/* Back to Home & Theme Toggle */}
         <div className="flex justify-between items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
+          <div className="w-8"></div> {/* Spacer */}
           <Button
             variant="ghost"
             size="icon"
@@ -122,26 +145,12 @@ export default function AuthPage({
           </div>
         </div>
 
-        {/* Logo/Header */}
+        {/* Auth Header */}
         <div className="text-center space-y-2">
-          <button 
-            type="button"
-            onClick={() => navigate('/')}
-            className="inline-block hover:opacity-80 transition-smooth"
-          >
-            <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl">MeetLines</h1>
-          </button>
-          <p className="text-muted-foreground">
+          <p className="text-lg font-semibold">
             {isLogin ? "Entre na sua conta" : "Crie sua conta"}
             {userType === "organizer" && " de organizador"}
           </p>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="text-sm text-primary hover:underline transition-smooth"
-          >
-            ← Voltar para página inicial
-          </button>
         </div>
 
         {/* Auth Form */}
@@ -195,6 +204,7 @@ export default function AuthPage({
           <p className="text-xs text-muted-foreground">
             Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
           </p>
+        </div>
         </div>
       </div>
     </div>;
