@@ -128,15 +128,29 @@ Retorne APENAS o JSON, sem texto adicional.`
     // Parse the extracted event
     let eventData;
     try {
-      // Try to extract JSON from the response
-      const jsonMatch = extractedContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        eventData = JSON.parse(jsonMatch[0]);
+      // Remove markdown code blocks if present
+      let cleanedContent = extractedContent.trim();
+      cleanedContent = cleanedContent.replace(/^```json\s*/i, '');
+      cleanedContent = cleanedContent.replace(/^```\s*/i, '');
+      cleanedContent = cleanedContent.replace(/\s*```$/i, '');
+      cleanedContent = cleanedContent.trim();
+      
+      // Check if the response is null or contains null
+      if (cleanedContent === 'null' || cleanedContent === '') {
+        console.log('AI returned null - no event found in image');
+        eventData = null;
       } else {
-        eventData = JSON.parse(extractedContent);
+        // Try to extract JSON from the response
+        const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          eventData = JSON.parse(jsonMatch[0]);
+        } else {
+          eventData = JSON.parse(cleanedContent);
+        }
       }
     } catch (e) {
       console.error('Failed to parse AI response:', e);
+      console.error('Content was:', extractedContent);
       throw new Error('Failed to parse extracted event data');
     }
 
