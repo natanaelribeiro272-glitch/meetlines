@@ -217,8 +217,10 @@ const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessage
 export default function FindFriends({
   onBack
 }: FindFriendsProps) {
+  const [activeTab, setActiveTab] = useState<'nearby' | 'friends'>('nearby');
   const [isVisible, setIsVisible] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [friendsList, setFriendsList] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedUsers, setLikedUsers] = useState<Set<string>>(new Set());
   const [chatOpen, setChatOpen] = useState(false);
@@ -329,7 +331,86 @@ export default function FindFriends({
     loadLikes();
   }, [user]);
 
-  // Fetch nearby users and friends
+  // Fetch friends list
+  useEffect(() => {
+    const fetchFriends = async () => {
+      if (!user) return;
+
+      try {
+        const { data: friendshipsData, error: friendshipsError } = await supabase
+          .from('friendships')
+          .select('user_id, friend_id')
+          .eq('status', 'accepted')
+          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+
+        if (friendshipsError) {
+          console.error('Error fetching friendships:', friendshipsError);
+          return;
+        }
+
+        const friendIds = friendshipsData?.map(f => 
+          f.user_id === user.id ? f.friend_id : f.user_id
+        ) || [];
+
+        if (friendIds.length === 0) {
+          setFriendsList([]);
+          return;
+        }
+
+        // Fetch friend profiles
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url, notes, instagram_url, phone, interest, relationship_status')
+          .in('user_id', friendIds);
+
+        if (profilesError) {
+          console.error('Error fetching friend profiles:', profilesError);
+          return;
+        }
+
+        const friends = (profilesData || []).map(profile => ({
+          id: profile.user_id,
+          user_id: profile.user_id,
+          name: profile.display_name || "Usuário",
+          avatar: profile.avatar_url || "",
+          interest: profile.interest || "curtição",
+          note: profile.notes || "Seu amigo",
+          distance: "Amigo",
+          instagram: profile.instagram_url || "",
+          phone: profile.phone || null,
+          event_name: "Amigo",
+          relationship_status: profile.relationship_status || "preferencia_nao_informar",
+          isFriend: true
+        }));
+
+        setFriendsList(friends);
+
+        // Load unread messages for friends
+        if (friends.length > 0) {
+          const { data: messagesData } = await supabase
+            .from('user_messages')
+            .select('from_user_id')
+            .eq('to_user_id', user.id)
+            .in('from_user_id', friendIds)
+            .eq('read', false);
+          
+          if (messagesData) {
+            const unreadMap = new Map<string, number>();
+            messagesData.forEach(msg => {
+              unreadMap.set(msg.from_user_id, (unreadMap.get(msg.from_user_id) || 0) + 1);
+            });
+            setUnreadMessages(prev => new Map([...prev, ...unreadMap]));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching friends:', error);
+      }
+    };
+
+    fetchFriends();
+  }, [user]);
+
+  // Fetch nearby users
   useEffect(() => {
     let channel: any = null;
     const fetchNearbyUsers = async () => {
@@ -351,7 +432,7 @@ export default function FindFriends({
       }
 
       try {
-        // Buscar amigos primeiro
+        // Buscar amigos para excluir da lista de próximos
         const { data: friendshipsData, error: friendshipsError } = await supabase
           .from('friendships')
           .select('user_id, friend_id')
@@ -389,8 +470,9 @@ export default function FindFriends({
           return;
         }
 
-        // Calcular distância e filtrar
+        // Calcular distância e filtrar (apenas pessoas próximas, não amigos)
         const nearbyUsers = profilesData
+          .filter(profile => !friendIds.includes(profile.user_id)) // Excluir amigos
           .map(profile => {
             const R = 6371000;
             const lat1 = userLocation.lat * Math.PI / 180;
@@ -404,21 +486,19 @@ export default function FindFriends({
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             const distance = R * c;
 
-            const isFriend = friendIds.includes(profile.user_id);
             const hasRecentLocation = profile.location_updated_at && 
               new Date(profile.location_updated_at) >= new Date(tenMinutesAgo);
 
             return {
               profile,
               distance,
-              isFriend,
               hasRecentLocation
             };
           })
-          .filter(({ distance, isFriend, hasRecentLocation }) => 
-            isFriend || (distance <= 100 && hasRecentLocation)
+          .filter(({ distance, hasRecentLocation }) => 
+            distance <= 100 && hasRecentLocation
           )
-          .map(({ profile, distance, isFriend }) => ({
+          .map(({ profile, distance }) => ({
             id: profile.user_id,
             user_id: profile.user_id,
             name: profile.display_name || "Usuário",
@@ -428,13 +508,11 @@ export default function FindFriends({
             distance: `${Math.round(distance)}m`,
             instagram: profile.instagram_url || "",
             phone: profile.phone || null,
-            event_name: isFriend ? "Amigo" : "Próximo",
+            event_name: "Próximo",
             relationship_status: profile.relationship_status || "preferencia_nao_informar",
-            isFriend
+            isFriend: false
           }))
           .sort((a, b) => {
-            if (a.isFriend && !b.isFriend) return -1;
-            if (!a.isFriend && b.isFriend) return 1;
             const distA = parseFloat(a.distance);
             const distB = parseFloat(b.distance);
             return distA - distB;
@@ -591,6 +669,8 @@ export default function FindFriends({
     }
   };
 
+  const displayedUsers = activeTab === 'nearby' ? attendees : friendsList;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -600,27 +680,57 @@ export default function FindFriends({
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="font-bold text-foreground">Encontrar Amigos</h1>
+            <h1 className="font-bold text-foreground">Conectar</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant={isVisible ? "glow" : "outline"} size="sm" onClick={toggleVisibility}>
-              <Eye className="h-4 w-4 mr-1" />
-              {isVisible ? "Visível" : "Ser Visto"}
-            </Button>
-            <div className="flex items-center gap-1 text-sm text-primary">
-              <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
-              <span>AO VIVO</span>
-            </div>
-          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 px-4 pb-3 max-w-md mx-auto">
+          <Button
+            variant={activeTab === 'nearby' ? "default" : "outline"}
+            className="flex-1 rounded-full"
+            onClick={() => setActiveTab('nearby')}
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Próximos
+          </Button>
+          <Button
+            variant={activeTab === 'friends' ? "default" : "outline"}
+            className="flex-1 rounded-full"
+            onClick={() => setActiveTab('friends')}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Amigos
+          </Button>
         </div>
       </header>
 
       {/* Content */}
       <div className="px-4 py-6 max-w-md mx-auto">
-        {/* Editable Profile Section */}
-        {isVisible && (
-          <div className="mb-6 p-4 bg-card rounded-lg border border-border">
-            <h3 className="font-semibold text-foreground mb-3">Como você quer aparecer</h3>
+        {/* Nearby Tab Controls */}
+        {activeTab === 'nearby' && (
+          <>
+            {/* Visibility Controls */}
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <Button 
+                variant={isVisible ? "glow" : "outline"} 
+                size="sm" 
+                onClick={toggleVisibility}
+                className="flex-1"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {isVisible ? "Visível" : "Ser Visto"}
+              </Button>
+              <div className="flex items-center gap-2 px-3 py-2 bg-surface rounded-lg border border-primary/20">
+                <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
+                <span className="text-sm text-primary font-medium">AO VIVO</span>
+              </div>
+            </div>
+
+            {/* Editable Profile Section */}
+            {isVisible && (
+              <div className="mb-6 p-4 bg-card rounded-lg border border-border">
+                <h3 className="font-semibold text-foreground mb-3">Como você quer aparecer</h3>
             
             <div className="space-y-3">
               <div>
@@ -685,36 +795,53 @@ export default function FindFriends({
               </div>
             </div>
           </div>
+            )}
+            
+            {/* Info Banner */}
+            <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="font-medium text-foreground">
+                  {isVisible ? "Você está visível para outros" : "Pessoas próximas"}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {isVisible 
+                  ? locationError 
+                    ? locationError
+                    : !userLocation
+                    ? "Aguardando sua localização para encontrar pessoas próximas..."
+                    : "Outras pessoas até 100m de você podem te encontrar."
+                  : "Conecte-se com pessoas até 100 metros de você. Para aparecer para outros, ative 'Ser Visto'."}
+              </p>
+            </div>
+          </>
         )}
-        
-        {/* Info Banner */}
-        <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-5 w-5 text-primary" />
-            <span className="font-medium text-foreground">
-              {isVisible ? "Você está visível para outros" : "Pessoas próximas"}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {isVisible 
-              ? locationError 
-                ? locationError
-                : !userLocation
-                ? "Aguardando sua localização para encontrar pessoas próximas..."
-                : "Outras pessoas até 100m de você podem te encontrar. Amigos sempre aparecem aqui."
-              : "Conecte-se com pessoas até 100 metros de você. Para aparecer para outros, ative 'Ser Visto'."}
-          </p>
-        </div>
 
-        {/* Attendees List */}
-        {loading ? (
+        {/* Friends Tab Info */}
+        {activeTab === 'friends' && (
+          <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-5 w-5 text-primary" />
+              <span className="font-medium text-foreground">Seus Amigos</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {friendsList.length === 0 
+                ? "Você ainda não tem amigos adicionados. Vá para 'Próximos' e adicione pessoas próximas!"
+                : `Você tem ${friendsList.length} ${friendsList.length === 1 ? 'amigo' : 'amigos'}. Seus amigos sempre aparecem aqui, não importa a distância.`}
+            </p>
+          </div>
+        )}
+
+        {/* Users List */}
+        {loading && activeTab === 'nearby' ? (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-muted-foreground">Procurando pessoas...</p>
           </div>
-        ) : attendees.length > 0 ? (
+        ) : displayedUsers.length > 0 ? (
           <div className="space-y-4">
-            {attendees.map(person => (
+            {displayedUsers.map(person => (
               <UserCard 
                 key={person.id}
                 person={person}
@@ -729,24 +856,35 @@ export default function FindFriends({
         ) : (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              {isVisible 
-                ? locationError
-                  ? "Erro ao acessar localização"
-                  : !userLocation
-                  ? "Aguardando localização..."
-                  : "Nenhuma pessoa encontrada"
-                : "Você precisa ser visível para ver outras pessoas"}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {isVisible 
-                ? locationError
-                  ? "Permita o acesso à localização no seu navegador para encontrar pessoas próximas."
-                  : !userLocation
-                  ? "Carregando sua localização para encontrar pessoas até 100m de você..."
-                  : "Não há outras pessoas visíveis até 100 metros de você no momento."
-                : "Ative 'Ser Visto' para se conectar com pessoas próximas."}
-            </p>
+            {activeTab === 'nearby' ? (
+              <>
+                <p className="text-muted-foreground">
+                  {isVisible 
+                    ? locationError
+                      ? "Erro ao acessar localização"
+                      : !userLocation
+                      ? "Aguardando localização..."
+                      : "Nenhuma pessoa próxima"
+                    : "Você precisa ser visível"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {isVisible 
+                    ? locationError
+                      ? "Permita o acesso à localização no seu navegador."
+                      : !userLocation
+                      ? "Carregando sua localização..."
+                      : "Não há pessoas visíveis até 100m de você."
+                    : "Ative 'Ser Visto' para se conectar."}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground">Você ainda não tem amigos</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Vá para 'Próximos' e adicione pessoas próximas!
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>
