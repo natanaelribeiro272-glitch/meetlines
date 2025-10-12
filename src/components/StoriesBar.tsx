@@ -22,7 +22,11 @@ interface UserStory {
   hasUnviewed: boolean;
 }
 
-export default function StoriesBar() {
+interface StoriesBarProps {
+  mode: 'nearby' | 'friends';
+}
+
+export default function StoriesBar({ mode }: StoriesBarProps) {
   const [userStories, setUserStories] = useState<UserStory[]>([]);
   const [currentUserStory, setCurrentUserStory] = useState<UserStory | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -59,50 +63,89 @@ export default function StoriesBar() {
   const loadStories = async () => {
     if (!user) return;
 
-    // Get current user's location
-    const { data: myProfile } = await supabase
-      .from('profiles')
-      .select('latitude, longitude')
-      .eq('user_id', user.id)
-      .single();
+    let allowedUserIds: string[] = [user.id]; // Always include current user
 
-    if (!myProfile?.latitude || !myProfile?.longitude) return;
+    if (mode === 'nearby') {
+      // Get current user's location
+      const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('latitude, longitude')
+        .eq('user_id', user.id)
+        .single();
 
-    // Get nearby users (within 10km)
-    const { data: nearbyProfiles } = await supabase
-      .from('profiles')
-      .select('user_id, display_name, avatar_url, latitude, longitude')
-      .not('latitude', 'is', null)
-      .not('longitude', 'is', null);
+      if (!myProfile?.latitude || !myProfile?.longitude) {
+        setUserStories([]);
+        setCurrentUserStory(null);
+        return;
+      }
 
-    if (!nearbyProfiles) return;
+      // Get nearby users (within 100m)
+      const { data: nearbyProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url, latitude, longitude')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
 
-    // Calculate distances and filter nearby users
-    const nearbyUserIds = nearbyProfiles
-      .filter(profile => {
-        if (profile.user_id === user.id) return true; // Always include current user
-        
-        const R = 6371000; // Earth radius in meters
-        const lat1 = myProfile.latitude * Math.PI / 180;
-        const lat2 = profile.latitude! * Math.PI / 180;
-        const deltaLat = (profile.latitude! - myProfile.latitude) * Math.PI / 180;
-        const deltaLon = (profile.longitude! - myProfile.longitude) * Math.PI / 180;
+      if (!nearbyProfiles) {
+        setUserStories([]);
+        setCurrentUserStory(null);
+        return;
+      }
 
-        const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
-                 Math.cos(lat1) * Math.cos(lat2) *
-                 Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const distance = R * c;
+      // Calculate distances and filter nearby users (100m)
+      allowedUserIds = nearbyProfiles
+        .filter(profile => {
+          if (profile.user_id === user.id) return true; // Always include current user
+          
+          const R = 6371000; // Earth radius in meters
+          const lat1 = myProfile.latitude * Math.PI / 180;
+          const lat2 = profile.latitude! * Math.PI / 180;
+          const deltaLat = (profile.latitude! - myProfile.latitude) * Math.PI / 180;
+          const deltaLon = (profile.longitude! - myProfile.longitude) * Math.PI / 180;
 
-        return distance <= 10000; // 10km
-      })
-      .map(p => p.user_id);
+          const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                   Math.cos(lat1) * Math.cos(lat2) *
+                   Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = R * c;
 
-    // Get stories from nearby users (not expired)
+          return distance <= 100; // 100m
+        })
+        .map(p => p.user_id);
+
+    } else if (mode === 'friends') {
+      // Get accepted friends only
+      const { data: friendshipsData } = await supabase
+        .from('friendships')
+        .select('user_id, friend_id')
+        .eq('status', 'accepted')
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+
+      if (!friendshipsData || friendshipsData.length === 0) {
+        setUserStories([]);
+        setCurrentUserStory(null);
+        return;
+      }
+
+      // Extract friend IDs
+      const friendIds = friendshipsData.map(f => 
+        f.user_id === user.id ? f.friend_id : f.user_id
+      );
+
+      allowedUserIds = [user.id, ...friendIds];
+    }
+
+    if (allowedUserIds.length === 0) {
+      setUserStories([]);
+      setCurrentUserStory(null);
+      return;
+    }
+
+    // Get stories from allowed users (not expired)
     const { data: storiesData } = await supabase
       .from('stories')
       .select('*')
-      .in('user_id', nearbyUserIds)
+      .in('user_id', allowedUserIds)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false });
 

@@ -791,23 +791,28 @@ export default function FindFriends({
             </div>
 
             {/* Stories Bar */}
-            {isVisible && userLocation && <StoriesBar />}
+            {isVisible && userLocation && <StoriesBar mode="nearby" />}
           </>
         )}
 
         {/* Friends Tab Info */}
         {activeTab === 'friends' && (
-          <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="font-medium text-foreground">Seus Amigos</span>
+          <>
+            {/* Stories Bar for Friends */}
+            <StoriesBar mode="friends" />
+
+            <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-5 w-5 text-primary" />
+                <span className="font-medium text-foreground">Seus Amigos</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {friendsList.length === 0 
+                  ? "Você ainda não tem amigos adicionados. Vá para 'Próximos' e adicione pessoas próximas!"
+                  : `Você tem ${friendsList.length} ${friendsList.length === 1 ? 'amigo' : 'amigos'}. Seus amigos sempre aparecem aqui, não importa a distância.`}
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {friendsList.length === 0 
-                ? "Você ainda não tem amigos adicionados. Vá para 'Próximos' e adicione pessoas próximas!"
-                : `Você tem ${friendsList.length} ${friendsList.length === 1 ? 'amigo' : 'amigos'}. Seus amigos sempre aparecem aqui, não importa a distância.`}
-            </p>
-          </div>
+          </>
         )}
 
         {/* Users List */}
