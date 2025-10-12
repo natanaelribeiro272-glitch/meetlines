@@ -115,7 +115,7 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
     }
   };
 
-  const displayedNotifications = notifications.filter((n) => !n.read || n.type === 'friend_request');
+  const displayedNotifications = notifications.filter((n) => !n.read);
   const handleNotificationClick = async (notification: any) => {
     if (notification.type === 'friend_request') {
       // Don't close dropdown for friend requests, just mark as read
