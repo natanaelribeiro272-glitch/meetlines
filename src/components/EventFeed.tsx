@@ -40,16 +40,19 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
   const categorizeEvents = () => {
     const now = new Date();
     
-    // Eventos ao vivo: data do evento já passou ou está acontecendo agora
+    // Eventos ao vivo: começaram mas ainda não terminaram
     const live = events.filter(event => {
-      const eventDate = new Date(event.event_date);
-      return eventDate <= now;
+      const start = new Date(event.event_date);
+      const end = event.end_date ? new Date(event.end_date) : null;
+      const isCompleted = (event.status || '').toLowerCase() === 'completed' || (event.status || '').toLowerCase() === 'ended';
+      return start <= now && !isCompleted && (!end || end > now);
     });
     
-    // Próximos eventos: data do evento ainda não chegou
+    // Próximos eventos: ainda não começaram
     const upcoming = events.filter(event => {
-      const eventDate = new Date(event.event_date);
-      return eventDate > now;
+      const start = new Date(event.event_date);
+      const isCompleted = (event.status || '').toLowerCase() === 'completed' || (event.status || '').toLowerCase() === 'ended';
+      return start > now && !isCompleted;
     });
     
     return { upcoming, live };
@@ -93,7 +96,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 likes={event.likes_count || 0}
                 comments={event.comments_count || 0}
                 isLiked={event.is_liked || false}
-                isLive={true}
+                isLive={(() => { const start = new Date(event.event_date); const end = event.end_date ? new Date(event.end_date) : null; const now = new Date(); return start <= now && (!end || end > now); })()}
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}
