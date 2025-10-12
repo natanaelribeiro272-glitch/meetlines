@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Check, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { ArrowLeft, Save, Check, Sparkles, Upload } from 'lucide-react';
 
 export default function AdminEditPendingEvent() {
   const navigate = useNavigate();
@@ -18,6 +18,8 @@ export default function AdminEditPendingEvent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [eventImage, setEventImage] = useState<string | null>(null);
+  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -84,6 +86,10 @@ export default function AdminEditPendingEvent() {
           ticket_link: data.ticket_link || '',
           max_attendees: data.max_attendees,
         });
+        
+        if (data.image_url) {
+          setEventImage(data.image_url);
+        }
       }
     } catch (error) {
       console.error('Error fetching event:', error);
@@ -91,6 +97,18 @@ export default function AdminEditPendingEvent() {
       navigate('/admin/pending-events');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEventImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEventImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -102,6 +120,27 @@ export default function AdminEditPendingEvent() {
 
     setSaving(true);
     try {
+      let imageUrl = eventImage;
+
+      // Upload image if a new file was selected
+      if (eventImageFile) {
+        const fileExt = eventImageFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('user-uploads')
+          .upload(filePath, eventImageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-uploads')
+          .getPublicUrl(filePath);
+
+        imageUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('platform_events')
         .update({
@@ -112,6 +151,7 @@ export default function AdminEditPendingEvent() {
           end_date: formData.end_date || formData.event_date,
           location: formData.location,
           location_link: formData.location_link || null,
+          image_url: imageUrl || null,
           category: formData.category || null,
           ticket_price: formData.ticket_price || 0,
           ticket_link: formData.ticket_link || null,
@@ -205,6 +245,41 @@ export default function AdminEditPendingEvent() {
           <CardTitle>Informações do Evento</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Banner do Evento */}
+          <div className="space-y-2">
+            <Label>Banner do Evento</Label>
+            {eventImage ? (
+              <div className="relative h-48 rounded-lg overflow-hidden">
+                <img src={eventImage} alt="Preview do evento" className="w-full h-full object-cover" />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={() => {
+                    setEventImage(null);
+                    setEventImageFile(null);
+                  }}
+                >
+                  Remover
+                </Button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                <span className="text-sm text-muted-foreground">
+                  Clique para adicionar uma imagem
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="title">Título *</Label>
             <Input
