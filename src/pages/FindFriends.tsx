@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Heart, Users, MessageCircle, Instagram, Phone, Eye, MapPin } from "lucide-react";
+import { ArrowLeft, Heart, Users, MessageCircle, Instagram, Phone, Eye, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -40,6 +41,7 @@ export default function FindFriends({
   const [currentInterest, setCurrentInterest] = useState<string>("curtição");
   const [currentNotes, setCurrentNotes] = useState<string>("");
   const [notesVisible, setNotesVisible] = useState<boolean>(true);
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const {
     user
   } = useAuth();
@@ -558,7 +560,7 @@ export default function FindFriends({
           </div> : attendees.length > 0 ? <div className="space-y-4">
             {attendees.map(person => <div key={person.id} className="bg-card rounded-lg p-4 shadow-card">
                 <div className="flex items-start gap-3">
-                  <div className="avatar-story">
+                  <div className="avatar-story cursor-pointer" onClick={() => setSelectedAvatar(person.avatar)}>
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={person.avatar} alt={person.name} />
                       <AvatarFallback className="bg-surface">
@@ -643,5 +645,24 @@ export default function FindFriends({
 
       {/* Chat Dialog */}
       {selectedChat && <UserChatDialog open={chatOpen} onOpenChange={setChatOpen} recipientId={selectedChat.user_id} recipientName={selectedChat.name} recipientAvatar={selectedChat.avatar} />}
+
+      {/* Avatar Preview Dialog */}
+      <Dialog open={!!selectedAvatar} onOpenChange={() => setSelectedAvatar(null)}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-black/95 border-0">
+          <button
+            onClick={() => setSelectedAvatar(null)}
+            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+          >
+            <X className="h-5 w-5 text-white" />
+          </button>
+          {selectedAvatar && (
+            <img
+              src={selectedAvatar}
+              alt="Profile"
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>;
 }
