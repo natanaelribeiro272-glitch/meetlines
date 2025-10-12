@@ -186,26 +186,58 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert events into platform_events with auto_generated flag
-    const eventsToInsert = futureEvents.map((event: any) => ({
-      title: event.title,
-      description: event.description || null,
-      organizer_name: event.organizer_name,
-      event_date: event.event_date,
-      end_date: event.end_date || event.event_date,
-      location: event.location,
-      location_link: event.location_link || null,
-      image_url: event.image_url || null,
-      category: event.category || null,
-      ticket_price: event.ticket_price || 0,
-      ticket_link: event.ticket_link || null,
-      max_attendees: event.max_attendees || null,
-      auto_generated: true,
-      approval_status: 'pending',
-      created_by_admin_id: user.id,
-      source_data: event,
-      status: 'upcoming'
-    }));
+    // Check for duplicates based on title, location, and event_date
+    const eventsToInsert = [];
+    let duplicateCount = 0;
+
+    for (const event of futureEvents) {
+      const { data: existingEvent } = await supabaseClient
+        .from('platform_events')
+        .select('id')
+        .eq('title', event.title)
+        .eq('location', event.location)
+        .eq('event_date', event.event_date)
+        .maybeSingle();
+
+      if (!existingEvent) {
+        eventsToInsert.push({
+          title: event.title,
+          description: event.description || null,
+          organizer_name: event.organizer_name,
+          event_date: event.event_date,
+          end_date: event.end_date || event.event_date,
+          location: event.location,
+          location_link: event.location_link || null,
+          image_url: event.image_url || null,
+          category: event.category || null,
+          ticket_price: event.ticket_price || 0,
+          ticket_link: event.ticket_link || null,
+          max_attendees: event.max_attendees || null,
+          auto_generated: true,
+          approval_status: 'pending',
+          created_by_admin_id: user.id,
+          source_data: event,
+          status: 'upcoming'
+        });
+      } else {
+        duplicateCount++;
+        console.log(`Duplicate event found: ${event.title} at ${event.location} on ${event.event_date}`);
+      }
+    }
+
+    if (eventsToInsert.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Todos os ${futureEvents.length} eventos já existem no sistema (duplicados)`,
+          count: 0,
+          duplicates: duplicateCount
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Inserting ${eventsToInsert.length} new events (${duplicateCount} duplicates skipped)`);
 
     const { data: insertedEvents, error: insertError } = await supabaseClient
       .from('platform_events')
@@ -223,7 +255,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         count: insertedEvents?.length || 0,
-        message: `${insertedEvents?.length} eventos extraídos e salvos para aprovação`
+        duplicates: duplicateCount,
+        message: `${insertedEvents?.length} eventos novos salvos para aprovação${duplicateCount > 0 ? ` (${duplicateCount} duplicados ignorados)` : ''}`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
