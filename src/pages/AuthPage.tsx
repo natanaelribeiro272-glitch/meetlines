@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Sun, Moon } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Sun, Moon, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,8 +85,17 @@ export default function AuthPage({
   };
   return <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Theme Toggle */}
-        <div className="flex justify-end">
+        {/* Back to Home & Theme Toggle */}
+        <div className="flex justify-between items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
           <Button
             variant="ghost"
             size="icon"
