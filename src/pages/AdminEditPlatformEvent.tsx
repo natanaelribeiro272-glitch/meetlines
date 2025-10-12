@@ -6,8 +6,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
+
+const EVENT_CATEGORIES = [
+  { value: "cristao", label: "🙏 Cristão" },
+  { value: "vendas", label: "💰 Vendas" },
+  { value: "streemer", label: "🎮 Streemer" },
+  { value: "festas", label: "🎉 Festas" },
+  { value: "eventos", label: "📅 Eventos" },
+  { value: "eletronica", label: "🎵 Eletrônica" },
+  { value: "rock", label: "🎸 Rock" },
+  { value: "pop", label: "🎤 Pop" },
+  { value: "forro", label: "🪗 Forró" },
+  { value: "sertanejo", label: "🤠 Sertanejo" },
+  { value: "funk", label: "🕺 Funk" },
+  { value: "samba", label: "🥁 Samba" },
+  { value: "jazz", label: "🎺 Jazz" },
+  { value: "outros", label: "🎭 Outros" }
+];
 
 export default function AdminEditPlatformEvent() {
   const { eventId } = useParams();
@@ -26,7 +45,12 @@ export default function AdminEditPlatformEvent() {
     organizer_name: '',
     max_attendees: '',
     category: '',
+    ticket_price: '',
+    ticket_link: '',
   });
+  
+  const [eventImage, setEventImage] = useState<string | null>(null);
+  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -60,7 +84,11 @@ export default function AdminEditPlatformEvent() {
         organizer_name: data.organizer_name,
         max_attendees: data.max_attendees?.toString() || '',
         category: data.category || '',
+        ticket_price: (data as any).ticket_price?.toString() || '',
+        ticket_link: (data as any).ticket_link || '',
       });
+      
+      setEventImage((data as any).image_url || null);
     } catch (error) {
       console.error('Error fetching event:', error);
       toast.error('Erro ao carregar evento');
@@ -69,11 +97,42 @@ export default function AdminEditPlatformEvent() {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEventImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setEventImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
+      let imageUrl = eventImage;
+
+      // Upload image if a new one was selected
+      if (eventImageFile) {
+        const fileExt = eventImageFile.name.split('.').pop();
+        const fileName = `platform-events/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('user-uploads')
+          .upload(fileName, eventImageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-uploads')
+          .getPublicUrl(fileName);
+        
+        imageUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('platform_events')
         .update({
@@ -86,6 +145,9 @@ export default function AdminEditPlatformEvent() {
           organizer_name: formData.organizer_name,
           max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
           category: formData.category || null,
+          image_url: imageUrl,
+          ticket_price: formData.ticket_price ? parseFloat(formData.ticket_price) : 0,
+          ticket_link: formData.ticket_link || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', eventId);
@@ -118,8 +180,45 @@ export default function AdminEditPlatformEvent() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Imagem do Evento */}
             <div>
-              <label className="text-sm font-medium">Título do Evento</label>
+              <Label>Banner do Evento</Label>
+              <div className="mt-2">
+                {eventImage ? (
+                  <div className="relative h-48 rounded-lg overflow-hidden">
+                    <img src={eventImage} alt="Preview do evento" className="w-full h-full object-cover" />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        setEventImage(null);
+                        setEventImageFile(null);
+                      }}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground">
+                      Clique para adicionar uma imagem
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <Label>Título do Evento</Label>
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -128,7 +227,7 @@ export default function AdminEditPlatformEvent() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Nome do Organizador</label>
+              <Label>Nome do Organizador</Label>
               <Input
                 value={formData.organizer_name}
                 onChange={(e) => setFormData({ ...formData, organizer_name: e.target.value })}
@@ -137,7 +236,7 @@ export default function AdminEditPlatformEvent() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Descrição</label>
+              <Label>Descrição</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -145,9 +244,28 @@ export default function AdminEditPlatformEvent() {
               />
             </div>
 
+            <div>
+              <Label>Categoria</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border z-50">
+                  {EVENT_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Data/Hora Início</label>
+                <Label>Data/Hora Início</Label>
                 <Input
                   type="datetime-local"
                   value={formData.event_date}
@@ -156,7 +274,7 @@ export default function AdminEditPlatformEvent() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Data/Hora Fim</label>
+                <Label>Data/Hora Fim</Label>
                 <Input
                   type="datetime-local"
                   value={formData.end_date}
@@ -166,7 +284,7 @@ export default function AdminEditPlatformEvent() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Local</label>
+              <Label>Local</Label>
               <Input
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -175,7 +293,7 @@ export default function AdminEditPlatformEvent() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Link do Local</label>
+              <Label>Link do Local</Label>
               <Input
                 type="url"
                 value={formData.location_link}
@@ -185,7 +303,7 @@ export default function AdminEditPlatformEvent() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Capacidade Máxima</label>
+              <Label>Capacidade Máxima</Label>
               <Input
                 type="number"
                 value={formData.max_attendees}
@@ -194,13 +312,37 @@ export default function AdminEditPlatformEvent() {
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Categoria</label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="Ex: Show, Festival, Workshop..."
-              />
+            {/* Informações de Pagamento */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="font-medium">Informações de Pagamento</h3>
+              
+              <div>
+                <Label>Preço do Ingresso (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.ticket_price}
+                  onChange={(e) => setFormData({ ...formData, ticket_price: e.target.value })}
+                  placeholder="0.00 para evento gratuito"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Deixe 0 ou vazio para evento gratuito
+                </p>
+              </div>
+
+              <div>
+                <Label>Link de Pagamento/Ingresso</Label>
+                <Input
+                  type="url"
+                  value={formData.ticket_link}
+                  onChange={(e) => setFormData({ ...formData, ticket_link: e.target.value })}
+                  placeholder="https://sympla.com.br/..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Link externo para compra de ingressos (Sympla, Eventbrite, etc)
+                </p>
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={submitting}>
