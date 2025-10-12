@@ -125,8 +125,9 @@ export default function AdminAutoGenerateEvents() {
             Extrair de Imagem
           </CardTitle>
           <CardDescription>
-            Faça upload de uma imagem de evento (flyer, cartaz) e nossa IA irá extrair todas as informações 
-            automaticamente. O evento será salvo como "pendente" para sua aprovação.
+            Faça upload de uma imagem de evento (flyer, cartaz, banner promocional) e nossa IA irá extrair todas as informações 
+            automaticamente. A imagem deve conter informações visíveis como título do evento, data, horário, local e organizador. 
+            O evento será salvo como "pendente" para sua aprovação.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

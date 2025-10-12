@@ -157,11 +157,11 @@ Retorne APENAS o JSON, sem texto adicional.`
     if (!eventData || eventData === null) {
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          message: 'Nenhum evento futuro encontrado na imagem',
+          success: false, 
+          error: 'Não foi possível identificar informações de evento nesta imagem. Por favor, envie uma imagem de flyer/cartaz de evento com informações visíveis como título, data, local e organizador.',
           count: 0 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
