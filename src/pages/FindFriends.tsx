@@ -35,10 +35,51 @@ export default function FindFriends({
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState<Attendee | null>(null);
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const {
     user
   } = useAuth();
   const navigate = useNavigate();
+
+  // Request geolocation and update user location
+  useEffect(() => {
+    if (!user || !isVisible) return;
+
+    if (!navigator.geolocation) {
+      setLocationError('Geolocalização não suportada pelo navegador');
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lon: longitude });
+        setLocationError(null);
+
+        // Update user location in database
+        await supabase
+          .from('profiles')
+          .update({
+            latitude,
+            longitude,
+            location_updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLocationError('Erro ao obter localização. Permita o acesso à localização.');
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 30000,
+        timeout: 27000,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [user, isVisible]);
 
   // Load user visibility preference
   useEffect(() => {
@@ -93,7 +134,7 @@ export default function FindFriends({
   }, [user]);
   useEffect(() => {
     let channel: any = null;
-    const fetchEventAttendees = async () => {
+    const fetchNearbyUsers = async () => {
       if (!user) {
         setLoading(false);
         return;
@@ -105,91 +146,95 @@ export default function FindFriends({
         setLoading(false);
         return;
       }
+
+      // Precisa de localização para encontrar pessoas próximas
+      if (!userLocation) {
+        setAttendees([]);
+        setLoading(false);
+        return;
+      }
+
       try {
-        // First, get events where current user registered with confirmed attendance (exclude online/live)
-        const {
-          data: myRegistrations,
-          error: myRegError
-        } = await supabase.from('event_registrations').select('event_id, events!inner(is_live)').eq('user_id', user.id).eq('attendance_confirmed', true).eq('events.is_live', false);
-        if (myRegError) {
-          console.error('Error fetching my registrations:', myRegError);
-          setLoading(false);
-          return;
-        }
-        if (!myRegistrations || myRegistrations.length === 0) {
-          setAttendees([]);
-          setLoading(false);
-          return;
-        }
-        const myEventIds = myRegistrations.map(reg => reg.event_id);
-
-        // Get other users with confirmed attendance in the same in-person events who are visible
-        const {
-          data,
-          error
-        } = await supabase.from('event_registrations').select(`
-            id,
-            user_id,
-            user_name,
-            event_id,
-            events!inner(
-              title,
-              is_live
-            )
-          `).in('event_id', myEventIds).eq('attendance_confirmed', true).eq('events.is_live', false).neq('user_id', user.id);
-        if (error) {
-          console.error('Error fetching attendees:', error);
-          setLoading(false);
-          return;
-        }
-
-        // Now fetch profile data for each user
-        const userIds = data?.map(reg => reg.user_id) || [];
-        if (userIds.length === 0) {
-          setAttendees([]);
-          setLoading(false);
-          return;
-        }
+        // Buscar todos os usuários visíveis com localização recente (últimos 5 minutos)
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        
         const {
           data: profilesData,
           error: profilesError
-        } = await supabase.from('profiles').select('user_id, avatar_url, notes, notes_visible, find_friends_visible, instagram_url, phone, interest, relationship_status').in('user_id', userIds).eq('find_friends_visible', true).eq('notes_visible', true);
+        } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url, notes, notes_visible, find_friends_visible, instagram_url, phone, interest, relationship_status, latitude, longitude')
+          .eq('find_friends_visible', true)
+          .eq('notes_visible', true)
+          .neq('user_id', user.id)
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null)
+          .gte('location_updated_at', fiveMinutesAgo);
+
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
           setLoading(false);
           return;
         }
 
-        // Create a map of profiles by user_id
-        const profilesMap = new Map((profilesData || []).map(p => [p.user_id, p]));
+        if (!profilesData || profilesData.length === 0) {
+          setAttendees([]);
+          setLoading(false);
+          return;
+        }
 
-        // Combine registration data with profile data and remove duplicates
-        const attendeesMap = new Map<string, Attendee>();
-        (data || []).filter(registration => profilesMap.has(registration.user_id)).forEach((registration: any) => {
-          // Only add if user not already in map (prevents duplicates)
-          if (!attendeesMap.has(registration.user_id)) {
-            const profile = profilesMap.get(registration.user_id);
-            attendeesMap.set(registration.user_id, {
-              id: registration.user_id,
-              // Use user_id as unique id instead of registration id
-              user_id: registration.user_id,
-              name: registration.user_name,
-              avatar: profile?.avatar_url || "",
-              interest: profile?.interest || "curtição",
-              note: profile?.notes || "Participante do evento",
-              distance: `${Math.floor(Math.random() * 100) + 10}m`,
-              instagram: profile?.instagram_url || "",
-              phone: profile?.phone || null,
-              event_name: registration.events?.title || "Evento",
-              relationship_status: profile?.relationship_status || "preferencia_nao_informar"
-            });
-          }
-        });
-        const formattedAttendees: Attendee[] = Array.from(attendeesMap.values());
-        setAttendees(formattedAttendees);
+        // Calcular distância e filtrar até 100m
+        const nearbyUsers = profilesData
+          .map(profile => {
+            // Fórmula de Haversine simplificada
+            const R = 6371000; // Raio da Terra em metros
+            const lat1 = userLocation.lat * Math.PI / 180;
+            const lat2 = profile.latitude! * Math.PI / 180;
+            const deltaLat = (profile.latitude! - userLocation.lat) * Math.PI / 180;
+            const deltaLon = (profile.longitude! - userLocation.lon) * Math.PI / 180;
+
+            const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                     Math.cos(lat1) * Math.cos(lat2) *
+                     Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+
+            return {
+              ...profile,
+              calculatedDistance: distance
+            };
+          })
+          .filter(profile => profile.calculatedDistance <= 100) // Filtrar até 100 metros
+          .map(profile => ({
+            id: profile.user_id,
+            user_id: profile.user_id,
+            name: profile.display_name || "Usuário",
+            avatar: profile.avatar_url || "",
+            interest: profile.interest || "curtição",
+            note: profile.notes || "Está próximo de você",
+            distance: profile.calculatedDistance < 1 
+              ? `${Math.round(profile.calculatedDistance)}m`
+              : profile.calculatedDistance < 10
+              ? `${Math.round(profile.calculatedDistance)}m`
+              : profile.calculatedDistance < 100
+              ? `${Math.round(profile.calculatedDistance)}m`
+              : `${Math.round(profile.calculatedDistance)}m`,
+            instagram: profile.instagram_url || "",
+            phone: profile.phone || null,
+            event_name: "Próximo",
+            relationship_status: profile.relationship_status || "preferencia_nao_informar"
+          }))
+          .sort((a, b) => {
+            // Ordenar por distância
+            const distA = parseFloat(a.distance);
+            const distB = parseFloat(b.distance);
+            return distA - distB;
+          });
+
+        setAttendees(nearbyUsers);
 
         // Load unread messages count for each user
-        const userIdsForMessages = formattedAttendees.map(a => a.user_id);
+        const userIdsForMessages = nearbyUsers.map(a => a.user_id);
         if (userIdsForMessages.length > 0) {
           const {
             data: messagesData
@@ -204,7 +249,7 @@ export default function FindFriends({
         }
 
         // Subscribe to realtime updates for profiles and messages
-        const userIdsForRealtime = formattedAttendees.map(a => a.user_id);
+        const userIdsForRealtime = nearbyUsers.map(a => a.user_id);
         channel = supabase.channel('profiles-and-messages-updates').on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',
@@ -272,14 +317,14 @@ export default function FindFriends({
         setLoading(false);
       }
     };
-    fetchEventAttendees();
+    fetchNearbyUsers();
     return () => {
       if (channel) {
         console.log('Removendo canal de profiles');
         supabase.removeChannel(channel);
       }
     };
-  }, [user, isVisible]);
+  }, [user, isVisible, userLocation]);
   const handleLike = async (userId: string) => {
     if (!user) {
       toast.error('Faça login para curtir perfis');
@@ -420,7 +465,13 @@ export default function FindFriends({
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            {isVisible ? "Outras pessoas com presença confirmada no evento podem te encontrar. Toque em 'Ser Visto' novamente para ficar invisível." : "Conecte-se com pessoas que confirmaram presença e estão visíveis. Para aparecer para outros, ative 'Ser Visto' e confirme sua presença no evento."}
+            {isVisible 
+              ? locationError 
+                ? locationError
+                : !userLocation
+                ? "Aguardando sua localização para encontrar pessoas próximas..."
+                : "Outras pessoas até 100m de você podem te encontrar. Toque em 'Ser Visto' novamente para ficar invisível."
+              : "Conecte-se com pessoas até 100 metros de você. Para aparecer para outros, ative 'Ser Visto' e permita o acesso à localização."}
           </p>
         </div>
 
@@ -491,10 +542,22 @@ export default function FindFriends({
           </div> : <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              {isVisible ? "Nenhuma pessoa encontrada" : "Você precisa ser visível para ver outras pessoas"}
+              {isVisible 
+                ? locationError
+                  ? "Erro ao acessar localização"
+                  : !userLocation
+                  ? "Aguardando localização..."
+                  : "Nenhuma pessoa encontrada"
+                : "Você precisa ser visível para ver outras pessoas"}
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              {isVisible ? "Não há outras pessoas com presença confirmada e visíveis em eventos ao vivo no momento. Lembre-se de confirmar sua presença no evento!" : "Ative 'Ser Visto' no topo da página para poder ver e se conectar com outras pessoas do evento."}
+              {isVisible 
+                ? locationError
+                  ? "Permita o acesso à localização no seu navegador para encontrar pessoas próximas."
+                  : !userLocation
+                  ? "Carregando sua localização para encontrar pessoas até 100m de você..."
+                  : "Não há outras pessoas visíveis até 100 metros de você no momento."
+                : "Ative 'Ser Visto' e permita o acesso à localização para se conectar com pessoas próximas."}
             </p>
           </div>}
 
