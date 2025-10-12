@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { Loader2, Upload } from 'lucide-react';
 
@@ -51,6 +52,7 @@ export default function AdminEditPlatformEvent() {
   
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -89,6 +91,11 @@ export default function AdminEditPlatformEvent() {
       });
       
       setEventImage((data as any).image_url || null);
+      
+      // Determinar se é pago baseado no preço ou link
+      const ticketPrice = (data as any).ticket_price;
+      const ticketLink = (data as any).ticket_link;
+      setIsPaid(!!(ticketPrice && ticketPrice > 0) || !!ticketLink);
     } catch (error) {
       console.error('Error fetching event:', error);
       toast.error('Erro ao carregar evento');
@@ -146,8 +153,8 @@ export default function AdminEditPlatformEvent() {
           max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
           category: formData.category || null,
           image_url: imageUrl,
-          ticket_price: formData.ticket_price ? parseFloat(formData.ticket_price) : 0,
-          ticket_link: formData.ticket_link || null,
+          ticket_price: isPaid && formData.ticket_price ? parseFloat(formData.ticket_price) : 0,
+          ticket_link: isPaid ? (formData.ticket_link || null) : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', eventId);
@@ -317,32 +324,60 @@ export default function AdminEditPlatformEvent() {
               <h3 className="font-medium">Informações de Pagamento</h3>
               
               <div>
-                <Label>Preço do Ingresso (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.ticket_price}
-                  onChange={(e) => setFormData({ ...formData, ticket_price: e.target.value })}
-                  placeholder="0.00 para evento gratuito"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Deixe 0 ou vazio para evento gratuito
-                </p>
+                <Label>Tipo de Evento</Label>
+                <RadioGroup 
+                  value={isPaid ? "paid" : "free"} 
+                  onValueChange={(value) => {
+                    setIsPaid(value === "paid");
+                    if (value === "free") {
+                      setFormData({ ...formData, ticket_price: '', ticket_link: '' });
+                    }
+                  }}
+                  className="flex gap-4 mt-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="free" id="free" />
+                    <Label htmlFor="free" className="cursor-pointer font-normal">
+                      💚 Gratuito
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="paid" id="paid" />
+                    <Label htmlFor="paid" className="cursor-pointer font-normal">
+                      💰 Pago
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
 
-              <div>
-                <Label>Link de Pagamento/Ingresso</Label>
-                <Input
-                  type="url"
-                  value={formData.ticket_link}
-                  onChange={(e) => setFormData({ ...formData, ticket_link: e.target.value })}
-                  placeholder="https://sympla.com.br/..."
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Link externo para compra de ingressos (Sympla, Eventbrite, etc)
-                </p>
-              </div>
+              {isPaid && (
+                <>
+                  <div>
+                    <Label>Preço do Ingresso (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.ticket_price}
+                      onChange={(e) => setFormData({ ...formData, ticket_price: e.target.value })}
+                      placeholder="Ex: 50.00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Link de Pagamento/Ingresso</Label>
+                    <Input
+                      type="url"
+                      value={formData.ticket_link}
+                      onChange={(e) => setFormData({ ...formData, ticket_link: e.target.value })}
+                      placeholder="https://sympla.com.br/..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Link externo para compra de ingressos (Sympla, Eventbrite, etc)
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={submitting}>
