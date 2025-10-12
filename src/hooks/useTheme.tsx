@@ -40,7 +40,11 @@ export function ThemeProvider({ children, forcedTheme }: { children: ReactNode; 
 
   const toggleTheme = () => {
     if (!forcedTheme) {
-      setTheme(theme === 'dark' ? 'light' : 'dark');
+      const newTheme = theme === 'dark' ? 'light' : 'dark';
+      console.log('Toggling theme from', theme, 'to', newTheme);
+      setTheme(newTheme);
+    } else {
+      console.log('Theme toggle blocked by forcedTheme:', forcedTheme);
     }
   };
 
