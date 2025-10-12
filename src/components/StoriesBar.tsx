@@ -391,7 +391,13 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
           initialIndex={selectedIndex}
           open={viewerOpen}
           onOpenChange={setViewerOpen}
-          onStoryDeleted={loadStories}
+          onStoryDeleted={(wasLast) => {
+            if (wasLast) {
+              setCurrentUserStory(null);
+            }
+            setSelectedStories([]);
+            loadStories();
+          }}
         />
       )}
     </>

@@ -48,7 +48,7 @@ interface StoryViewerProps {
   initialIndex: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onStoryDeleted?: () => void;
+  onStoryDeleted?: (wasLast: boolean) => void;
 }
 
 export default function StoryViewer({ stories, initialIndex, open, onOpenChange, onStoryDeleted }: StoryViewerProps) {
@@ -271,8 +271,8 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
 
       toast.success('Story excluído!');
       
-      // Notify parent to reload stories
-      onStoryDeleted?.();
+      // Notify parent to reload stories (and if this was the last one)
+      onStoryDeleted?.(stories.length <= 1);
       
       // Close dialog and viewer
       setShowDeleteDialog(false);
