@@ -298,52 +298,6 @@ export default function UserProfile({
         </CardContent>
       </Card>
 
-      {/* Interest Options */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5" />
-            Interesse no Evento
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {[{
-            value: "curtição",
-            label: "Curtição",
-            emoji: "🤙"
-          }, {
-            value: "namoro",
-            label: "Namoro",
-            emoji: "💗"
-          }, {
-            value: "network",
-            label: "Network",
-            emoji: "🤝"
-          }, {
-            value: "amizade",
-            label: "Amizade",
-            emoji: "👥"
-          }, {
-            value: "casual",
-            label: "Casual",
-            emoji: "🤪"
-          }].map(interest => <button key={interest.value} type="button" onClick={() => {
-            const newInterest = interest.value as "namoro" | "network" | "curtição" | "amizade" | "casual";
-            setFormData(prev => ({
-              ...prev,
-              interest: newInterest
-            }));
-            updateProfile({
-              interest: newInterest
-            });
-          }} className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${formData.interest === interest.value ? 'bg-primary text-primary-foreground shadow-md' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
-                {interest.emoji} {interest.label}
-              </button>)}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Status de Relacionamento */}
       <Card>
         <CardHeader>
@@ -379,78 +333,6 @@ export default function UserProfile({
                 {opt.label}
               </button>
             ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Public Notes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {formData.notes_visible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-            Notas Públicas
-            {formData.notes_visible && <Badge variant="secondary" className="text-xs">Visível para outros</Badge>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Visibility Toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex-1">
-                <Label htmlFor="notes-visibility" className="text-sm font-medium">
-                  Visibilidade das Notas
-                </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formData.notes_visible ? "Suas notas aparecerão nos eventos que você participa" : "Suas notas ficam privadas"}
-                </p>
-              </div>
-              <Switch id="notes-visibility" checked={formData.notes_visible} onCheckedChange={async checked => {
-              setFormData(prev => ({
-                ...prev,
-                notes_visible: checked
-              }));
-              await updateProfile({
-                notes_visible: checked
-              });
-            }} />
-            </div>
-
-            {/* Notes Editor - sempre editável */}
-            <div className="space-y-2">
-              <Textarea 
-                value={formData.notes} 
-                onChange={e => {
-                  const newValue = e.target.value;
-                  setFormData(prev => ({
-                    ...prev,
-                    notes: newValue
-                  }));
-                  setNotesEdited(newValue !== (profile?.notes || ''));
-                }} 
-                placeholder="Escreva o que você está achando dos eventos que participa..." 
-                className="min-h-[120px]" 
-                aria-label="Editar notas públicas" 
-              />
-              {notesEdited && (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={async () => {
-                    const success = await handleSaveField('notes');
-                    if (success) setNotesEdited(false);
-                  }} disabled={saving}>
-                    Salvar
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      notes: profile?.notes || ''
-                    }));
-                    setNotesEdited(false);
-                  }}>
-                    Cancelar
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
         </CardContent>
       </Card>

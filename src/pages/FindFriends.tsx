@@ -37,6 +37,9 @@ export default function FindFriends({
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [currentInterest, setCurrentInterest] = useState<string>("curtição");
+  const [currentNotes, setCurrentNotes] = useState<string>("");
+  const [notesVisible, setNotesVisible] = useState<boolean>(true);
   const {
     user
   } = useAuth();
@@ -81,16 +84,19 @@ export default function FindFriends({
     return () => navigator.geolocation.clearWatch(watchId);
   }, [user, isVisible]);
 
-  // Load user visibility preference
+  // Load user visibility preference and profile data
   useEffect(() => {
     const loadVisibility = async () => {
       if (!user) return;
       const {
         data,
         error
-      } = await supabase.from('profiles').select('find_friends_visible').eq('user_id', user.id).single();
+      } = await supabase.from('profiles').select('find_friends_visible, interest, notes, notes_visible').eq('user_id', user.id).single();
       if (data && !error) {
         setIsVisible(data.find_friends_visible ?? false);
+        setCurrentInterest(data.interest || "curtição");
+        setCurrentNotes(data.notes || "");
+        setNotesVisible(data.notes_visible ?? true);
       }
     };
     loadVisibility();
@@ -456,6 +462,76 @@ export default function FindFriends({
 
       {/* Content */}
       <div className="px-4 py-6 max-w-md mx-auto">
+        {/* Editable Profile Section */}
+        {isVisible && (
+          <div className="mb-6 p-4 bg-card rounded-lg border border-border">
+            <h3 className="font-semibold text-foreground mb-3">Como você quer aparecer</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Interesse</label>
+                <select
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground"
+                  value={currentInterest}
+                  onChange={async (e) => {
+                    if (!user) return;
+                    setCurrentInterest(e.target.value);
+                    await supabase
+                      .from('profiles')
+                      .update({ interest: e.target.value as any })
+                      .eq('user_id', user.id);
+                    toast.success('Interesse atualizado');
+                  }}
+                >
+                  <option value="curtição">💛 Curtição</option>
+                  <option value="namoro">💕 Namoro</option>
+                  <option value="amizade">🤝 Amizade</option>
+                  <option value="network">💼 Network</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Notas sobre você</label>
+                <textarea
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground resize-none"
+                  rows={3}
+                  placeholder="Escreva algo sobre você..."
+                  value={currentNotes}
+                  onChange={(e) => setCurrentNotes(e.target.value)}
+                  onBlur={async (e) => {
+                    if (!user) return;
+                    await supabase
+                      .from('profiles')
+                      .update({ notes: e.target.value })
+                      .eq('user_id', user.id);
+                    toast.success('Notas atualizadas');
+                  }}
+                />
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="checkbox"
+                    id="notes-visible"
+                    checked={notesVisible}
+                    onChange={async (e) => {
+                      if (!user) return;
+                      setNotesVisible(e.target.checked);
+                      await supabase
+                        .from('profiles')
+                        .update({ notes_visible: e.target.checked })
+                        .eq('user_id', user.id);
+                      toast.success(e.target.checked ? 'Notas visíveis para outros' : 'Notas privadas');
+                    }}
+                    className="rounded border-border"
+                  />
+                  <label htmlFor="notes-visible" className="text-xs text-muted-foreground">
+                    {notesVisible ? '✓ Visível para outros' : 'Privado'}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Info Banner */}
         <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20">
           <div className="flex items-center gap-2 mb-2">
