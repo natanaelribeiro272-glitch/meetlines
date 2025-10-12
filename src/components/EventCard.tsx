@@ -68,6 +68,7 @@ export function EventCard({
     locationLink.includes('streamyard') ||
     locationLink.includes('jitsi')
   );
+  const hasImage = Boolean(image && image.trim() !== '' && !image.includes('placeholder.svg'));
   return (
     <div className="event-card bg-card rounded-lg overflow-hidden shadow-card cursor-pointer" onClick={onClick}>
       {/* Header - Organizer info */}
@@ -122,7 +123,7 @@ export function EventCard({
       </div>
 
       {/* Event Image */}
-      {image && (
+      {hasImage && (
         <div className="relative">
           <img
             src={image}
@@ -143,6 +144,17 @@ export function EventCard({
 
       {/* Event Info */}
       <div className="p-4 pt-3">
+        {!hasImage && (
+          ((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink)) ? (
+            <div className="mb-2 inline-flex px-2 py-1 rounded-md bg-destructive/90">
+              <span className="text-xs font-medium text-white">PAGO</span>
+            </div>
+          ) : (
+            <div className="mb-2 inline-flex px-2 py-1 rounded-md bg-primary/90">
+              <span className="text-xs font-medium text-primary-foreground">GRÁTIS</span>
+            </div>
+          )
+        )}
         <h3 className="font-semibold text-foreground mb-2 line-clamp-2">{title}</h3>
         
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
