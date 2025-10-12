@@ -26,44 +26,35 @@ export default function Home({
     id: "todos",
     label: "Todos"
   }, {
-    id: "cristao",
-    label: "🙏 Cristão"
-  }, {
-    id: "vendas",
-    label: "💰 Vendas"
-  }, {
-    id: "streemer",
-    label: "🎮 Streemer"
-  }, {
     id: "festas",
     label: "🎉 Festas"
   }, {
-    id: "eventos",
-    label: "📅 Eventos"
+    id: "shows",
+    label: "🎤 Shows"
   }, {
-    id: "eletronica",
-    label: "🎵 Eletrônica"
+    id: "encontros",
+    label: "👥 Encontros"
   }, {
-    id: "rock",
-    label: "🎸 Rock"
+    id: "cristao",
+    label: "🙏 Cristão"
   }, {
-    id: "pop",
-    label: "🎤 Pop"
+    id: "esportes",
+    label: "⚽ Esportes"
   }, {
-    id: "forro",
-    label: "🪗 Forró"
+    id: "educacao",
+    label: "📚 Educação"
   }, {
-    id: "sertanejo",
-    label: "🤠 Sertanejo"
+    id: "networking",
+    label: "💼 Networking"
   }, {
-    id: "funk",
-    label: "🕺 Funk"
+    id: "gastronomia",
+    label: "🍽️ Gastronomia"
   }, {
-    id: "samba",
-    label: "🥁 Samba"
+    id: "arte",
+    label: "🎨 Arte & Cultura"
   }, {
-    id: "jazz",
-    label: "🎺 Jazz"
+    id: "musica",
+    label: "🎵 Música"
   }, {
     id: "outros",
     label: "🎭 Outros"
