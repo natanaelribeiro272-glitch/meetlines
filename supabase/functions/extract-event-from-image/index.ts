@@ -85,7 +85,7 @@ Retorne um objeto JSON com os seguintes campos (deixe null se não encontrar a i
 - location (obrigatório - local do evento)
 - location_link (opcional - link do Google Maps se houver)
 - image_url (null - será preenchido depois)
-- category (opcional - categoria do evento: shows, festas, esportes, etc)
+- category (opcional - categoria do evento: festas, shows, eventos, eletronica, rock, pop, forro, sertanejo, funk, samba, jazz ou outros)
 - ticket_price (obrigatório - número: 0 para eventos gratuitos, valor em reais se for pago)
 - ticket_link (opcional - link de compra de ingressos se houver)
 - max_attendees (opcional - capacidade máxima se informada)

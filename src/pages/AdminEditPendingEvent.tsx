@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, Check, Sparkles } from 'lucide-react';
 
 export default function AdminEditPendingEvent() {
@@ -25,12 +26,26 @@ export default function AdminEditPendingEvent() {
     end_date: '',
     location: '',
     location_link: '',
-    image_url: '',
     category: '',
     ticket_price: 0,
     ticket_link: '',
     max_attendees: null as number | null,
   });
+
+  const categories = [
+    { value: "festas", label: "🎉 Festas" },
+    { value: "shows", label: "🎸 Shows" },
+    { value: "eventos", label: "📅 Eventos" },
+    { value: "eletronica", label: "🎵 Eletrônica" },
+    { value: "rock", label: "🎸 Rock" },
+    { value: "pop", label: "🎤 Pop" },
+    { value: "forro", label: "🪗 Forró" },
+    { value: "sertanejo", label: "🤠 Sertanejo" },
+    { value: "funk", label: "🕺 Funk" },
+    { value: "samba", label: "🥁 Samba" },
+    { value: "jazz", label: "🎺 Jazz" },
+    { value: "outros", label: "🎭 Outros" }
+  ];
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -64,7 +79,6 @@ export default function AdminEditPendingEvent() {
           end_date: data.end_date || '',
           location: data.location || '',
           location_link: data.location_link || '',
-          image_url: data.image_url || '',
           category: data.category || '',
           ticket_price: data.ticket_price || 0,
           ticket_link: data.ticket_link || '',
@@ -98,7 +112,6 @@ export default function AdminEditPendingEvent() {
           end_date: formData.end_date || formData.event_date,
           location: formData.location,
           location_link: formData.location_link || null,
-          image_url: formData.image_url || null,
           category: formData.category || null,
           ticket_price: formData.ticket_price || 0,
           ticket_link: formData.ticket_link || null,
@@ -274,31 +287,24 @@ export default function AdminEditPendingEvent() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="image_url">URL da Imagem</Label>
-            <Input
-              id="image_url"
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-            />
-            {formData.image_url && (
-              <img 
-                src={formData.image_url} 
-                alt="Preview" 
-                className="w-full h-48 object-cover rounded-lg mt-2"
-              />
-            )}
-          </div>
-
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Categoria</Label>
-              <Input
-                id="category"
+              <Select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              />
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
