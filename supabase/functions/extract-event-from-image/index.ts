@@ -158,16 +158,37 @@ Retorne APENAS o JSON, sem texto adicional.`
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Não foi possível identificar informações de evento nesta imagem. Por favor, envie uma imagem de flyer/cartaz de evento com informações visíveis como título, data, local e organizador.',
+          error: 'Não foi possível identificar nenhuma informação de evento nesta imagem. Por favor, tente com uma imagem de flyer/cartaz de evento.',
           count: 0 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Validate required fields
-    if (!eventData.title || !eventData.organizer_name || !eventData.event_date || !eventData.location) {
-      throw new Error('Informações essenciais do evento não encontradas na imagem');
+    // Validate that at least some basic info was extracted
+    const hasMinimumInfo = eventData.title || eventData.organizer_name || eventData.location || eventData.event_date;
+    
+    if (!hasMinimumInfo) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Não foi possível extrair informações suficientes. A imagem deve conter ao menos o título, organizador, local ou data do evento.',
+          count: 0 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Set defaults for missing required fields
+    if (!eventData.title) eventData.title = 'Evento sem título (completar manualmente)';
+    if (!eventData.organizer_name) eventData.organizer_name = 'A definir';
+    if (!eventData.location) eventData.location = 'Local a definir';
+    
+    // Set default date to tomorrow if not found
+    if (!eventData.event_date) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      eventData.event_date = tomorrow.toISOString();
     }
 
     // Verify event is in the future
@@ -239,11 +260,24 @@ Retorne APENAS o JSON, sem texto adicional.`
 
     console.log('Successfully inserted event from image');
 
+    // Build success message based on what was extracted
+    const extractedFields = [];
+    if (eventData.title && !eventData.title.includes('sem título')) extractedFields.push('título');
+    if (eventData.organizer_name && eventData.organizer_name !== 'A definir') extractedFields.push('organizador');
+    if (eventData.location && eventData.location !== 'Local a definir') extractedFields.push('local');
+    if (eventData.event_date) extractedFields.push('data');
+    if (eventData.ticket_price !== null && eventData.ticket_price !== undefined) extractedFields.push('preço');
+    if (eventData.description) extractedFields.push('descrição');
+    
+    const fieldsMessage = extractedFields.length > 0 
+      ? ` Campos extraídos: ${extractedFields.join(', ')}.`
+      : ' Complete os campos manualmente.';
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         count: 1,
-        message: 'Evento extraído da imagem e salvo para aprovação!'
+        message: 'Evento extraído da imagem e salvo para aprovação!' + fieldsMessage
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

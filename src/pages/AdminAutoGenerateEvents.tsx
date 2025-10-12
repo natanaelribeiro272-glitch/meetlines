@@ -59,7 +59,8 @@ export default function AdminAutoGenerateEvents() {
         if (error) throw error;
 
         if (data?.success) {
-          toast.success(data.message || 'Evento extraído da imagem com sucesso!');
+          const message = data.message || 'Evento extraído da imagem com sucesso!';
+          toast.success(message + ' Verifique e complete os campos necessários na revisão.');
           navigate('/admin/pending-events');
         } else {
           throw new Error(data?.error || 'Erro ao extrair evento da imagem');
@@ -68,7 +69,8 @@ export default function AdminAutoGenerateEvents() {
       reader.readAsDataURL(selectedImage);
     } catch (error) {
       console.error('Error extracting from image:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao processar imagem');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar imagem';
+      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -126,8 +128,8 @@ export default function AdminAutoGenerateEvents() {
           </CardTitle>
           <CardDescription>
             Faça upload de uma imagem de evento (flyer, cartaz, banner promocional) e nossa IA irá extrair todas as informações 
-            automaticamente. A imagem deve conter informações visíveis como título do evento, data, horário, local e organizador. 
-            O evento será salvo como "pendente" para sua aprovação.
+            disponíveis automaticamente. Não precisa ter todos os dados - você pode completar manualmente os campos que 
+            faltarem. O evento será salvo como "pendente" para revisão e edição antes da publicação.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -182,9 +184,9 @@ export default function AdminAutoGenerateEvents() {
             <h3 className="font-semibold text-sm">Como funciona:</h3>
             <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
               <li>A IA analisa a imagem e identifica informações do evento</li>
-              <li>Extrai título, data, local, preço e outras informações</li>
-              <li>Cria o evento como "pendente" para revisão</li>
-              <li>Você revisa e aprova antes de publicar</li>
+              <li>Extrai título, data, local, preço e outras informações disponíveis</li>
+              <li>Cria o evento como "pendente" mesmo com dados incompletos</li>
+              <li>Você completa os campos faltantes e aprova antes de publicar</li>
             </ol>
           </div>
         </CardContent>
