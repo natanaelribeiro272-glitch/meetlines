@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
 
 export default function AdminAutoGenerateEvents() {
   const navigate = useNavigate();
@@ -15,6 +15,8 @@ export default function AdminAutoGenerateEvents() {
   const [apiEndpoint, setApiEndpoint] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   if (adminLoading) {
     return null;
@@ -24,6 +26,53 @@ export default function AdminAutoGenerateEvents() {
     navigate('/');
     return null;
   }
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleExtractFromImage = async () => {
+    if (!selectedImage) {
+      toast.error('Por favor, selecione uma imagem');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result as string;
+
+        const { data, error } = await supabase.functions.invoke('extract-event-from-image', {
+          body: { image: base64Image }
+        });
+
+        if (error) throw error;
+
+        if (data?.success) {
+          toast.success(data.message || 'Evento extraído da imagem com sucesso!');
+          navigate('/admin/pending-events');
+        } else {
+          throw new Error(data?.error || 'Erro ao extrair evento da imagem');
+        }
+      };
+      reader.readAsDataURL(selectedImage);
+    } catch (error) {
+      console.error('Error extracting from image:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao processar imagem');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleExtractEvents = async () => {
     if (!apiEndpoint.trim()) {
@@ -72,8 +121,79 @@ export default function AdminAutoGenerateEvents() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            Extrair de Imagem
+          </CardTitle>
+          <CardDescription>
+            Faça upload de uma imagem de evento (flyer, cartaz) e nossa IA irá extrair todas as informações 
+            automaticamente. O evento será salvo como "pendente" para sua aprovação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="image">Upload de Imagem *</Label>
+            <div className="flex flex-col gap-4">
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                disabled={isProcessing}
+                className="cursor-pointer"
+              />
+              {imagePreview && (
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-contain bg-muted"
+                  />
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Formatos aceitos: JPG, PNG, WEBP
+            </p>
+          </div>
+
+          <div className="pt-4">
+            <Button 
+              onClick={handleExtractFromImage} 
+              disabled={isProcessing || !selectedImage}
+              className="w-full"
+              size="lg"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analisando imagem...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Extrair Evento da Imagem
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="pt-4 border-t space-y-2">
+            <h3 className="font-semibold text-sm">Como funciona:</h3>
+            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>A IA analisa a imagem e identifica informações do evento</li>
+              <li>Extrai título, data, local, preço e outras informações</li>
+              <li>Cria o evento como "pendente" para revisão</li>
+              <li>Você revisa e aprova antes de publicar</li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
-            Extração Inteligente de Eventos
+            Extração de API Externa
           </CardTitle>
           <CardDescription>
             Forneça um endpoint de API que retorne dados de eventos. Nossa IA irá analisar os dados e extrair 
