@@ -765,23 +765,6 @@ export default function FindFriends({
                         toast.success('Notas atualizadas');
                       }}
                     />
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <input
-                        type="checkbox"
-                        id="notes-visible"
-                        checked={notesVisible}
-                        onChange={async (e) => {
-                          if (!user) return;
-                          setNotesVisible(e.target.checked);
-                          await supabase
-                            .from('profiles')
-                            .update({ notes_visible: e.target.checked })
-                            .eq('user_id', user.id);
-                          toast.success(e.target.checked ? 'Notas visíveis' : 'Notas privadas');
-                        }}
-                        className="rounded border-border"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
