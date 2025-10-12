@@ -514,12 +514,17 @@ export default function EventDetails({
     );
   }
 
+  const hasHeaderImage = Boolean(event.image_url && event.image_url.trim() !== '' && !event.image_url.includes('placeholder.svg'));
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="relative">
-        <img src={event.image_url || "/placeholder.svg"} alt={event.title} className="w-full h-80 object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+        {hasHeaderImage && (
+          <>
+            <img src={event.image_url!} alt={event.title} className="w-full h-80 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+          </>
+        )}
 
         {/* Back button */}
         <Button
@@ -569,7 +574,7 @@ export default function EventDetails({
         </div>
 
         {/* Live indicator */}
-        {event.is_live && (
+        {event.is_live && hasHeaderImage && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-destructive/90 backdrop-blur-sm px-3 py-1 rounded-full">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 bg-white rounded-full animate-pulse" />
