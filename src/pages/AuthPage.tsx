@@ -18,6 +18,7 @@ export default function AuthPage({
   const [showPassword, setShowPassword] = useState(false);
   const [showUserTypeChoice, setShowUserTypeChoice] = useState(false);
   const [userType, setUserType] = useState<"user" | "organizer" | null>(null);
+  const [previewUserType, setPreviewUserType] = useState<"user" | "organizer">("user");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -90,14 +91,25 @@ export default function AuthPage({
       [field]: value
     }));
   };
-  const features = [
+  const userFeatures = [
     { icon: Users, text: "Conecte-se com pessoas de interesses em comum" },
     { icon: Calendar, text: "Encontre eventos na sua cidade" },
-    { icon: Grid3x3, text: "Organizado por categorias" },
+    { icon: Grid3x3, text: "Descubra eventos por categorias" },
     { icon: Radar, text: "Encontre pessoas num raio de 100 metros" },
-    { icon: Share2, text: "Rede social de interação e eventos" },
+    { icon: Share2, text: "Rede social de interação" },
     { icon: MapPin, text: "Veja quem está próximo em tempo real" }
   ];
+
+  const organizerFeatures = [
+    { icon: Calendar, text: "Crie e gerencie seus eventos" },
+    { icon: Users, text: "Alcance seu público-alvo" },
+    { icon: Grid3x3, text: "Organize eventos por categorias" },
+    { icon: MapPin, text: "Localize participantes próximos" },
+    { icon: Share2, text: "Divulgue seus eventos" },
+    { icon: Radar, text: "Conecte-se com participantes interessados" }
+  ];
+
+  const features = previewUserType === "user" ? userFeatures : organizerFeatures;
 
   return <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-4xl space-y-8">
@@ -105,6 +117,26 @@ export default function AuthPage({
         <div className="text-center space-y-4">
           <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl md:text-5xl">MeetLines</h1>
           <p className="text-lg text-muted-foreground">Conecte-se com pessoas e descubra eventos incríveis</p>
+          
+          {/* User Type Toggle */}
+          <div className="flex items-center justify-center pt-2">
+            <div className="flex bg-surface rounded-lg p-1 border border-border">
+              <button 
+                type="button" 
+                onClick={() => setPreviewUserType("user")} 
+                className={`px-6 py-2 text-sm font-medium rounded-md transition-smooth ${previewUserType === "user" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                👤 Usuário
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setPreviewUserType("organizer")} 
+                className={`px-6 py-2 text-sm font-medium rounded-md transition-smooth ${previewUserType === "organizer" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                🎯 Organizador
+              </button>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             {features.map((feature, index) => {
