@@ -711,19 +711,21 @@ export default function FindFriends({
         {activeTab === 'nearby' && (
           <>
             {/* Visibility Controls */}
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <Button 
-                variant={isVisible ? "glow" : "outline"} 
-                size="sm" 
+                variant={isVisible ? "default" : "outline"} 
                 onClick={toggleVisibility}
-                className="flex-1"
+                className="flex-1 h-11"
               >
                 <Eye className="h-4 w-4 mr-2" />
                 {isVisible ? "Visível" : "Ser Visto"}
               </Button>
-              <div className="flex items-center gap-2 px-3 py-2 bg-surface rounded-lg border border-primary/20">
-                <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
-                <span className="text-sm text-primary font-medium">AO VIVO</span>
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/30">
+                <div className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                </div>
+                <span className="text-xs font-semibold text-primary tracking-wide">AO VIVO</span>
               </div>
             </div>
 
