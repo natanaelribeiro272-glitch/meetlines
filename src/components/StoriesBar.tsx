@@ -1,0 +1,312 @@
+import { useState, useEffect } from "react";
+import { Plus, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import StoryViewer from "./StoryViewer";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface UserStory {
+  user_id: string;
+  user_name: string;
+  user_avatar: string;
+  stories: {
+    id: string;
+    user_id: string;
+    image_url: string;
+    created_at: string;
+    user_name: string;
+    user_avatar: string;
+  }[];
+  hasUnviewed: boolean;
+}
+
+export default function StoriesBar() {
+  const [userStories, setUserStories] = useState<UserStory[]>([]);
+  const [currentUserStory, setCurrentUserStory] = useState<UserStory | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedStories, setSelectedStories] = useState<any[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    loadStories();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('stories-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stories'
+        },
+        () => {
+          loadStories();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const loadStories = async () => {
+    if (!user) return;
+
+    // Get current user's location
+    const { data: myProfile } = await supabase
+      .from('profiles')
+      .select('latitude, longitude')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!myProfile?.latitude || !myProfile?.longitude) return;
+
+    // Get nearby users (within 10km)
+    const { data: nearbyProfiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url, latitude, longitude')
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null);
+
+    if (!nearbyProfiles) return;
+
+    // Calculate distances and filter nearby users
+    const nearbyUserIds = nearbyProfiles
+      .filter(profile => {
+        if (profile.user_id === user.id) return true; // Always include current user
+        
+        const R = 6371000; // Earth radius in meters
+        const lat1 = myProfile.latitude * Math.PI / 180;
+        const lat2 = profile.latitude! * Math.PI / 180;
+        const deltaLat = (profile.latitude! - myProfile.latitude) * Math.PI / 180;
+        const deltaLon = (profile.longitude! - myProfile.longitude) * Math.PI / 180;
+
+        const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                 Math.cos(lat1) * Math.cos(lat2) *
+                 Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+
+        return distance <= 10000; // 10km
+      })
+      .map(p => p.user_id);
+
+    // Get stories from nearby users (not expired)
+    const { data: storiesData } = await supabase
+      .from('stories')
+      .select('*')
+      .in('user_id', nearbyUserIds)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (!storiesData || storiesData.length === 0) {
+      setUserStories([]);
+      setCurrentUserStory(null);
+      return;
+    }
+
+    // Check which stories the user has viewed
+    const { data: viewsData } = await supabase
+      .from('story_views')
+      .select('story_id')
+      .eq('viewer_id', user.id);
+
+    const viewedStoryIds = new Set(viewsData?.map(v => v.story_id) || []);
+
+    // Group stories by user
+    const storiesByUser = new Map<string, any[]>();
+    storiesData.forEach(story => {
+      if (!storiesByUser.has(story.user_id)) {
+        storiesByUser.set(story.user_id, []);
+      }
+      storiesByUser.get(story.user_id)!.push(story);
+    });
+
+    // Get user profiles
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', Array.from(storiesByUser.keys()));
+
+    const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+
+    // Build user stories array
+    const userStoriesArray: UserStory[] = [];
+    let currentUserStoryData: UserStory | null = null;
+
+    storiesByUser.forEach((stories, userId) => {
+      const profile = profilesMap.get(userId);
+      const hasUnviewed = stories.some(s => !viewedStoryIds.has(s.id));
+
+      const userStory: UserStory = {
+        user_id: userId,
+        user_name: profile?.display_name || 'Usuário',
+        user_avatar: profile?.avatar_url || '',
+        stories: stories.map(s => ({
+          ...s,
+          user_name: profile?.display_name || 'Usuário',
+          user_avatar: profile?.avatar_url || ''
+        })),
+        hasUnviewed
+      };
+
+      if (userId === user.id) {
+        currentUserStoryData = userStory;
+      } else {
+        userStoriesArray.push(userStory);
+      }
+    });
+
+    // Sort: unviewed first
+    userStoriesArray.sort((a, b) => {
+      if (a.hasUnviewed && !b.hasUnviewed) return -1;
+      if (!a.hasUnviewed && b.hasUnviewed) return 1;
+      return 0;
+    });
+
+    setUserStories(userStoriesArray);
+    setCurrentUserStory(currentUserStoryData);
+  };
+
+  const handleUploadStory = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Upload to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `stories/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('user-uploads')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(filePath);
+
+      // Create story
+      const { error: insertError } = await supabase
+        .from('stories')
+        .insert({
+          user_id: user.id,
+          image_url: publicUrl
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success('Story publicado!');
+      loadStories();
+    } catch (error) {
+      console.error('Error uploading story:', error);
+      toast.error('Erro ao publicar story');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const openStoryViewer = (stories: any[], index: number = 0) => {
+    setSelectedStories(stories);
+    setSelectedIndex(index);
+    setViewerOpen(true);
+  };
+
+  return (
+    <>
+      <div className="bg-card rounded-lg p-4 shadow-card mb-4">
+        <ScrollArea className="w-full">
+          <div className="flex gap-3 pb-2">
+            {/* Current user - add story */}
+            <div className="flex flex-col items-center gap-1 min-w-[70px]">
+              <div className="relative">
+                <div className={`rounded-full p-[3px] ${currentUserStory ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' : 'bg-gray-600'}`}>
+                  <div className="bg-background rounded-full p-[2px]">
+                    <label htmlFor="story-upload" className="cursor-pointer">
+                      <Avatar className="h-14 w-14">
+                        <AvatarImage src={user?.user_metadata?.avatar_url} />
+                        <AvatarFallback>Eu</AvatarFallback>
+                      </Avatar>
+                    </label>
+                  </div>
+                </div>
+                <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1">
+                  <label htmlFor="story-upload" className="cursor-pointer">
+                    {uploading ? (
+                      <Loader2 className="h-3 w-3 text-white animate-spin" />
+                    ) : (
+                      <Plus className="h-3 w-3 text-white" />
+                    )}
+                  </label>
+                </div>
+                <input
+                  id="story-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUploadStory}
+                  disabled={uploading}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground text-center line-clamp-1">Seu story</span>
+            </div>
+
+            {/* Other users' stories */}
+            {userStories.map((userStory) => (
+              <div
+                key={userStory.user_id}
+                className="flex flex-col items-center gap-1 min-w-[70px] cursor-pointer"
+                onClick={() => openStoryViewer(userStory.stories, 0)}
+              >
+                <div className={`rounded-full p-[3px] ${
+                  userStory.hasUnviewed 
+                    ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' 
+                    : 'bg-gray-600'
+                }`}>
+                  <div className="bg-background rounded-full p-[2px]">
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={userStory.user_avatar} />
+                      <AvatarFallback>{userStory.user_name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+                <span className="text-xs text-muted-foreground text-center line-clamp-1 max-w-[70px]">
+                  {userStory.user_name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {selectedStories.length > 0 && (
+        <StoryViewer
+          stories={selectedStories}
+          initialIndex={selectedIndex}
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+        />
+      )}
+    </>
+  );
+}

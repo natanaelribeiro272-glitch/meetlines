@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import UserChatDialog from "@/components/UserChatDialog";
 import { useFriendship } from "@/hooks/useFriendship";
+import StoriesBar from "@/components/StoriesBar";
 
 interface Attendee {
   id: string;
@@ -788,6 +789,9 @@ export default function FindFriends({
                   : "Conecte-se com pessoas até 100 metros de você. Para aparecer para outros, ative 'Ser Visto'."}
               </p>
             </div>
+
+            {/* Stories Bar */}
+            {isVisible && userLocation && <StoriesBar />}
           </>
         )}
 
