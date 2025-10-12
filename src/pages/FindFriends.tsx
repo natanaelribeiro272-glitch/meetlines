@@ -648,12 +648,12 @@ export default function FindFriends({
 
       {/* Avatar Preview Dialog */}
       <Dialog open={!!selectedAvatar} onOpenChange={() => setSelectedAvatar(null)}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-black/95 border-0">
+        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-background/95 backdrop-blur-lg border border-border">
           <button
             onClick={() => setSelectedAvatar(null)}
-            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-surface/80 hover:bg-surface transition-smooth"
           >
-            <X className="h-5 w-5 text-white" />
+            <X className="h-5 w-5 text-foreground" />
           </button>
           {selectedAvatar && (
             <img
