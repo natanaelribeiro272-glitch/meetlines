@@ -234,8 +234,8 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
     try {
       // Upload to storage
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `stories/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `stories/${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('user-uploads')
