@@ -126,7 +126,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Eventos da Plataforma</CardTitle>
@@ -138,6 +138,21 @@ export default function AdminDashboard() {
             </Button>
             <Button onClick={() => navigate('/admin/create-platform-event')} className="w-full">
               Criar Novo Evento
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Geração Automática</CardTitle>
+            <CardDescription>Use IA para extrair eventos de APIs externas</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button onClick={() => navigate('/admin/auto-generate-events')} className="w-full">
+              Gerar Eventos com IA
+            </Button>
+            <Button onClick={() => navigate('/admin/pending-events')} className="w-full" variant="outline">
+              Ver Eventos Pendentes
             </Button>
           </CardContent>
         </Card>

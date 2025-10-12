@@ -607,6 +607,8 @@ export type Database = {
       }
       platform_events: {
         Row: {
+          approval_status: string | null
+          auto_generated: boolean | null
           category: string | null
           claimed_by_organizer_id: string | null
           created_at: string | null
@@ -620,6 +622,7 @@ export type Database = {
           location_link: string | null
           max_attendees: number | null
           organizer_name: string
+          source_data: Json | null
           status: string | null
           ticket_link: string | null
           ticket_price: number | null
@@ -627,6 +630,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          approval_status?: string | null
+          auto_generated?: boolean | null
           category?: string | null
           claimed_by_organizer_id?: string | null
           created_at?: string | null
@@ -640,6 +645,7 @@ export type Database = {
           location_link?: string | null
           max_attendees?: number | null
           organizer_name: string
+          source_data?: Json | null
           status?: string | null
           ticket_link?: string | null
           ticket_price?: number | null
@@ -647,6 +653,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          approval_status?: string | null
+          auto_generated?: boolean | null
           category?: string | null
           claimed_by_organizer_id?: string | null
           created_at?: string | null
@@ -660,6 +668,7 @@ export type Database = {
           location_link?: string | null
           max_attendees?: number | null
           organizer_name?: string
+          source_data?: Json | null
           status?: string | null
           ticket_link?: string | null
           ticket_price?: number | null

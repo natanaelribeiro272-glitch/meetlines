@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.auto-end-events]
 verify_jwt = false
+
+[functions.extract-events]
+verify_jwt = true

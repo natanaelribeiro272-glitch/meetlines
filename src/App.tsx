@@ -19,6 +19,8 @@ import AdminPlatformEvents from "./pages/AdminPlatformEvents";
 import AdminEditPlatformEvent from "./pages/AdminEditPlatformEvent";
 import AdminPlatformEventRegistrations from "./pages/AdminPlatformEventRegistrations";
 import AdminSupport from "./pages/AdminSupport";
+import AdminAutoGenerateEvents from "./pages/AdminAutoGenerateEvents";
+import AdminPendingEvents from "./pages/AdminPendingEvents";
 import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
@@ -44,7 +46,9 @@ const App = () => (
             <Route path="/admin/platform-events" element={<AdminPlatformEvents />} />
             <Route path="/admin/platform-event/:eventId/edit" element={<AdminEditPlatformEvent />} />
             <Route path="/admin/platform-event/:eventId/registrations" element={<AdminPlatformEventRegistrations />} />
-              <Route path="/admin/support" element={<AdminSupport />} />
+            <Route path="/admin/support" element={<AdminSupport />} />
+            <Route path="/admin/auto-generate-events" element={<AdminAutoGenerateEvents />} />
+            <Route path="/admin/pending-events" element={<AdminPendingEvents />} />
               {/* Public event share route: domain.com/@username/event-slug */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
               {/* Public organizer profile: domain.com/@username */}

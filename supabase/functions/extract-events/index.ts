@@ -1,0 +1,210 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface ExtractEventsRequest {
+  apiEndpoint: string;
+  apiKey?: string;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    // Verify admin role
+    const { data: isAdmin } = await supabaseClient.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    if (!isAdmin) {
+      throw new Error('Unauthorized: Admin role required');
+    }
+
+    const { apiEndpoint, apiKey }: ExtractEventsRequest = await req.json();
+
+    console.log('Fetching data from:', apiEndpoint);
+
+    // Fetch data from the provided API
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const apiResponse = await fetch(apiEndpoint, { headers });
+    
+    if (!apiResponse.ok) {
+      throw new Error(`API request failed: ${apiResponse.statusText}`);
+    }
+
+    const apiData = await apiResponse.text();
+    console.log('API data received, length:', apiData.length);
+
+    // Use Lovable AI to extract event information
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
+
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `Você é um assistente especializado em extrair informações de eventos de dados JSON ou HTML. 
+            Extraia o máximo de informações possível sobre eventos e retorne um array JSON com os seguintes campos para cada evento:
+            - title (obrigatório)
+            - description (opcional)
+            - organizer_name (obrigatório)
+            - event_date (obrigatório, formato ISO 8601)
+            - end_date (opcional, formato ISO 8601)
+            - location (obrigatório)
+            - location_link (opcional)
+            - image_url (opcional)
+            - category (opcional)
+            - ticket_price (opcional, número)
+            - ticket_link (opcional)
+            - max_attendees (opcional, número)
+            
+            Se não conseguir extrair eventos, retorne um array vazio.
+            Retorne APENAS o JSON, sem texto adicional.`
+          },
+          {
+            role: 'user',
+            content: `Extraia todos os eventos destes dados:\n\n${apiData.substring(0, 50000)}`
+          }
+        ],
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('AI API error:', errorText);
+      throw new Error(`AI API request failed: ${aiResponse.statusText}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const extractedContent = aiData.choices?.[0]?.message?.content;
+    
+    if (!extractedContent) {
+      throw new Error('No content extracted from AI');
+    }
+
+    console.log('AI extracted content:', extractedContent);
+
+    // Parse the extracted events
+    let events;
+    try {
+      // Try to extract JSON from the response
+      const jsonMatch = extractedContent.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        events = JSON.parse(jsonMatch[0]);
+      } else {
+        events = JSON.parse(extractedContent);
+      }
+    } catch (e) {
+      console.error('Failed to parse AI response:', e);
+      throw new Error('Failed to parse extracted events');
+    }
+
+    if (!Array.isArray(events) || events.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Nenhum evento encontrado nos dados fornecidos',
+          count: 0 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Extracted ${events.length} events, inserting into database`);
+
+    // Insert events into platform_events with auto_generated flag
+    const eventsToInsert = events.map((event: any) => ({
+      title: event.title,
+      description: event.description || null,
+      organizer_name: event.organizer_name,
+      event_date: event.event_date,
+      end_date: event.end_date || event.event_date,
+      location: event.location,
+      location_link: event.location_link || null,
+      image_url: event.image_url || null,
+      category: event.category || null,
+      ticket_price: event.ticket_price || 0,
+      ticket_link: event.ticket_link || null,
+      max_attendees: event.max_attendees || null,
+      auto_generated: true,
+      approval_status: 'pending',
+      created_by_admin_id: user.id,
+      source_data: event,
+      status: 'upcoming'
+    }));
+
+    const { data: insertedEvents, error: insertError } = await supabaseClient
+      .from('platform_events')
+      .insert(eventsToInsert)
+      .select();
+
+    if (insertError) {
+      console.error('Database insert error:', insertError);
+      throw new Error(`Failed to save events: ${insertError.message}`);
+    }
+
+    console.log(`Successfully inserted ${insertedEvents?.length} events`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        count: insertedEvents?.length || 0,
+        message: `${insertedEvents?.length} eventos extraídos e salvos para aprovação`
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in extract-events function:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+});
