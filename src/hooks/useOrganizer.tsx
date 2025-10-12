@@ -42,7 +42,7 @@ interface Event {
   description?: string;
   image_url?: string;
   event_date: string;
-  end_date?: string;
+  end_date: string;
   location: string;
   location_link?: string;
   max_attendees?: number;
@@ -172,11 +172,11 @@ export function useOrganizer() {
     try {
       const { data, error } = await supabase
         .from('events')
-        .insert({
+        .insert([{
           ...eventData,
           organizer_id: organizerData.id,
           current_attendees: 0
-        })
+        }])
         .select()
         .single();
 

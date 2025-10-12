@@ -82,7 +82,7 @@ export default function AdminCreatePlatformEvent() {
     e.preventDefault();
     if (!user) return;
 
-    if (!formData.title || !formData.organizer_name || !formData.date || !formData.time) {
+    if (!formData.title || !formData.organizer_name || !formData.date || !formData.time || !formData.end_date || !formData.end_time) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -121,18 +121,15 @@ export default function AdminCreatePlatformEvent() {
       // Combine date and time
       const eventDateTime = new Date(`${formData.date}T${formData.time}`);
       
-      // Combine end date and time if provided
-      let eventEndDateTime = null;
-      if (formData.end_date && formData.end_time) {
-        eventEndDateTime = new Date(`${formData.end_date}T${formData.end_time}`);
-      }
+      // Combine end date and time (obrigatório)
+      const eventEndDateTime = new Date(`${formData.end_date}T${formData.end_time}`);
 
       const { error } = await supabase.from('platform_events').insert({
         title: formData.title,
         description: formData.description,
         organizer_name: formData.organizer_name,
         event_date: eventDateTime.toISOString(),
-        end_date: eventEndDateTime ? eventEndDateTime.toISOString() : null,
+        end_date: eventEndDateTime.toISOString(),
         location: eventType === "live" ? "Online" : formData.address,
         location_link: formData.location_link || null,
         category: formData.category || null,
@@ -333,24 +330,26 @@ export default function AdminCreatePlatformEvent() {
               </div>
 
               <div className="pt-2 border-t">
-                <Label className="text-sm font-medium mb-2 block">Encerramento (Opcional)</Label>
+                <Label className="text-sm font-medium mb-2 block">Encerramento do Evento *</Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="end_date" className="text-xs text-muted-foreground">Data</Label>
+                    <Label htmlFor="end_date" className="text-xs text-muted-foreground">Data *</Label>
                     <Input
                       id="end_date"
                       type="date"
                       value={formData.end_date}
                       onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="end_time" className="text-xs text-muted-foreground">Horário</Label>
+                    <Label htmlFor="end_time" className="text-xs text-muted-foreground">Horário *</Label>
                     <Input
                       id="end_time"
                       type="time"
                       value={formData.end_time}
                       onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                      required
                     />
                   </div>
                 </div>

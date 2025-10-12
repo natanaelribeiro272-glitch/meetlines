@@ -216,7 +216,7 @@ export type Database = {
           created_at: string | null
           current_attendees: number | null
           description: string | null
-          end_date: string | null
+          end_date: string
           event_date: string
           form_fields: Json | null
           id: string
@@ -239,7 +239,7 @@ export type Database = {
           created_at?: string | null
           current_attendees?: number | null
           description?: string | null
-          end_date?: string | null
+          end_date: string
           event_date: string
           form_fields?: Json | null
           id?: string
@@ -262,7 +262,7 @@ export type Database = {
           created_at?: string | null
           current_attendees?: number | null
           description?: string | null
-          end_date?: string | null
+          end_date?: string
           event_date?: string
           form_fields?: Json | null
           id?: string
@@ -585,7 +585,7 @@ export type Database = {
           created_at: string | null
           created_by_admin_id: string
           description: string | null
-          end_date: string | null
+          end_date: string
           event_date: string
           id: string
           image_url: string | null
@@ -605,7 +605,7 @@ export type Database = {
           created_at?: string | null
           created_by_admin_id: string
           description?: string | null
-          end_date?: string | null
+          end_date: string
           event_date: string
           id?: string
           image_url?: string | null
@@ -625,7 +625,7 @@ export type Database = {
           created_at?: string | null
           created_by_admin_id?: string
           description?: string | null
-          end_date?: string | null
+          end_date?: string
           event_date?: string
           id?: string
           image_url?: string | null

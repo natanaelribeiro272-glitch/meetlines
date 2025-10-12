@@ -177,7 +177,7 @@ export default function CreateEvent({
     e.preventDefault();
     
     // Validação condicional baseada no tipo de evento
-    if (!eventData.title || !eventData.date || !eventData.time) {
+    if (!eventData.title || !eventData.date || !eventData.time || !eventData.endDate || !eventData.endTime) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -214,11 +214,8 @@ export default function CreateEvent({
       // Combine date and time
       const eventDateTime = new Date(`${eventData.date}T${eventData.time}`);
       
-      // Combine end date and time if provided
-      let eventEndDateTime = null;
-      if (eventData.endDate && eventData.endTime) {
-        eventEndDateTime = new Date(`${eventData.endDate}T${eventData.endTime}`);
-      }
+      // Combine end date and time (obrigatório)
+      const eventEndDateTime = new Date(`${eventData.endDate}T${eventData.endTime}`);
 
       // Update public notes if changed
       if (publicNotes !== profile?.notes) {
@@ -235,7 +232,7 @@ export default function CreateEvent({
             title: eventData.title,
             description: eventData.description,
             event_date: eventDateTime.toISOString(),
-            end_date: eventEndDateTime ? eventEndDateTime.toISOString() : null,
+            end_date: eventEndDateTime.toISOString(),
             location: eventType === "live" ? "Online" : eventData.address,
             location_link: eventData.locationLink || null,
             image_url: imageUrl || eventImage,
@@ -258,7 +255,7 @@ export default function CreateEvent({
           title: eventData.title,
           description: eventData.description,
           event_date: eventDateTime.toISOString(),
-          end_date: eventEndDateTime ? eventEndDateTime.toISOString() : null,
+          end_date: eventEndDateTime.toISOString(),
           location: eventType === "live" ? "Online" : eventData.address,
           location_link: eventData.locationLink || null,
           image_url: imageUrl,
@@ -403,19 +400,19 @@ export default function CreateEvent({
               </div>
 
               <div className="pt-2 border-t">
-                <Label className="text-sm font-medium mb-2 block">Encerramento Automático (Opcional)</Label>
+                <Label className="text-sm font-medium mb-2 block">Encerramento do Evento *</Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="endDate" className="text-xs text-muted-foreground">Data</Label>
-                    <Input id="endDate" type="date" value={eventData.endDate} onChange={e => handleInputChange("endDate", e.target.value)} />
+                    <Input id="endDate" type="date" value={eventData.endDate} onChange={e => handleInputChange("endDate", e.target.value)} required />
                   </div>
                   <div>
                     <Label htmlFor="endTime" className="text-xs text-muted-foreground">Horário</Label>
-                    <Input id="endTime" type="time" value={eventData.endTime} onChange={e => handleInputChange("endTime", e.target.value)} />
+                    <Input id="endTime" type="time" value={eventData.endTime} onChange={e => handleInputChange("endTime", e.target.value)} required />
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Se definido, o evento será encerrado automaticamente neste horário
+                  Data e hora em que o evento será encerrado automaticamente
                 </p>
               </div>
             </CardContent>

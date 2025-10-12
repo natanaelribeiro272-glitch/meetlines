@@ -272,7 +272,7 @@ export default function AdminEditPlatformEvent() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Data/Hora Início</Label>
+                <Label>Data/Hora Início *</Label>
                 <Input
                   type="datetime-local"
                   value={formData.event_date}
@@ -281,11 +281,12 @@ export default function AdminEditPlatformEvent() {
                 />
               </div>
               <div>
-                <Label>Data/Hora Fim</Label>
+                <Label>Data/Hora Fim *</Label>
                 <Input
                   type="datetime-local"
                   value={formData.end_date}
                   onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  required
                 />
               </div>
             </div>
