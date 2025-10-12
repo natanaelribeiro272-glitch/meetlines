@@ -49,15 +49,21 @@ Deno.serve(async (req) => {
     console.log('Fetching data from:', apiEndpoint);
 
     // Fetch data from the provided API
+    let finalUrl = apiEndpoint;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     
+    // Check if API key should be in URL (common for SerpApi, etc)
     if (apiKey) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
+      // If URL already has query params, add with &, otherwise with ?
+      const separator = apiEndpoint.includes('?') ? '&' : '?';
+      finalUrl = `${apiEndpoint}${separator}api_key=${encodeURIComponent(apiKey)}`;
     }
 
-    const apiResponse = await fetch(apiEndpoint, { headers });
+    console.log('Final URL (key hidden):', finalUrl.replace(/api_key=[^&]+/, 'api_key=***'));
+
+    const apiResponse = await fetch(finalUrl, { headers });
     
     if (!apiResponse.ok) {
       throw new Error(`API request failed: ${apiResponse.statusText}`);
