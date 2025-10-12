@@ -163,8 +163,8 @@ export default function FindFriends({
       }
 
       try {
-        // Buscar todos os usuários visíveis com localização recente (últimos 5 minutos)
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        // Buscar todos os usuários visíveis com localização recente (últimos 10 minutos)
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         
         const {
           data: profilesData,
@@ -173,11 +173,10 @@ export default function FindFriends({
           .from('profiles')
           .select('user_id, display_name, avatar_url, notes, notes_visible, find_friends_visible, instagram_url, phone, interest, relationship_status, latitude, longitude')
           .eq('find_friends_visible', true)
-          .eq('notes_visible', true)
           .neq('user_id', user.id)
           .not('latitude', 'is', null)
           .not('longitude', 'is', null)
-          .gte('location_updated_at', fiveMinutesAgo);
+          .gte('location_updated_at', tenMinutesAgo);
 
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
