@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Heart, MessageCircle, Send } from "lucide-react";
+import { X, Heart, MessageCircle, Send, MoreVertical, Trash2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Story {
   id: string;
@@ -41,6 +57,7 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange 
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [showComments, setShowComments] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { user } = useAuth();
 
   const currentStory = stories[currentIndex];
@@ -233,6 +250,39 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange 
     }
   };
 
+  const handleDeleteStory = async () => {
+    if (!user || !currentStory) return;
+
+    try {
+      // Delete story from database
+      const { error: deleteError } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', currentStory.id);
+
+      if (deleteError) throw deleteError;
+
+      // Delete image from storage
+      const filePath = currentStory.image_url.split('/').slice(-3).join('/');
+      await supabase.storage
+        .from('user-uploads')
+        .remove([filePath]);
+
+      toast.success('Story excluído!');
+      
+      // Close dialog and move to next story or close viewer
+      setShowDeleteDialog(false);
+      if (stories.length > 1) {
+        handleNext();
+      } else {
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Error deleting story:', error);
+      toast.error('Erro ao excluir story');
+    }
+  };
+
   if (!currentStory) return null;
 
   return (
@@ -254,14 +304,39 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange 
                   </p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-                className="text-white hover:bg-white/20"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Show delete option only for own stories */}
+                {currentStory.user_id === user?.id && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:bg-white/20"
+                      >
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-surface border-border">
+                      <DropdownMenuItem
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="text-red-500 focus:text-red-500 cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir story
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onOpenChange(false)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -351,6 +426,27 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange 
           </div>
         </div>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-surface border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir story?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Seu story será excluído permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteStory}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
