@@ -122,22 +122,24 @@ export function EventCard({
       </div>
 
       {/* Event Image */}
-      <div className="relative">
-        <img
-          src={image}
-          alt={title}
-          className="w-full h-64 object-cover"
-        />
-        {((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink)) ? (
-          <div className="absolute top-3 right-3 bg-destructive/90 backdrop-blur-sm px-2 py-1 rounded-md">
-            <span className="text-xs font-medium text-white">PAGO</span>
-          </div>
-        ) : (
-          <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm px-2 py-1 rounded-md">
-            <span className="text-xs font-medium text-primary-foreground">GRÁTIS</span>
-          </div>
-        )}
-      </div>
+      {image && (
+        <div className="relative">
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-64 object-cover"
+          />
+          {((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink)) ? (
+            <div className="absolute top-3 right-3 bg-destructive/90 backdrop-blur-sm px-2 py-1 rounded-md">
+              <span className="text-xs font-medium text-white">PAGO</span>
+            </div>
+          ) : (
+            <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm px-2 py-1 rounded-md">
+              <span className="text-xs font-medium text-primary-foreground">GRÁTIS</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Event Info */}
       <div className="p-4 pt-3">

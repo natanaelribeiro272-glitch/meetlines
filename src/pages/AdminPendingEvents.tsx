@@ -131,7 +131,7 @@ export default function AdminPendingEvents() {
         <div className="grid gap-4 md:grid-cols-2">
           {events.map((event) => (
             <Card key={event.id} className="overflow-hidden">
-              {event.image_url && (
+              {event.image_url && event.image_url.trim() !== '' && (
                 <div className="h-48 overflow-hidden">
                   <img 
                     src={event.image_url} 
