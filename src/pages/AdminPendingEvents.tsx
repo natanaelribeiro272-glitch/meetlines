@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, MapPin, Check, X, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, Check, X, ArrowLeft, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -173,6 +173,14 @@ export default function AdminPendingEvents() {
 
                 <div className="flex gap-2 pt-2">
                   <Button
+                    onClick={() => navigate(`/admin/pending-event/${event.id}/edit`)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
                     onClick={() => handleApprove(event.id)}
                     className="flex-1"
                   >
@@ -182,7 +190,6 @@ export default function AdminPendingEvents() {
                   <Button
                     onClick={() => handleReject(event.id)}
                     variant="destructive"
-                    className="flex-1"
                   >
                     <X className="h-4 w-4 mr-1" />
                     Rejeitar
