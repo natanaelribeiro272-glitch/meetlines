@@ -50,7 +50,37 @@ export default function AdminPlatformEvents() {
         .order('event_date', { ascending: true });
 
       if (error) throw error;
-      setEvents(data || []);
+      
+      // Automatically update status of past events
+      const now = new Date();
+      const eventsToUpdate = (data || []).filter(event => {
+        const eventEndDate = new Date(event.end_date || event.event_date);
+        return eventEndDate < now && event.status !== 'ended';
+      });
+
+      // Update past events to 'ended' status
+      if (eventsToUpdate.length > 0) {
+        const updatePromises = eventsToUpdate.map(event =>
+          supabase
+            .from('platform_events')
+            .update({ status: 'ended' })
+            .eq('id', event.id)
+        );
+        
+        await Promise.all(updatePromises);
+        console.log(`Auto-ended ${eventsToUpdate.length} past events`);
+        
+        // Fetch again to get updated data
+        const { data: updatedData, error: refetchError } = await supabase
+          .from('platform_events')
+          .select('*')
+          .order('event_date', { ascending: true });
+        
+        if (refetchError) throw refetchError;
+        setEvents(updatedData || []);
+      } else {
+        setEvents(data || []);
+      }
     } catch (error) {
       console.error('Error fetching platform events:', error);
       toast.error('Erro ao carregar eventos');
