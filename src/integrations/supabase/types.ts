@@ -594,6 +594,7 @@ export type Database = {
           max_attendees: number | null
           organizer_name: string
           status: string | null
+          ticket_link: string | null
           ticket_price: number | null
           title: string
           updated_at: string | null
@@ -613,6 +614,7 @@ export type Database = {
           max_attendees?: number | null
           organizer_name: string
           status?: string | null
+          ticket_link?: string | null
           ticket_price?: number | null
           title: string
           updated_at?: string | null
@@ -632,6 +634,7 @@ export type Database = {
           max_attendees?: number | null
           organizer_name?: string
           status?: string | null
+          ticket_link?: string | null
           ticket_price?: number | null
           title?: string
           updated_at?: string | null
