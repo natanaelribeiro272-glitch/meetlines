@@ -77,6 +77,7 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
                 onClick={() => onEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 showJoinButton={true}
+                isPlatformEvent={event.is_platform_event || false}
               />
             ))}
           </div>

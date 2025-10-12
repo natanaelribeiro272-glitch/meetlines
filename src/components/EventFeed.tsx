@@ -105,6 +105,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 userType={userType}
                 onRegister={() => onEventClick("register")}
                 onManageRegistrations={() => onEventClick("registrations")}
+                isPlatformEvent={event.is_platform_event || false}
               />
             ))}
           </div>
@@ -141,6 +142,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 userType={userType}
                 onRegister={() => onEventClick("register")}
                 onManageRegistrations={() => onEventClick("registrations")}
+                isPlatformEvent={event.is_platform_event || false}
               />
             ))}
           </div>

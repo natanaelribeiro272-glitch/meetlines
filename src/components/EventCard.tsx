@@ -28,6 +28,7 @@ interface EventCardProps {
   onManageRegistrations?: () => void;
   showJoinButton?: boolean;
   ticketLink?: string;
+  isPlatformEvent?: boolean;
 }
 
 export function EventCard({
@@ -55,6 +56,7 @@ export function EventCard({
   onManageRegistrations,
   showJoinButton = false,
   ticketLink,
+  isPlatformEvent = false,
 }: EventCardProps) {
   // Verificar se é um evento online (link de streaming)
   const isOnlineEvent = locationLink && (
@@ -71,10 +73,12 @@ export function EventCard({
       {/* Header - Organizer info */}
       <div className="flex items-center gap-3 p-4 pb-3">
         <div 
-          className="avatar-story cursor-pointer"
+          className={isPlatformEvent ? "avatar-story" : "avatar-story cursor-pointer"}
           onClick={(e) => {
-            e.stopPropagation();
-            onOrganizerClick?.();
+            if (!isPlatformEvent) {
+              e.stopPropagation();
+              onOrganizerClick?.();
+            }
           }}
         >
           <Avatar className="h-8 w-8">
@@ -85,13 +89,17 @@ export function EventCard({
           </Avatar>
         </div>
         <div 
-          className="flex-1 cursor-pointer"
+          className={isPlatformEvent ? "flex-1" : "flex-1 cursor-pointer"}
           onClick={(e) => {
-            e.stopPropagation();
-            onOrganizerClick?.();
+            if (!isPlatformEvent) {
+              e.stopPropagation();
+              onOrganizerClick?.();
+            }
           }}
         >
-          <p className="text-sm font-medium text-foreground hover:text-primary transition-colors">{organizerName}</p>
+          <p className={`text-sm font-medium text-foreground ${!isPlatformEvent ? 'hover:text-primary transition-colors' : ''}`}>
+            {organizerName}
+          </p>
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Calendar className="h-3 w-3" />
