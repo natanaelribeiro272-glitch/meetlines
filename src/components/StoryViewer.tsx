@@ -48,9 +48,10 @@ interface StoryViewerProps {
   initialIndex: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onStoryDeleted?: () => void;
 }
 
-export default function StoryViewer({ stories, initialIndex, open, onOpenChange }: StoryViewerProps) {
+export default function StoryViewer({ stories, initialIndex, open, onOpenChange, onStoryDeleted }: StoryViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
@@ -270,13 +271,12 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange 
 
       toast.success('Story excluído!');
       
-      // Close dialog and move to next story or close viewer
+      // Notify parent to reload stories
+      onStoryDeleted?.();
+      
+      // Close dialog and viewer
       setShowDeleteDialog(false);
-      if (stories.length > 1) {
-        handleNext();
-      } else {
-        onOpenChange(false);
-      }
+      onOpenChange(false);
     } catch (error) {
       console.error('Error deleting story:', error);
       toast.error('Erro ao excluir story');
