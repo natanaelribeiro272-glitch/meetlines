@@ -124,11 +124,24 @@ export default function AuthPage({
 
         {/* Logo/Header */}
         <div className="text-center space-y-2">
-          <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl">MeetLines</h1>
+          <button 
+            type="button"
+            onClick={() => navigate('/')}
+            className="inline-block hover:opacity-80 transition-smooth"
+          >
+            <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl">MeetLines</h1>
+          </button>
           <p className="text-muted-foreground">
             {isLogin ? "Entre na sua conta" : "Crie sua conta"}
             {userType === "organizer" && " de organizador"}
           </p>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="text-sm text-primary hover:underline transition-smooth"
+          >
+            ← Voltar para página inicial
+          </button>
         </div>
 
         {/* Auth Form */}
