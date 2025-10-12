@@ -199,7 +199,15 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h3 className="font-semibold text-foreground">Notificações</h3>
             {newNotificationsCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  markAllAsRead();
+                }}
+              >
                 Marcar todas como lidas
               </Button>
             )}
