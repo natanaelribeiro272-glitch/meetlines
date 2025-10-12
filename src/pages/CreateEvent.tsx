@@ -244,6 +244,8 @@ export default function CreateEvent({
             is_live: eventType === "live",
             requires_registration: requiresRegistration,
             category: eventData.category || null,
+            ticket_price: eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
+            ticket_link: eventData.ticketLink || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', eventId);
@@ -267,6 +269,7 @@ export default function CreateEvent({
           requires_registration: requiresRegistration,
           category: eventData.category || null,
           form_fields: requiresRegistration ? formFields : [],
+          ticket_price: eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
           ticket_link: eventData.ticketLink || null
         });
         toast.success('Evento criado com sucesso!');

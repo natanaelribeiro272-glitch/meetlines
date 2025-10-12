@@ -53,6 +53,7 @@ interface Event {
   requires_registration: boolean;
   category?: string;
   form_fields?: any[];
+  ticket_price?: number;
   ticket_link?: string;
 }
 

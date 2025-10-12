@@ -72,7 +72,8 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
                 likes={event.likes_count || 0}
                 comments={event.comments_count || 0}
                 isLiked={event.is_liked || false}
-                isLive={(() => { const start = new Date(event.event_date); const end = event.end_date ? new Date(event.end_date) : null; return start <= now && (!end || end > now); })()}
+                 isLive={(() => { const start = new Date(event.event_date); const end = event.end_date ? new Date(event.end_date) : null; return start <= now && (!end || end > now); })()}
+                 price={event.ticket_price || 0}
                 onClick={() => onEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 showJoinButton={true}
