@@ -27,6 +27,7 @@ interface EventCardProps {
   onRegister?: () => void;
   onManageRegistrations?: () => void;
   showJoinButton?: boolean;
+  ticketLink?: string;
 }
 
 export function EventCard({
@@ -53,6 +54,7 @@ export function EventCard({
   onRegister,
   onManageRegistrations,
   showJoinButton = false,
+  ticketLink,
 }: EventCardProps) {
   // Verificar se é um evento online (link de streaming)
   const isOnlineEvent = locationLink && (
@@ -118,7 +120,7 @@ export function EventCard({
           alt={title}
           className="w-full h-64 object-cover"
         />
-        {price && price > 0 ? (
+        {((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink)) ? (
           <div className="absolute top-3 right-3 bg-destructive/90 backdrop-blur-sm px-2 py-1 rounded-md">
             <span className="text-xs font-medium text-white">PAGO</span>
           </div>

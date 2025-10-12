@@ -31,6 +31,7 @@ export interface EventData {
   is_liked?: boolean;
   price?: number;
   ticket_price?: number;
+  ticket_link?: string;
   category?: string;
   registrations_count?: number;
   confirmed_attendees_count?: number;
