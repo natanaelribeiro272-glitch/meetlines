@@ -16,7 +16,8 @@ export default function AuthPage({
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState<"user" | "organizer">("user");
+  const [showUserTypeChoice, setShowUserTypeChoice] = useState(false);
+  const [userType, setUserType] = useState<"user" | "organizer" | null>(null);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -39,41 +40,47 @@ export default function AuthPage({
   }, [user, navigate, searchParams]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      if (isLogin) {
-        const {
-          error
-        } = await signIn(formData.email, formData.password);
+    
+    if (isLogin) {
+      setLoading(true);
+      try {
+        const { error } = await signIn(formData.email, formData.password);
         if (!error) {
-          // Login bem-sucedido - aguardar role ser carregada
-          // O MainLayout vai fazer o redirecionamento apropriado
           const redirectTo = searchParams.get('redirect') || '/';
           navigate(redirectTo);
         }
-      } else {
-        // Para ambos os tipos, coletar dados no onboarding antes de criar a conta
-        if (userType === "organizer") {
-          navigate('/organizer-onboarding', {
-            state: {
-              email: formData.email,
-              password: formData.password,
-              name: formData.name,
-            }
-          });
-        } else {
-          // Fluxo de usuário: coletar dados no onboarding antes de criar a conta
-          navigate('/user-onboarding', {
-            state: {
-              email: formData.email,
-              password: formData.password,
-              name: formData.name,
-            }
-          });
-        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
+    } else {
+      // Mostrar escolha de tipo de usuário
+      if (!showUserTypeChoice) {
+        setShowUserTypeChoice(true);
+        return;
+      }
+      
+      // Prosseguir com onboarding
+      if (!userType) {
+        return;
+      }
+      
+      if (userType === "organizer") {
+        navigate('/organizer-onboarding', {
+          state: {
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+          }
+        });
+      } else {
+        navigate('/user-onboarding', {
+          state: {
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+          }
+        });
+      }
     }
   };
 
@@ -133,27 +140,70 @@ export default function AuthPage({
           </Button>
         </div>
 
-        {/* User Type Toggle */}
-        <div className="flex items-center justify-center">
-          <div className="flex bg-surface rounded-lg p-1 border border-border">
-            <button type="button" onClick={() => setUserType("user")} className={`px-4 py-2 text-sm font-medium rounded-md transition-smooth ${userType === "user" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-              👤 Usuário
-            </button>
-            <button type="button" onClick={() => setUserType("organizer")} className={`px-4 py-2 text-sm font-medium rounded-md transition-smooth ${userType === "organizer" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-              🎯 Organizador
-            </button>
-          </div>
-        </div>
-
         {/* Auth Header */}
         <div className="text-center space-y-2">
           <p className="text-lg font-semibold">
-            {isLogin ? "Entre na sua conta" : "Crie sua conta"}
-            {userType === "organizer" && " de organizador"}
+            {isLogin ? "Entre na sua conta" : showUserTypeChoice ? "O que você deseja fazer?" : "Crie sua conta"}
           </p>
         </div>
 
+        {/* User Type Choice (only shown during signup after initial form) */}
+        {!isLogin && showUserTypeChoice && (
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => {
+                setUserType("user");
+                handleSubmit(new Event('submit') as any);
+              }}
+              className="w-full p-6 rounded-lg border-2 border-border hover:border-primary bg-card hover:bg-card/80 transition-all text-left"
+            >
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">Encontrar Eventos</h3>
+                  <p className="text-sm text-muted-foreground">Quero descobrir e participar de eventos na minha cidade</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => {
+                setUserType("organizer");
+                handleSubmit(new Event('submit') as any);
+              }}
+              className="w-full p-6 rounded-lg border-2 border-border hover:border-primary bg-card hover:bg-card/80 transition-all text-left"
+            >
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">Criar Eventos</h3>
+                  <p className="text-sm text-muted-foreground">Sou organizador e quero criar e gerenciar eventos</p>
+                </div>
+              </div>
+            </button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setShowUserTypeChoice(false);
+                setUserType(null);
+              }}
+              className="w-full"
+            >
+              Voltar
+            </Button>
+          </div>
+        )}
+
         {/* Auth Form */}
+        {(isLogin || !showUserTypeChoice) && (
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && <div className="space-y-2">
               <Label htmlFor="name">Nome completo</Label>
@@ -183,19 +233,30 @@ export default function AuthPage({
           </div>
 
           <Button type="submit" variant="glow" size="lg" className="w-full" disabled={loading}>
-            {loading ? "Carregando..." : isLogin ? "Entrar" : "Criar Conta"}
+            {loading ? "Carregando..." : isLogin ? "Entrar" : "Continuar"}
           </Button>
         </form>
+        )}
 
         {/* Toggle Auth Mode */}
+        {!showUserTypeChoice && (
         <div className="text-center">
-          <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-muted-foreground hover:text-primary transition-smooth">
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setShowUserTypeChoice(false);
+              setUserType(null);
+            }} 
+            className="text-sm text-muted-foreground hover:text-primary transition-smooth"
+          >
             {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
             <span className="text-primary font-medium">
               {isLogin ? "Cadastre-se" : "Entre"}
             </span>
           </button>
         </div>
+        )}
 
         {/* Demo Login */}
         
