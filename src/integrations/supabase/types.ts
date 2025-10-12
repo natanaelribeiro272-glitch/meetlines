@@ -661,8 +661,11 @@ export type Database = {
           id: string
           instagram_url: string | null
           interest: Database["public"]["Enums"]["user_interest"] | null
+          latitude: number | null
           linkedin_url: string | null
           location: string | null
+          location_updated_at: string | null
+          longitude: number | null
           notes: string | null
           notes_visible: boolean | null
           phone: string | null
@@ -689,8 +692,11 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           interest?: Database["public"]["Enums"]["user_interest"] | null
+          latitude?: number | null
           linkedin_url?: string | null
           location?: string | null
+          location_updated_at?: string | null
+          longitude?: number | null
           notes?: string | null
           notes_visible?: boolean | null
           phone?: string | null
@@ -717,8 +723,11 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           interest?: Database["public"]["Enums"]["user_interest"] | null
+          latitude?: number | null
           linkedin_url?: string | null
           location?: string | null
+          location_updated_at?: string | null
+          longitude?: number | null
           notes?: string | null
           notes_visible?: boolean | null
           phone?: string | null
@@ -876,6 +885,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
       check_username_available: {
         Args: { current_organizer_id: string; username_to_check: string }
         Returns: boolean
