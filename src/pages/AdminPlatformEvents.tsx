@@ -105,6 +105,51 @@ export default function AdminPlatformEvents() {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('platform_events')
+        .delete()
+        .eq('id', eventId);
+
+      if (error) throw error;
+      toast.success('Evento excluído com sucesso');
+      fetchEvents();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast.error('Erro ao excluir evento');
+    }
+  };
+
+  const categorizeEvents = () => {
+    const now = new Date();
+    
+    const upcoming = events.filter(event => {
+      const start = new Date(event.event_date);
+      const end = event.end_date ? new Date(event.end_date) : null;
+      return start > now && event.status !== 'ended';
+    });
+
+    const live = events.filter(event => {
+      const start = new Date(event.event_date);
+      const end = event.end_date ? new Date(event.end_date) : null;
+      return start <= now && (!end || end > now) && event.status !== 'ended';
+    });
+
+    const ended = events.filter(event => {
+      const end = event.end_date ? new Date(event.end_date) : new Date(event.event_date);
+      return end < now || event.status === 'ended';
+    });
+
+    return { upcoming, live, ended };
+  };
+
+  const { upcoming, live, ended } = categorizeEvents();
+
   if (adminLoading || !isAdmin) {
     return null;
   }
@@ -125,9 +170,9 @@ export default function AdminPlatformEvents() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-64" />
+            <Skeleton key={i} className="h-48" />
           ))}
         </div>
       ) : events.length === 0 ? (
@@ -137,90 +182,205 @@ export default function AdminPlatformEvents() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {events.map((event) => (
-            <Card key={event.id} className="overflow-hidden">
-              {event.image_url && (
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={event.image_url} 
-                    alt={event.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">{event.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Por: {event.organizer_name}
-                    </p>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    event.status === 'ended' 
-                      ? 'bg-red-500/20 text-red-500' 
-                      : event.status === 'live'
-                      ? 'bg-green-500/20 text-green-500'
-                      : 'bg-blue-500/20 text-blue-500'
-                  }`}>
-                    {event.status === 'ended' ? 'Encerrado' : event.status === 'live' ? 'Ao Vivo' : 'Em Breve'}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {format(new Date(event.event_date), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{event.location}</span>
-                  </div>
-                  {event.max_attendees && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>Capacidade: {event.max_attendees} pessoas</span>
-                    </div>
-                  )}
-                </div>
+        <div className="space-y-8">
+          {/* Eventos Acontecendo Agora */}
+          {live.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse" />
+                Acontecendo Agora ({live.length})
+              </h2>
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                {live.map((event) => (
+                  <Card key={event.id} className="overflow-hidden">
+                    {event.image_url && (
+                      <div className="h-32 overflow-hidden">
+                        <img 
+                          src={event.image_url} 
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <CardHeader className="p-3">
+                      <CardTitle className="text-sm line-clamp-2">{event.title}</CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {event.organizer_name}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-0 space-y-2">
+                      <div className="flex items-center gap-1 text-xs">
+                        <Calendar className="h-3 w-3" />
+                        <span className="truncate">
+                          {format(new Date(event.event_date), "d/MM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate">{event.location}</span>
+                      </div>
+                      <div className="flex gap-1 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/platform-event/${event.id}/edit`)}
+                          className="flex-1 h-7 text-xs"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/platform-event/${event.id}/registrations`)}
+                          className="flex-1 h-7 text-xs"
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleEndEvent(event.id)}
+                          className="h-7 text-xs"
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/admin/platform-event/${event.id}/edit`)}
-                    className="flex-1"
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/admin/platform-event/${event.id}/registrations`)}
-                    className="flex-1"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Cadastros
-                  </Button>
-                  {event.status !== 'ended' && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleEndEvent(event.id)}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Encerrar
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Próximos Eventos */}
+          {upcoming.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-500" />
+                Próximos Eventos ({upcoming.length})
+              </h2>
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                {upcoming.map((event) => (
+                  <Card key={event.id} className="overflow-hidden">
+                    {event.image_url && (
+                      <div className="h-32 overflow-hidden">
+                        <img 
+                          src={event.image_url} 
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <CardHeader className="p-3">
+                      <CardTitle className="text-sm line-clamp-2">{event.title}</CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {event.organizer_name}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-0 space-y-2">
+                      <div className="flex items-center gap-1 text-xs">
+                        <Calendar className="h-3 w-3" />
+                        <span className="truncate">
+                          {format(new Date(event.event_date), "d/MM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate">{event.location}</span>
+                      </div>
+                      <div className="flex gap-1 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/platform-event/${event.id}/edit`)}
+                          className="flex-1 h-7 text-xs"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/platform-event/${event.id}/registrations`)}
+                          className="flex-1 h-7 text-xs"
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleEndEvent(event.id)}
+                          className="h-7 text-xs"
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Eventos Realizados */}
+          {ended.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-muted-foreground">
+                <CheckCircle className="h-5 w-5" />
+                Eventos Realizados ({ended.length})
+              </h2>
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                {ended.map((event) => (
+                  <Card key={event.id} className="overflow-hidden opacity-75">
+                    {event.image_url && (
+                      <div className="h-32 overflow-hidden">
+                        <img 
+                          src={event.image_url} 
+                          alt={event.title}
+                          className="w-full h-full object-cover grayscale"
+                        />
+                      </div>
+                    )}
+                    <CardHeader className="p-3">
+                      <CardTitle className="text-sm line-clamp-2">{event.title}</CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {event.organizer_name}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-0 space-y-2">
+                      <div className="flex items-center gap-1 text-xs">
+                        <Calendar className="h-3 w-3" />
+                        <span className="truncate">
+                          {format(new Date(event.event_date), "d/MM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate">{event.location}</span>
+                      </div>
+                      <div className="flex gap-1 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/platform-event/${event.id}/registrations`)}
+                          className="flex-1 h-7 text-xs"
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="h-7 text-xs"
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
