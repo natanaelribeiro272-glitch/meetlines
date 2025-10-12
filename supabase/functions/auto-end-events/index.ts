@@ -19,25 +19,40 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Buscar eventos que deveriam ter sido encerrados (end_date passou e status não é 'completed')
     const now = new Date().toISOString();
     console.log('Searching for events to end. Current time:', now);
 
-    const { data: eventsToEnd, error: selectError } = await supabase
+    // Buscar eventos regulares que deveriam ter sido encerrados
+    const { data: eventsToEnd, error: selectEventsError } = await supabase
       .from('events')
       .select('id, title, end_date')
       .not('end_date', 'is', null)
       .lt('end_date', now)
       .neq('status', 'completed');
 
-    if (selectError) {
-      console.error('Error selecting events:', selectError);
-      throw selectError;
+    if (selectEventsError) {
+      console.error('Error selecting events:', selectEventsError);
+      throw selectEventsError;
     }
 
-    console.log(`Found ${eventsToEnd?.length || 0} events to end`);
+    // Buscar eventos de plataforma que deveriam ter sido encerrados
+    const { data: platformEventsToEnd, error: selectPlatformError } = await supabase
+      .from('platform_events')
+      .select('id, title, end_date')
+      .not('end_date', 'is', null)
+      .lt('end_date', now)
+      .neq('status', 'completed')
+      .neq('status', 'ended');
 
-    if (!eventsToEnd || eventsToEnd.length === 0) {
+    if (selectPlatformError) {
+      console.error('Error selecting platform events:', selectPlatformError);
+      throw selectPlatformError;
+    }
+
+    const totalEvents = (eventsToEnd?.length || 0) + (platformEventsToEnd?.length || 0);
+    console.log(`Found ${eventsToEnd?.length || 0} regular events and ${platformEventsToEnd?.length || 0} platform events to end`);
+
+    if (totalEvents === 0) {
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -51,31 +66,57 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Encerrar cada evento
-    const eventIds = eventsToEnd.map(e => e.id);
-    
-    const { error: updateError } = await supabase
-      .from('events')
-      .update({ 
-        status: 'completed',
-        is_live: false,
-        updated_at: now
-      })
-      .in('id', eventIds);
+    const endedEvents = [];
 
-    if (updateError) {
-      console.error('Error updating events:', updateError);
-      throw updateError;
+    // Encerrar eventos regulares
+    if (eventsToEnd && eventsToEnd.length > 0) {
+      const eventIds = eventsToEnd.map(e => e.id);
+      
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({ 
+          status: 'completed',
+          is_live: false,
+          updated_at: now
+        })
+        .in('id', eventIds);
+
+      if (updateError) {
+        console.error('Error updating events:', updateError);
+        throw updateError;
+      }
+
+      console.log(`Successfully ended ${eventsToEnd.length} regular events:`, eventsToEnd.map(e => e.title).join(', '));
+      endedEvents.push(...eventsToEnd.map(e => ({ ...e, type: 'regular' })));
     }
 
-    console.log(`Successfully ended ${eventsToEnd.length} events:`, eventsToEnd.map(e => e.title).join(', '));
+    // Encerrar eventos de plataforma
+    if (platformEventsToEnd && platformEventsToEnd.length > 0) {
+      const platformEventIds = platformEventsToEnd.map(e => e.id);
+      
+      const { error: updatePlatformError } = await supabase
+        .from('platform_events')
+        .update({ 
+          status: 'ended',
+          updated_at: now
+        })
+        .in('id', platformEventIds);
+
+      if (updatePlatformError) {
+        console.error('Error updating platform events:', updatePlatformError);
+        throw updatePlatformError;
+      }
+
+      console.log(`Successfully ended ${platformEventsToEnd.length} platform events:`, platformEventsToEnd.map(e => e.title).join(', '));
+      endedEvents.push(...platformEventsToEnd.map(e => ({ ...e, type: 'platform' })));
+    }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Ended ${eventsToEnd.length} events`,
-        endedCount: eventsToEnd.length,
-        events: eventsToEnd.map(e => ({ id: e.id, title: e.title, end_date: e.end_date }))
+        message: `Ended ${totalEvents} events`,
+        endedCount: totalEvents,
+        events: endedEvents
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
