@@ -342,8 +342,8 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
                 variant="ghost" 
                 className="w-full text-sm"
                 onClick={() => {
-                  markAllAsRead();
                   setIsOpen(false);
+                  navigate('/notifications');
                 }}
               >
                 Ver todas as notificações

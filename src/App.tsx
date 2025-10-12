@@ -19,6 +19,7 @@ import AdminPlatformEvents from "./pages/AdminPlatformEvents";
 import AdminEditPlatformEvent from "./pages/AdminEditPlatformEvent";
 import AdminPlatformEventRegistrations from "./pages/AdminPlatformEventRegistrations";
 import AdminSupport from "./pages/AdminSupport";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
               <Route path="/organizer-onboarding" element={<OrganizerOnboarding />} />
               <Route path="/user-onboarding" element={<UserOnboarding />} />
+              <Route path="/notifications" element={<Notifications />} />
               {/* Admin routes */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />
