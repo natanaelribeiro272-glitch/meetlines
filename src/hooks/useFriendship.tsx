@@ -58,13 +58,13 @@ export function useFriendship(friendId: string | undefined) {
         .insert({
           user_id: user.id,
           friend_id: friendId,
-          status: 'accepted', // Amizade imediata sem aprovação
+          status: 'pending',
         });
 
       if (error) throw error;
 
-      setFriendshipStatus('accepted');
-      toast.success('Amigo adicionado com sucesso!');
+      setFriendshipStatus('pending');
+      toast.success('Solicitação de amizade enviada!');
       return true;
     } catch (error: any) {
       console.error('Error adding friend:', error);

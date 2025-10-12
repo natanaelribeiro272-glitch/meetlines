@@ -7,7 +7,7 @@ export interface Notification {
   user_id: string;
   organizer_id: string;
   event_id: string | null;
-  type: 'event_created' | 'event_updated' | 'event_cancelled';
+  type: 'event_created' | 'event_updated' | 'event_cancelled' | 'friend_request' | 'user_message' | 'user_like';
   title: string;
   message: string;
   read: boolean;
