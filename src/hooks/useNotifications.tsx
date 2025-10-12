@@ -77,21 +77,33 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
+      // Find the notification to check if it's already read
+      const notification = notifications.find(n => n.id === notificationId);
+      
+      // Only update if notification exists and is unread
+      if (!notification || notification.read) {
+        return;
+      }
 
-      if (error) throw error;
-
+      // Update local state immediately for better UX
       setNotifications(prev =>
         prev.map(n =>
           n.id === notificationId ? { ...n, read: true } : n
         )
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
+
+      // Then update database
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      // Revert local state on error
+      fetchNotifications();
     }
   };
 
@@ -99,6 +111,13 @@ export function useNotifications() {
     if (!user) return;
 
     try {
+      // Update local state immediately for better UX
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, read: true }))
+      );
+      setUnreadCount(0);
+
+      // Then update database
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
@@ -106,33 +125,34 @@ export function useNotifications() {
         .eq('read', false);
 
       if (error) throw error;
-
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, read: true }))
-      );
-      setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all as read:', error);
+      // Revert local state on error
+      fetchNotifications();
     }
   };
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
+      // Update local state immediately
       const notification = notifications.find(n => n.id === notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       
       if (notification && !notification.read) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
+
+      // Then update database
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) throw error;
     } catch (error) {
       console.error('Error deleting notification:', error);
+      // Revert local state on error
+      fetchNotifications();
     }
   };
 

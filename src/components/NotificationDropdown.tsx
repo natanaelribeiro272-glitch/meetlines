@@ -115,20 +115,29 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
     }
   };
 
-  const handleNotificationClick = (notification: any) => {
+  const handleNotificationClick = async (notification: any) => {
     if (notification.type === 'friend_request') {
-      // Don't close dropdown for friend requests
-      markAsRead(notification.id);
+      // Don't close dropdown for friend requests, just mark as read
+      await markAsRead(notification.id);
       return;
     }
 
-    markAsRead(notification.id);
+    // Mark as read first
+    await markAsRead(notification.id);
     
+    // Handle navigation based on notification type
     if (notification.type === 'user_message') {
       setIsOpen(false);
-      toast.info('Vá para a aba "Amigos" para ver a mensagem');
+      navigate('/find-friends');
+    } else if (notification.type === 'user_like') {
+      setIsOpen(false);
+      navigate('/find-friends');
     } else if (notification.event_id) {
+      // For event notifications, go to the specific event
+      setIsOpen(false);
       navigate(`/event/${notification.event_id}`);
+    } else {
+      // For other types, just close
       setIsOpen(false);
     }
   };
