@@ -98,13 +98,12 @@ Deno.serve(async (req) => {
             IMPORTANTE: Extraia APENAS eventos que ainda não aconteceram. A data atual de referência é: ${currentDate}
             NÃO inclua eventos com datas anteriores à data atual.
             
-            TAREFAS ADICIONAIS OBRIGATÓRIAS:
+            TAREFAS OBRIGATÓRIAS:
             1. **Identificar se é pago**: Analise o preço e links de ingresso. Se houver menção de "grátis", "free", "entrada gratuita" ou preço = 0, defina ticket_price como 0. Se houver valor ou link de compra, identifique o preço correto.
-            2. **Gerar descrição**: Se não houver descrição explícita, CRIE uma descrição atraente e informativa com 2-3 frases baseada no título, categoria, local e organizador do evento. A descrição deve capturar a essência do evento e motivar participação.
             
             Extraia o máximo de informações possível sobre eventos FUTUROS e retorne um array JSON com os seguintes campos para cada evento:
             - title (obrigatório)
-            - description (obrigatório - se não houver, GERE uma descrição atraente)
+            - description (opcional - deixe vazio se não houver descrição explícita nos dados)
             - organizer_name (obrigatório)
             - event_date (obrigatório, formato ISO 8601, DEVE SER >= ${currentDate})
             - end_date (opcional, formato ISO 8601)
@@ -116,16 +115,12 @@ Deno.serve(async (req) => {
             - ticket_link (opcional - link de compra se houver)
             - max_attendees (opcional, número)
             
-            EXEMPLO de descrição gerada:
-            - Para "Show de Rock": "Prepare-se para uma noite inesquecível de rock com as melhores bandas da região. Evento imperdível para os amantes do rock com muito som e energia!"
-            - Para "Workshop de Culinária": "Aprenda técnicas profissionais de culinária neste workshop interativo. Descubra segredos dos chefs e leve suas habilidades para o próximo nível!"
-            
             Se não conseguir extrair eventos futuros, retorne um array vazio.
             Retorne APENAS o JSON, sem texto adicional.`
           },
           {
             role: 'user',
-            content: `Extraia todos os eventos FUTUROS (a partir de ${currentDate}) destes dados e GERE descrições atraentes para eventos sem descrição:\n\n${apiData.substring(0, 50000)}`
+            content: `Extraia todos os eventos FUTUROS (a partir de ${currentDate}) destes dados:\n\n${apiData.substring(0, 50000)}`
           }
         ],
       }),

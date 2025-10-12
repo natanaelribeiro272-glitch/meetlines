@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Check } from 'lucide-react';
+import { ArrowLeft, Save, Check, Sparkles } from 'lucide-react';
 
 export default function AdminEditPendingEvent() {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ export default function AdminEditPendingEvent() {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -135,6 +136,41 @@ export default function AdminEditPendingEvent() {
     }
   };
 
+  const handleGenerateDescription = async () => {
+    if (!formData.title || !formData.organizer_name || !formData.event_date || !formData.location) {
+      toast.error('Preencha os campos obrigatórios antes de gerar a descrição');
+      return;
+    }
+
+    setGeneratingDescription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-event-description', {
+        body: {
+          title: formData.title,
+          organizerName: formData.organizer_name,
+          eventDate: formData.event_date,
+          location: formData.location,
+          category: formData.category,
+          ticketPrice: formData.ticket_price,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.description) {
+        setFormData({ ...formData, description: data.description });
+        toast.success('Descrição gerada com sucesso!');
+      } else {
+        throw new Error('Nenhuma descrição foi gerada');
+      }
+    } catch (error) {
+      console.error('Error generating description:', error);
+      toast.error('Erro ao gerar descrição. Tente novamente.');
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
   if (adminLoading || loading || !isAdmin) {
     return null;
   }
@@ -166,12 +202,25 @@ export default function AdminEditPendingEvent() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="description">Descrição</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateDescription}
+                disabled={generatingDescription || !formData.title}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {generatingDescription ? 'Gerando...' : 'Gerar com IA'}
+              </Button>
+            </div>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
+              placeholder="Clique em 'Gerar com IA' para criar uma descrição automática ou escreva manualmente"
             />
           </div>
 

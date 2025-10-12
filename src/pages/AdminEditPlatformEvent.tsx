@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, Sparkles } from 'lucide-react';
 
 const EVENT_CATEGORIES = [
   { value: "cristao", label: "🙏 Cristão" },
@@ -35,6 +35,7 @@ export default function AdminEditPlatformEvent() {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -171,6 +172,41 @@ export default function AdminEditPlatformEvent() {
     }
   };
 
+  const handleGenerateDescription = async () => {
+    if (!formData.title || !formData.organizer_name || !formData.event_date || !formData.location) {
+      toast.error('Preencha os campos obrigatórios antes de gerar a descrição');
+      return;
+    }
+
+    setGeneratingDescription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-event-description', {
+        body: {
+          title: formData.title,
+          organizerName: formData.organizer_name,
+          eventDate: formData.event_date,
+          location: formData.location,
+          category: formData.category,
+          ticketPrice: isPaid && formData.ticket_price ? parseFloat(formData.ticket_price) : 0,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.description) {
+        setFormData({ ...formData, description: data.description });
+        toast.success('Descrição gerada com sucesso!');
+      } else {
+        throw new Error('Nenhuma descrição foi gerada');
+      }
+    } catch (error) {
+      console.error('Error generating description:', error);
+      toast.error('Erro ao gerar descrição. Tente novamente.');
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
   if (adminLoading || !isAdmin || loading) {
     return null;
   }
@@ -243,11 +279,24 @@ export default function AdminEditPlatformEvent() {
             </div>
 
             <div>
-              <Label>Descrição</Label>
+              <div className="flex justify-between items-center mb-2">
+                <Label>Descrição</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateDescription}
+                  disabled={generatingDescription || !formData.title}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {generatingDescription ? 'Gerando...' : 'Gerar com IA'}
+                </Button>
+              </div>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
+                placeholder="Clique em 'Gerar com IA' para criar uma descrição automática ou escreva manualmente"
               />
             </div>
 
