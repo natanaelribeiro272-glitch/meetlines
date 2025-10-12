@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -156,6 +156,11 @@ export function useNotifications() {
     }
   };
 
+  const clearLocalNotifications = () => {
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
   return {
     notifications,
     unreadCount,
@@ -164,5 +169,6 @@ export function useNotifications() {
     markAllAsRead,
     deleteNotification,
     refetch: fetchNotifications,
+    clearLocalNotifications,
   };
 }

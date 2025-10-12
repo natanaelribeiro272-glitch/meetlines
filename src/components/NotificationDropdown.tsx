@@ -19,7 +19,7 @@ interface NotificationDropdownProps {
 export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdownProps = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, clearLocalNotifications } = useNotifications();
   const { acceptFriendRequest, declineFriendRequest, loading: requestLoading } = useFriendRequest();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -115,6 +115,7 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
     }
   };
 
+  const displayedNotifications = notifications.filter((n) => !n.read || n.type === 'friend_request');
   const handleNotificationClick = async (notification: any) => {
     if (notification.type === 'friend_request') {
       // Don't close dropdown for friend requests, just mark as read
@@ -202,10 +203,12 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  markAllAsRead();
+                  await markAllAsRead();
+                  clearLocalNotifications();
+                  setIsOpen(false);
                 }}
               >
                 Marcar todas como lidas
@@ -220,14 +223,14 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
                 <Bell className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
                 <p>Carregando...</p>
               </div>
-            ) : notifications.length === 0 ? (
+            ) : displayedNotifications.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
                 <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Nenhuma notificação</p>
               </div>
             ) : (
               <div className="space-y-1">
-                {notifications.map((notification) => {
+                {displayedNotifications.map((notification) => {
                   const Icon = getIcon(notification.type);
                   const isFriendRequest = notification.type === 'friend_request';
                   const requesterProfile = isFriendRequest ? requesterProfiles[notification.id] : null;
