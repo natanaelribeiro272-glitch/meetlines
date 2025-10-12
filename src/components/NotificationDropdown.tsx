@@ -338,7 +338,14 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="p-3 border-t border-border">
-              <Button variant="ghost" className="w-full text-sm">
+              <Button 
+                variant="ghost" 
+                className="w-full text-sm"
+                onClick={() => {
+                  markAllAsRead();
+                  setIsOpen(false);
+                }}
+              >
                 Ver todas as notificações
               </Button>
             </div>
