@@ -11,11 +11,13 @@ interface LiveEventsProps {
 export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
   const { events, loading, toggleLike } = useEvents();
   
-  // Filter only live events
+  // Filter only truly live events: started and not ended yet
   const now = new Date();
   const liveEvents = events.filter(event => {
-    const eventDate = new Date(event.event_date);
-    return eventDate <= now;
+    const start = new Date(event.event_date);
+    const end = event.end_date ? new Date(event.end_date) : null;
+    const isCompleted = (event.status || '').toLowerCase() === 'completed' || (event.status || '').toLowerCase() === 'ended';
+    return start <= now && !isCompleted && (!end || end > now);
   });
 
   if (loading) {
@@ -70,7 +72,7 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
                 likes={event.likes_count || 0}
                 comments={event.comments_count || 0}
                 isLiked={event.is_liked || false}
-                isLive={new Date(event.event_date) <= now}
+                isLive={(() => { const start = new Date(event.event_date); const end = event.end_date ? new Date(event.end_date) : null; return start <= now && (!end || end > now); })()}
                 onClick={() => onEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 showJoinButton={true}
