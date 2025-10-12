@@ -711,21 +711,15 @@ export default function FindFriends({
         {activeTab === 'nearby' && (
           <>
             {/* Visibility Controls */}
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4">
               <Button 
                 variant={isVisible ? "default" : "outline"} 
                 onClick={toggleVisibility}
-                className="flex-1 h-11"
+                className="w-full h-11"
               >
                 <Eye className="h-4 w-4 mr-2" />
                 {isVisible ? "Visível" : "Ser Visto"}
               </Button>
-              <div className="flex items-center justify-center px-3 py-2.5 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/30">
-                <div className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
-                </div>
-              </div>
             </div>
 
             {/* Editable Profile Section */}
@@ -787,9 +781,6 @@ export default function FindFriends({
                         }}
                         className="rounded border-border"
                       />
-                      <label htmlFor="notes-visible" className="text-xs text-muted-foreground">
-                        {notesVisible ? 'Visível para outros' : 'Privado'}
-                      </label>
                     </div>
                   </div>
                 </div>
