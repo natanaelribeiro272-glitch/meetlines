@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Heart, Users, MessageCircle, Instagram, Phone, Eye, MapPin, X } from "lucide-react";
+import { ArrowLeft, Heart, Users, MessageCircle, Instagram, Phone, Eye, MapPin, X, UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import UserChatDialog from "@/components/UserChatDialog";
+import { useFriendship } from "@/hooks/useFriendship";
+
 interface Attendee {
   id: string;
   user_id: string;
@@ -22,10 +24,196 @@ interface Attendee {
   event_name: string;
   relationship_status: string;
   unreadMessages?: number;
+  isFriend?: boolean;
 }
+
 interface FindFriendsProps {
   onBack: () => void;
 }
+
+// UserCard component with friendship button
+const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessages, onFriendshipChange }: { 
+  person: Attendee; 
+  handleLike: (userId: string) => void;
+  handleMessage: (person: Attendee) => void;
+  likedUsers: Set<string>;
+  unreadMessages: Map<string, number>;
+  onFriendshipChange: () => void;
+}) => {
+  const { friendshipStatus, loading, addFriend, removeFriend } = useFriendship(person.user_id);
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+
+  const handleFriendshipToggle = async () => {
+    if (friendshipStatus === 'accepted') {
+      await removeFriend();
+    } else {
+      await addFriend();
+    }
+    onFriendshipChange();
+  };
+
+  return (
+    <div className="bg-card rounded-lg p-4 shadow-card">
+      <div className="flex items-start gap-3">
+        <div className="avatar-story cursor-pointer" onClick={() => setSelectedAvatar(person.avatar)}>
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={person.avatar} alt={person.name} />
+            <AvatarFallback className="bg-surface">
+              {person.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-medium text-foreground">{person.name}</h3>
+            <span className="text-xs text-muted-foreground">• {person.distance}</span>
+            {person.isFriend && (
+              <Badge className="bg-green-500/20 text-green-400 border-0 text-xs">
+                🤝 Amigo
+              </Badge>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mb-2">
+            <Badge className={`${
+              person.interest === 'curtição' ? 'bg-yellow-500/20 text-yellow-400' :
+              person.interest === 'namoro' ? 'bg-red-500/20 text-red-400' :
+              person.interest === 'amizade' ? 'bg-blue-500/20 text-blue-400' :
+              'bg-green-500/20 text-green-400'
+            } border-0`}>
+              <span className="mr-1">
+                {person.interest === 'curtição' ? '💛' :
+                 person.interest === 'namoro' ? '💕' :
+                 person.interest === 'amizade' ? '🤝' : '💼'}
+              </span>
+              {person.interest}
+            </Badge>
+            
+            <Badge className={`${
+              person.relationship_status === 'solteiro' ? 'bg-green-500/20 text-green-400' :
+              person.relationship_status === 'namorando' ? 'bg-pink-500/20 text-pink-400' :
+              person.relationship_status === 'casado' ? 'bg-purple-500/20 text-purple-400' :
+              person.relationship_status === 'relacionamento_aberto' ? 'bg-orange-500/20 text-orange-400' :
+              'bg-gray-500/20 text-gray-400'
+            } border-0 text-xs`}>
+              <span className="mr-1">
+                {person.relationship_status === 'solteiro' ? '😊' :
+                 person.relationship_status === 'namorando' ? '💑' :
+                 person.relationship_status === 'casado' ? '💍' :
+                 person.relationship_status === 'relacionamento_aberto' ? '🌈' : '🤐'}
+              </span>
+              {person.relationship_status === 'solteiro' ? 'Solteiro(a)' :
+               person.relationship_status === 'namorando' ? 'Namorando' :
+               person.relationship_status === 'casado' ? 'Casado(a)' :
+               person.relationship_status === 'relacionamento_aberto' ? 'Relacionamento Aberto' :
+               'Não informado'}
+            </Badge>
+          </div>
+          
+          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+            {person.note}
+          </p>
+
+          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3" />
+            <span>{person.event_name}</span>
+          </div>
+          
+          {/* Social Links */}
+          <div className="flex items-center gap-3 mt-3">
+            {person.instagram && (
+              <a 
+                href={person.instagram} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth"
+              >
+                <Instagram className="h-4 w-4" />
+                <span>Instagram</span>
+              </a>
+            )}
+            
+            {person.phone && (
+              <a 
+                href={`https://wa.me/${person.phone.replace(/\D/g, '')}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth"
+              >
+                <Phone className="h-4 w-4" />
+                <span>WhatsApp</span>
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2">
+          <Button 
+            variant={friendshipStatus === 'accepted' ? "default" : "outline"} 
+            size="sm" 
+            onClick={handleFriendshipToggle}
+            disabled={loading}
+            className={friendshipStatus === 'accepted' ? "text-green-400 bg-green-500/20 border-green-500" : ""}
+          >
+            {friendshipStatus === 'accepted' ? (
+              <UserCheck className="h-4 w-4" />
+            ) : (
+              <UserPlus className="h-4 w-4" />
+            )}
+          </Button>
+          <Button 
+            variant={likedUsers.has(person.user_id) ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => handleLike(person.user_id)}
+          >
+            <Heart 
+              className="h-4 w-4" 
+              fill={likedUsers.has(person.user_id) ? "currentColor" : "none"} 
+            />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleMessage(person)} 
+            className="relative"
+          >
+            <MessageCircle className="h-4 w-4" />
+            {unreadMessages.get(person.user_id) && unreadMessages.get(person.user_id)! > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full"
+              >
+                {unreadMessages.get(person.user_id)}
+              </Badge>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Avatar Preview Dialog */}
+      <Dialog open={!!selectedAvatar} onOpenChange={() => setSelectedAvatar(null)}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-background/95 backdrop-blur-lg border border-border">
+          <button
+            onClick={() => setSelectedAvatar(null)}
+            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-surface/80 hover:bg-surface transition-smooth"
+          >
+            <X className="h-5 w-5 text-foreground" />
+          </button>
+          {selectedAvatar && (
+            <img
+              src={selectedAvatar}
+              alt="Profile"
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 export default function FindFriends({
   onBack
 }: FindFriendsProps) {
@@ -41,10 +229,7 @@ export default function FindFriends({
   const [currentInterest, setCurrentInterest] = useState<string>("curtição");
   const [currentNotes, setCurrentNotes] = useState<string>("");
   const [notesVisible, setNotesVisible] = useState<boolean>(true);
-  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   // Request geolocation and update user location
@@ -90,10 +275,12 @@ export default function FindFriends({
   useEffect(() => {
     const loadVisibility = async () => {
       if (!user) return;
-      const {
-        data,
-        error
-      } = await supabase.from('profiles').select('find_friends_visible, interest, notes, notes_visible').eq('user_id', user.id).single();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('find_friends_visible, interest, notes, notes_visible')
+        .eq('user_id', user.id)
+        .single();
+      
       if (data && !error) {
         setIsVisible(data.find_friends_visible ?? false);
         setCurrentInterest(data.interest || "curtição");
@@ -112,15 +299,15 @@ export default function FindFriends({
     }
     const newVisibility = !isVisible;
     setIsVisible(newVisibility);
-    const {
-      error
-    } = await supabase.from('profiles').update({
-      find_friends_visible: newVisibility
-    }).eq('user_id', user.id);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ find_friends_visible: newVisibility })
+      .eq('user_id', user.id);
+    
     if (error) {
       console.error('Error updating visibility:', error);
       toast.error('Erro ao atualizar visibilidade');
-      setIsVisible(!newVisibility); // Revert on error
+      setIsVisible(!newVisibility);
     } else {
       toast.success(newVisibility ? 'Você está visível para outros' : 'Você está invisível');
     }
@@ -130,16 +317,19 @@ export default function FindFriends({
   useEffect(() => {
     const loadLikes = async () => {
       if (!user) return;
-      const {
-        data,
-        error
-      } = await supabase.from('user_likes').select('to_user_id').eq('from_user_id', user.id);
+      const { data, error } = await supabase
+        .from('user_likes')
+        .select('to_user_id')
+        .eq('from_user_id', user.id);
+      
       if (data && !error) {
         setLikedUsers(new Set(data.map(like => like.to_user_id)));
       }
     };
     loadLikes();
   }, [user]);
+
+  // Fetch nearby users and friends
   useEffect(() => {
     let channel: any = null;
     const fetchNearbyUsers = async () => {
@@ -148,14 +338,12 @@ export default function FindFriends({
         return;
       }
 
-      // Se o usuário não está visível, não pode ver outras pessoas
       if (!isVisible) {
         setAttendees([]);
         setLoading(false);
         return;
       }
 
-      // Precisa de localização para encontrar pessoas próximas
       if (!userLocation) {
         setAttendees([]);
         setLoading(false);
@@ -163,20 +351,31 @@ export default function FindFriends({
       }
 
       try {
-        // Buscar todos os usuários visíveis com localização recente (últimos 10 minutos)
+        // Buscar amigos primeiro
+        const { data: friendshipsData, error: friendshipsError } = await supabase
+          .from('friendships')
+          .select('user_id, friend_id')
+          .eq('status', 'accepted')
+          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+
+        if (friendshipsError) {
+          console.error('Error fetching friendships:', friendshipsError);
+        }
+
+        const friendIds = friendshipsData?.map(f => 
+          f.user_id === user.id ? f.friend_id : f.user_id
+        ) || [];
+
+        // Buscar usuários visíveis
         const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         
-        const {
-          data: profilesData,
-          error: profilesError
-        } = await supabase
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('user_id, display_name, avatar_url, notes, notes_visible, find_friends_visible, instagram_url, phone, interest, relationship_status, latitude, longitude')
+          .select('user_id, display_name, avatar_url, notes, notes_visible, find_friends_visible, instagram_url, phone, interest, relationship_status, latitude, longitude, location_updated_at')
           .eq('find_friends_visible', true)
           .neq('user_id', user.id)
           .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .gte('location_updated_at', tenMinutesAgo);
+          .not('longitude', 'is', null);
 
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
@@ -190,11 +389,10 @@ export default function FindFriends({
           return;
         }
 
-        // Calcular distância e filtrar até 100m
+        // Calcular distância e filtrar
         const nearbyUsers = profilesData
           .map(profile => {
-            // Fórmula de Haversine simplificada
-            const R = 6371000; // Raio da Terra em metros
+            const R = 6371000;
             const lat1 = userLocation.lat * Math.PI / 180;
             const lat2 = profile.latitude! * Math.PI / 180;
             const deltaLat = (profile.latitude! - userLocation.lat) * Math.PI / 180;
@@ -206,33 +404,37 @@ export default function FindFriends({
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             const distance = R * c;
 
+            const isFriend = friendIds.includes(profile.user_id);
+            const hasRecentLocation = profile.location_updated_at && 
+              new Date(profile.location_updated_at) >= new Date(tenMinutesAgo);
+
             return {
-              ...profile,
-              calculatedDistance: distance
+              profile,
+              distance,
+              isFriend,
+              hasRecentLocation
             };
           })
-          .filter(profile => profile.calculatedDistance <= 100) // Filtrar até 100 metros
-          .map(profile => ({
+          .filter(({ distance, isFriend, hasRecentLocation }) => 
+            isFriend || (distance <= 100 && hasRecentLocation)
+          )
+          .map(({ profile, distance, isFriend }) => ({
             id: profile.user_id,
             user_id: profile.user_id,
             name: profile.display_name || "Usuário",
             avatar: profile.avatar_url || "",
             interest: profile.interest || "curtição",
             note: profile.notes || "Está próximo de você",
-            distance: profile.calculatedDistance < 1 
-              ? `${Math.round(profile.calculatedDistance)}m`
-              : profile.calculatedDistance < 10
-              ? `${Math.round(profile.calculatedDistance)}m`
-              : profile.calculatedDistance < 100
-              ? `${Math.round(profile.calculatedDistance)}m`
-              : `${Math.round(profile.calculatedDistance)}m`,
+            distance: `${Math.round(distance)}m`,
             instagram: profile.instagram_url || "",
             phone: profile.phone || null,
-            event_name: "Próximo",
-            relationship_status: profile.relationship_status || "preferencia_nao_informar"
+            event_name: isFriend ? "Amigo" : "Próximo",
+            relationship_status: profile.relationship_status || "preferencia_nao_informar",
+            isFriend
           }))
           .sort((a, b) => {
-            // Ordenar por distância
+            if (a.isFriend && !b.isFriend) return -1;
+            if (!a.isFriend && b.isFriend) return 1;
             const distA = parseFloat(a.distance);
             const distB = parseFloat(b.distance);
             return distA - distB;
@@ -240,12 +442,16 @@ export default function FindFriends({
 
         setAttendees(nearbyUsers);
 
-        // Load unread messages count for each user
+        // Load unread messages count
         const userIdsForMessages = nearbyUsers.map(a => a.user_id);
         if (userIdsForMessages.length > 0) {
-          const {
-            data: messagesData
-          } = await supabase.from('user_messages').select('from_user_id').eq('to_user_id', user.id).in('from_user_id', userIdsForMessages).eq('read', false);
+          const { data: messagesData } = await supabase
+            .from('user_messages')
+            .select('from_user_id')
+            .eq('to_user_id', user.id)
+            .in('from_user_id', userIdsForMessages)
+            .eq('read', false);
+          
           if (messagesData) {
             const unreadMap = new Map<string, number>();
             messagesData.forEach(msg => {
@@ -255,95 +461,97 @@ export default function FindFriends({
           }
         }
 
-        // Subscribe to realtime updates for profiles and messages
+        // Subscribe to realtime updates
         const userIdsForRealtime = nearbyUsers.map(a => a.user_id);
-        channel = supabase.channel('profiles-and-messages-updates').on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles'
-        }, payload => {
-          const updatedProfile = payload.new as any;
-
-          // Only update if it's one of our attendees
-          if (userIdsForRealtime.includes(updatedProfile.user_id)) {
-            console.log('Profile atualizado em tempo real:', updatedProfile);
-            setAttendees(prev => prev.map(attendee => attendee.user_id === updatedProfile.user_id ? {
-              ...attendee,
-              note: updatedProfile.notes || attendee.note,
-              relationship_status: updatedProfile.relationship_status || attendee.relationship_status,
-              interest: updatedProfile.interest || attendee.interest
-            } : attendee));
-          }
-        }).on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'user_messages'
-        }, payload => {
-          const newMessage = payload.new as any;
-
-          // If we receive a message from one of our attendees
-          if (newMessage.to_user_id === user.id && userIdsForRealtime.includes(newMessage.from_user_id)) {
-            console.log('Nova mensagem recebida de:', newMessage.from_user_id);
-            setUnreadMessages(prev => {
-              const newMap = new Map(prev);
-              newMap.set(newMessage.from_user_id, (newMap.get(newMessage.from_user_id) || 0) + 1);
-              return newMap;
-            });
-          }
-        }).on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'user_messages'
-        }, payload => {
-          const updatedMessage = payload.new as any;
-
-          // If message was marked as read
-          if (updatedMessage.read && updatedMessage.to_user_id === user.id) {
-            console.log('Mensagem marcada como lida de:', updatedMessage.from_user_id);
-            // Reload unread count for this user
-            supabase.from('user_messages').select('id').eq('to_user_id', user.id).eq('from_user_id', updatedMessage.from_user_id).eq('read', false).then(({
-              data
-            }) => {
+        channel = supabase.channel('profiles-and-messages-updates')
+          .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles'
+          }, payload => {
+            const updatedProfile = payload.new as any;
+            if (userIdsForRealtime.includes(updatedProfile.user_id)) {
+              setAttendees(prev => prev.map(attendee => 
+                attendee.user_id === updatedProfile.user_id ? {
+                  ...attendee,
+                  note: updatedProfile.notes || attendee.note,
+                  relationship_status: updatedProfile.relationship_status || attendee.relationship_status,
+                  interest: updatedProfile.interest || attendee.interest
+                } : attendee
+              ));
+            }
+          })
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'user_messages'
+          }, payload => {
+            const newMessage = payload.new as any;
+            if (newMessage.to_user_id === user.id && userIdsForRealtime.includes(newMessage.from_user_id)) {
               setUnreadMessages(prev => {
                 const newMap = new Map(prev);
-                if (data && data.length > 0) {
-                  newMap.set(updatedMessage.from_user_id, data.length);
-                } else {
-                  newMap.delete(updatedMessage.from_user_id);
-                }
+                newMap.set(newMessage.from_user_id, (newMap.get(newMessage.from_user_id) || 0) + 1);
                 return newMap;
               });
-            });
-          }
-        }).subscribe(status => {
-          console.log('Status da inscrição de profiles e mensagens:', status);
-        });
+            }
+          })
+          .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'user_messages'
+          }, payload => {
+            const updatedMessage = payload.new as any;
+            if (updatedMessage.read && updatedMessage.to_user_id === user.id) {
+              supabase.from('user_messages')
+                .select('id')
+                .eq('to_user_id', user.id)
+                .eq('from_user_id', updatedMessage.from_user_id)
+                .eq('read', false)
+                .then(({ data }) => {
+                  setUnreadMessages(prev => {
+                    const newMap = new Map(prev);
+                    if (data && data.length > 0) {
+                      newMap.set(updatedMessage.from_user_id, data.length);
+                    } else {
+                      newMap.delete(updatedMessage.from_user_id);
+                    }
+                    return newMap;
+                  });
+                });
+            }
+          })
+          .subscribe();
       } catch (error) {
         console.error('Error:', error);
       } finally {
         setLoading(false);
       }
     };
+    
     fetchNearbyUsers();
+    
     return () => {
       if (channel) {
-        console.log('Removendo canal de profiles');
         supabase.removeChannel(channel);
       }
     };
   }, [user, isVisible, userLocation]);
+
   const handleLike = async (userId: string) => {
     if (!user) {
       toast.error('Faça login para curtir perfis');
       return;
     }
+    
     try {
       const isLiked = likedUsers.has(userId);
       if (isLiked) {
-        // Unlike
-        const {
-          error
-        } = await supabase.from('user_likes').delete().eq('from_user_id', user.id).eq('to_user_id', userId);
+        const { error } = await supabase
+          .from('user_likes')
+          .delete()
+          .eq('from_user_id', user.id)
+          .eq('to_user_id', userId);
+        
         if (error) throw error;
         setLikedUsers(prev => {
           const newSet = new Set(prev);
@@ -352,13 +560,10 @@ export default function FindFriends({
         });
         toast.success('Curtida removida');
       } else {
-        // Like
-        const {
-          error
-        } = await supabase.from('user_likes').insert({
-          from_user_id: user.id,
-          to_user_id: userId
-        });
+        const { error } = await supabase
+          .from('user_likes')
+          .insert({ from_user_id: user.id, to_user_id: userId });
+        
         if (error) throw error;
         setLikedUsers(prev => new Set(prev).add(userId));
         toast.success('Perfil curtido! A pessoa receberá uma notificação');
@@ -368,77 +573,26 @@ export default function FindFriends({
       toast.error('Erro ao curtir perfil');
     }
   };
+
   const handleMessage = async (person: Attendee) => {
     setSelectedChat(person);
     setChatOpen(true);
-
-    // Clear unread messages for this user when opening chat
     setUnreadMessages(prev => {
       const newMap = new Map(prev);
       newMap.delete(person.user_id);
       return newMap;
     });
   };
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      curtição: {
-        color: "bg-yellow-500/20 text-yellow-400",
-        icon: "💛"
-      },
-      namoro: {
-        color: "bg-red-500/20 text-red-400",
-        icon: "💕"
-      },
-      amizade: {
-        color: "bg-blue-500/20 text-blue-400",
-        icon: "🤝"
-      },
-      network: {
-        color: "bg-green-500/20 text-green-400",
-        icon: "🤝"
-      }
-    };
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return <Badge className={`${config.color} border-0`}>
-        <span className="mr-1">{config.icon}</span>
-        {status}
-      </Badge>;
+
+  const handleFriendshipChange = () => {
+    // Reload the page to fetch updated friend list
+    if (user && userLocation) {
+      window.location.reload();
+    }
   };
-  const getRelationshipBadge = (status: string) => {
-    const statusConfig = {
-      solteiro: {
-        color: "bg-green-500/20 text-green-400",
-        label: "Solteiro(a)",
-        emoji: "😊"
-      },
-      namorando: {
-        color: "bg-pink-500/20 text-pink-400",
-        label: "Namorando",
-        emoji: "💑"
-      },
-      casado: {
-        color: "bg-purple-500/20 text-purple-400",
-        label: "Casado(a)",
-        emoji: "💍"
-      },
-      relacionamento_aberto: {
-        color: "bg-orange-500/20 text-orange-400",
-        label: "Relacionamento Aberto",
-        emoji: "🌈"
-      },
-      preferencia_nao_informar: {
-        color: "bg-gray-500/20 text-gray-400",
-        label: "Não informado",
-        emoji: "🤐"
-      }
-    };
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.preferencia_nao_informar;
-    return <Badge className={`${config.color} border-0 text-xs`}>
-        <span className="mr-1">{config.emoji}</span>
-        {config.label}
-      </Badge>;
-  };
-  return <div className="min-h-screen bg-background">
+
+  return (
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3 max-w-md mx-auto">
@@ -547,76 +701,33 @@ export default function FindFriends({
                 ? locationError
                 : !userLocation
                 ? "Aguardando sua localização para encontrar pessoas próximas..."
-                : "Outras pessoas até 100m de você podem te encontrar. Toque em 'Ser Visto' novamente para ficar invisível."
-              : "Conecte-se com pessoas até 100 metros de você. Para aparecer para outros, ative 'Ser Visto' e permita o acesso à localização."}
+                : "Outras pessoas até 100m de você podem te encontrar. Amigos sempre aparecem aqui."
+              : "Conecte-se com pessoas até 100 metros de você. Para aparecer para outros, ative 'Ser Visto'."}
           </p>
         </div>
 
         {/* Attendees List */}
-        {loading ? <div className="text-center py-8">
+        {loading ? (
+          <div className="text-center py-8">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-muted-foreground">Procurando pessoas...</p>
-          </div> : attendees.length > 0 ? <div className="space-y-4">
-            {attendees.map(person => <div key={person.id} className="bg-card rounded-lg p-4 shadow-card">
-                <div className="flex items-start gap-3">
-                  <div className="avatar-story cursor-pointer" onClick={() => setSelectedAvatar(person.avatar)}>
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={person.avatar} alt={person.name} />
-                      <AvatarFallback className="bg-surface">
-                        {person.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-foreground">{person.name}</h3>
-                      <span className="text-xs text-muted-foreground">• {person.distance}</span>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {getStatusBadge(person.interest)}
-                      {getRelationshipBadge(person.relationship_status)}
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                      {person.note}
-                    </p>
-
-                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      <span>{person.event_name}</span>
-                    </div>
-                    
-                    {/* Social Links */}
-                    <div className="flex items-center gap-3 mt-3">
-                      {person.instagram && <a href={person.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth">
-                          <Instagram className="h-4 w-4" />
-                          <span>Instagram</span>
-                        </a>}
-                      
-                      {person.phone && <a href={`https://wa.me/${person.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-primary hover:text-primary-glow transition-smooth">
-                          <Phone className="h-4 w-4" />
-                          <span>WhatsApp</span>
-                        </a>}
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-2">
-                    <Button variant={likedUsers.has(person.user_id) ? "default" : "outline"} size="sm" onClick={() => handleLike(person.user_id)}>
-                      <Heart className="h-4 w-4" fill={likedUsers.has(person.user_id) ? "currentColor" : "none"} />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleMessage(person)} className="relative">
-                      <MessageCircle className="h-4 w-4" />
-                      {unreadMessages.get(person.user_id) && unreadMessages.get(person.user_id)! > 0 && <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
-                          {unreadMessages.get(person.user_id)}
-                        </Badge>}
-                    </Button>
-                  </div>
-                </div>
-              </div>)}
-          </div> : <div className="text-center py-12">
+          </div>
+        ) : attendees.length > 0 ? (
+          <div className="space-y-4">
+            {attendees.map(person => (
+              <UserCard 
+                key={person.id}
+                person={person}
+                handleLike={handleLike}
+                handleMessage={handleMessage}
+                likedUsers={likedUsers}
+                unreadMessages={unreadMessages}
+                onFriendshipChange={handleFriendshipChange}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
               {isVisible 
@@ -634,34 +745,22 @@ export default function FindFriends({
                   : !userLocation
                   ? "Carregando sua localização para encontrar pessoas até 100m de você..."
                   : "Não há outras pessoas visíveis até 100 metros de você no momento."
-                : "Ative 'Ser Visto' e permita o acesso à localização para se conectar com pessoas próximas."}
+                : "Ative 'Ser Visto' para se conectar com pessoas próximas."}
             </p>
-          </div>}
-
-        {/* Bottom CTA */}
-        
+          </div>
+        )}
       </div>
 
       {/* Chat Dialog */}
-      {selectedChat && <UserChatDialog open={chatOpen} onOpenChange={setChatOpen} recipientId={selectedChat.user_id} recipientName={selectedChat.name} recipientAvatar={selectedChat.avatar} />}
-
-      {/* Avatar Preview Dialog */}
-      <Dialog open={!!selectedAvatar} onOpenChange={() => setSelectedAvatar(null)}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-background/95 backdrop-blur-lg border border-border">
-          <button
-            onClick={() => setSelectedAvatar(null)}
-            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-surface/80 hover:bg-surface transition-smooth"
-          >
-            <X className="h-5 w-5 text-foreground" />
-          </button>
-          {selectedAvatar && (
-            <img
-              src={selectedAvatar}
-              alt="Profile"
-              className="w-full h-auto max-h-[80vh] object-contain"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>;
+      {selectedChat && (
+        <UserChatDialog 
+          open={chatOpen} 
+          onOpenChange={setChatOpen} 
+          recipientId={selectedChat.user_id} 
+          recipientName={selectedChat.name} 
+          recipientAvatar={selectedChat.avatar} 
+        />
+      )}
+    </div>
+  );
 }
