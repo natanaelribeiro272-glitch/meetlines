@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Capacitor } from "@capacitor/core";
 import { BarcodeScanner } from "@capacitor-mlkit/barcode-scanning";
 import { Html5Qrcode } from "html5-qrcode";
@@ -158,7 +159,8 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
         .select(`
           *,
           event:events!inner(id, title),
-          ticket_type:ticket_types(name)
+          ticket_type:ticket_types(name),
+          user:profiles!ticket_sales_user_id_fkey(avatar_url, display_name)
         `)
         .eq('id', ticketId)
         .eq('event_id', eventId)
@@ -335,35 +337,46 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
             </DialogDescription>
           </DialogHeader>
           {scannedTicket && (
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Titular</p>
-                <p className="font-semibold">{scannedTicket.buyer_name}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Email</p>
-                <p className="text-sm">{scannedTicket.buyer_email}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Tipo de Ingresso</p>
-                <p className="text-sm">{scannedTicket.ticket_type?.name}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Quantidade</p>
-                <p className="text-sm">{scannedTicket.quantity}x</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Valor</p>
-                <p className="text-sm">R$ {scannedTicket.total_amount.toFixed(2)}</p>
-              </div>
-              {scannedTicket.validated_at && (
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">Validado em</p>
-                  <p className="text-sm">
-                    {new Date(scannedTicket.validated_at).toLocaleString('pt-BR')}
-                  </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={scannedTicket.user?.avatar_url} />
+                  <AvatarFallback>
+                    {scannedTicket.buyer_name?.charAt(0).toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-lg">{scannedTicket.buyer_name}</p>
+                  <p className="text-sm text-muted-foreground">{scannedTicket.user?.display_name || scannedTicket.buyer_email}</p>
                 </div>
-              )}
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="text-sm">{scannedTicket.buyer_email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tipo de Ingresso</p>
+                  <p className="text-sm">{scannedTicket.ticket_type?.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Quantidade</p>
+                  <p className="text-sm">{scannedTicket.quantity}x</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Valor</p>
+                  <p className="text-sm">R$ {scannedTicket.total_amount.toFixed(2)}</p>
+                </div>
+                {scannedTicket.validated_at && (
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground">Validado em</p>
+                    <p className="text-sm">
+                      {new Date(scannedTicket.validated_at).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
