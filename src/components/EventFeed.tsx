@@ -99,6 +99,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 isLiked={event.is_liked || false}
                 isLive={(() => { const start = new Date(event.event_date); const end = event.end_date ? new Date(event.end_date) : null; const now = new Date(); return start <= now && (!end || end > now); })()}
                 price={event.ticket_price || 0}
+                hasPaidTickets={event.has_paid_tickets}
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}
@@ -136,6 +137,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 isLiked={event.is_liked || false}
                 isLive={false}
                 price={event.ticket_price || 0}
+                hasPaidTickets={event.has_paid_tickets}
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}

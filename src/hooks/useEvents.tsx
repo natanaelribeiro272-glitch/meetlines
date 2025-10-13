@@ -38,6 +38,7 @@ export interface EventData {
   unique_attendees_count?: number;
   is_platform_event?: boolean;
   organizer_name?: string;
+  has_paid_tickets?: boolean;
 }
 
 export function useEvents(categoryFilter?: string, searchQuery?: string) {
@@ -163,6 +164,17 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
           
           const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
 
+          // Verificar se tem tickets pagos
+          const { data: ticketTypes } = await supabase
+            .from('ticket_types')
+            .select('price')
+            .eq('event_id', event.id)
+            .eq('is_active', true);
+
+          const hasPaidTickets = (ticketTypes && ticketTypes.length > 0 && ticketTypes.some(t => Number(t.price) > 0)) || 
+                                 (event.ticket_price && Number(event.ticket_price) > 0) ||
+                                 !!event.ticket_link;
+
           // Verificar se o usuário curtiu (se logado)
           let isLiked = false;
           if (user) {
@@ -192,6 +204,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
             registrations_count: registrationsCount || 0,
             confirmed_attendees_count: confirmedAttendeesCount || 0,
             unique_attendees_count: uniqueAttendeesCount || 0,
+            has_paid_tickets: hasPaidTickets,
           };
         })
       );
@@ -219,6 +232,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
         registrations_count: 0,
         confirmed_attendees_count: 0,
         unique_attendees_count: 0,
+        has_paid_tickets: (platformEvent.ticket_price && Number(platformEvent.ticket_price) > 0) || !!platformEvent.ticket_link,
       }));
 
       // Combinar eventos regulares e platform_events

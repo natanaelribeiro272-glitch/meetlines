@@ -29,6 +29,7 @@ interface EventCardProps {
   showJoinButton?: boolean;
   ticketLink?: string;
   isPlatformEvent?: boolean;
+  hasPaidTickets?: boolean;
 }
 
 export function EventCard({
@@ -57,6 +58,7 @@ export function EventCard({
   showJoinButton = false,
   ticketLink,
   isPlatformEvent = false,
+  hasPaidTickets = false,
 }: EventCardProps) {
   // Verificar se é um evento online (link de streaming)
   const isOnlineEvent = locationLink && (
@@ -130,7 +132,7 @@ export function EventCard({
             alt={title}
             className="w-full h-64 object-cover"
           />
-          {((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink)) ? (
+          {((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink) || hasPaidTickets) ? (
             <div className="absolute top-3 right-3 bg-destructive/90 backdrop-blur-sm px-2 py-1 rounded-md">
               <span className="text-xs font-medium text-white">PAGO</span>
             </div>
@@ -145,7 +147,7 @@ export function EventCard({
       {/* Event Info */}
       <div className="p-4 pt-3">
         {!hasImage && (
-          ((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink)) ? (
+          ((typeof price !== 'undefined' && Number(price) > 0) || (!!ticketLink) || hasPaidTickets) ? (
             <div className="mb-2 inline-flex px-2 py-1 rounded-md bg-destructive/90">
               <span className="text-xs font-medium text-white">PAGO</span>
             </div>
