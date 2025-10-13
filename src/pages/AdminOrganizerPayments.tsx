@@ -35,80 +35,128 @@ export default function AdminOrganizerPayments() {
 
   const fetchOrganizersWithSales = async () => {
     try {
-      // Fetch all organizers with events that have ticket sales
-      const { data: organizersData, error: orgError } = await supabase
-        .from("organizers")
+      // Fetch all ticket sales with event and organizer info
+      const { data: salesData, error: salesError } = await supabase
+        .from("ticket_sales")
         .select(`
           id,
-          page_title,
-          avatar_url
-        `);
+          event_id,
+          total_amount,
+          subtotal,
+          platform_fee,
+          payment_processing_fee,
+          payment_status,
+          created_at,
+          events!inner (
+            id,
+            title,
+            end_date,
+            status,
+            organizer_id,
+            organizers!inner (
+              id,
+              page_title,
+              avatar_url
+            )
+          )
+        `)
+        .eq("payment_status", "completed");
 
-      if (orgError) throw orgError;
+      if (salesError) throw salesError;
 
-      // For each organizer, calculate pending payouts
-      const organizersWithSales = await Promise.all(
-        organizersData.map(async (org) => {
-          // Get events with completed sales
-          const { data: events } = await supabase
-            .from("events")
-            .select("id, end_date, status")
-            .eq("organizer_id", org.id);
+      console.log("Sales data:", salesData);
 
-          if (!events || events.length === 0) return null;
+      // Group sales by organizer
+      const organizerMap = new Map<string, {
+        id: string;
+        page_title: string;
+        avatar_url: string | null;
+        total_sales: number;
+        total_gross_amount: number;
+        total_pending_amount: number;
+        pending_payouts_count: number;
+        next_payout_date: string | null;
+        events: Set<string>;
+      }>();
 
-          let totalPending = 0;
-          let pendingCount = 0;
-          let nextPayoutDate: string | null = null;
+      for (const sale of salesData || []) {
+        const event = sale.events as any;
+        const organizer = event?.organizers;
+        
+        if (!organizer) continue;
 
-          for (const event of events) {
-            // Get sales for this event
-            const { data: sales } = await supabase
-              .from("ticket_sales")
-              .select("total_amount, platform_fee, payment_processing_fee, payment_status")
-              .eq("event_id", event.id)
-              .eq("payment_status", "completed");
+        const organizerId = organizer.id;
+        
+        if (!organizerMap.has(organizerId)) {
+          organizerMap.set(organizerId, {
+            id: organizerId,
+            page_title: organizer.page_title,
+            avatar_url: organizer.avatar_url,
+            total_sales: 0,
+            total_gross_amount: 0,
+            total_pending_amount: 0,
+            pending_payouts_count: 0,
+            next_payout_date: null,
+            events: new Set(),
+          });
+        }
 
-            if (sales && sales.length > 0) {
-              // Check if payout already exists
-              const { data: existingPayout } = await supabase
-                .from("organizer_payouts")
-                .select("payout_status")
-                .eq("event_id", event.id)
-                .single();
+        const orgData = organizerMap.get(organizerId)!;
+        orgData.total_sales++;
+        orgData.total_gross_amount += Number(sale.total_amount);
+        
+        // Add event to set
+        orgData.events.add(event.id);
 
-              if (!existingPayout || existingPayout.payout_status === "pending") {
-                const grossAmount = sales.reduce((sum, s) => sum + Number(s.total_amount), 0);
-                const platformFee = grossAmount * 0.05;
-                const processingFee = (grossAmount * 0.0399) + (sales.length * 0.39);
-                const netAmount = grossAmount - platformFee - processingFee;
+        // Check if payout already exists for this event
+        const { data: existingPayout } = await supabase
+          .from("organizer_payouts")
+          .select("payout_status")
+          .eq("event_id", event.id)
+          .maybeSingle();
 
-                totalPending += netAmount;
-                pendingCount++;
+        // Calculate net amount for pending payouts
+        if (!existingPayout || existingPayout.payout_status === "pending") {
+          const grossAmount = Number(sale.total_amount);
+          const platformFee = Number(sale.platform_fee || grossAmount * 0.05);
+          const processingFee = Number(sale.payment_processing_fee || (grossAmount * 0.0399 + 0.39));
+          const netAmount = grossAmount - platformFee - processingFee;
 
-                // Calculate payout date (3 business days after event end)
-                if (event.end_date) {
-                  const payoutDate = calculatePayoutDate(new Date(event.end_date));
-                  if (!nextPayoutDate || payoutDate < nextPayoutDate) {
-                    nextPayoutDate = payoutDate;
-                  }
-                }
+          orgData.total_pending_amount += netAmount;
+
+          // Calculate payout date if event has ended
+          if (event.end_date) {
+            const eventEndDate = new Date(event.end_date);
+            const now = new Date();
+            
+            if (eventEndDate < now) {
+              const payoutDate = calculatePayoutDate(eventEndDate);
+              if (!orgData.next_payout_date || payoutDate < orgData.next_payout_date) {
+                orgData.next_payout_date = payoutDate;
               }
             }
           }
+        }
+      }
 
-          if (pendingCount === 0) return null;
+      // Count unique events with pending payouts per organizer
+      for (const [organizerId, orgData] of organizerMap.entries()) {
+        orgData.pending_payouts_count = orgData.events.size;
+      }
 
-          return {
-            ...org,
-            total_pending_amount: totalPending,
-            pending_payouts_count: pendingCount,
-            next_payout_date: nextPayoutDate,
-          };
-        })
-      );
+      const organizersList = Array.from(organizerMap.values())
+        .filter(org => org.total_sales > 0)
+        .map(org => ({
+          id: org.id,
+          page_title: org.page_title,
+          avatar_url: org.avatar_url,
+          total_pending_amount: org.total_pending_amount,
+          pending_payouts_count: org.pending_payouts_count,
+          next_payout_date: org.next_payout_date,
+        }));
 
-      setOrganizers(organizersWithSales.filter(Boolean) as OrganizerWithSales[]);
+      console.log("Organizers with sales:", organizersList);
+      setOrganizers(organizersList);
     } catch (error) {
       console.error("Error fetching organizers:", error);
       toast.error("Erro ao carregar organizadores");
