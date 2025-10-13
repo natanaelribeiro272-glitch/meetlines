@@ -64,6 +64,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
     if (!user) return;
 
     let allowedUserIds: string[] = [user.id]; // Always include current user
+    let allowedStoryOwners: string[] = []; // Users whose stories we can see
 
     if (mode === 'nearby') {
       // Get current user's location
@@ -93,7 +94,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
       }
 
       // Calculate distances and filter nearby users (100m)
-      allowedUserIds = nearbyProfiles
+      const nearbyUserIds = nearbyProfiles
         .filter(profile => {
           if (profile.user_id === user.id) return true; // Always include current user
           
@@ -112,6 +113,24 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
           return distance <= 100; // 100m
         })
         .map(p => p.user_id);
+      
+      allowedUserIds = nearbyUserIds;
+
+      // Check story visibility settings for nearby users
+      const { data: nearbySettings } = await supabase
+        .from('profiles')
+        .select('user_id, story_visible_to')
+        .in('user_id', nearbyUserIds);
+
+      // Filter who can show stories to nearby users
+      allowedStoryOwners = nearbySettings
+        ?.filter(s => s.story_visible_to === 'both' || s.story_visible_to === 'nearby_only')
+        .map(s => s.user_id) || [];
+      
+      // Always include current user
+      if (!allowedStoryOwners.includes(user.id)) {
+        allowedStoryOwners.push(user.id);
+      }
 
     } else if (mode === 'friends') {
       // Get accepted friends only
@@ -133,19 +152,35 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
       );
 
       allowedUserIds = [user.id, ...friendIds];
+
+      // Check story visibility settings for friends
+      const { data: friendSettings } = await supabase
+        .from('profiles')
+        .select('user_id, story_visible_to')
+        .in('user_id', [user.id, ...friendIds]);
+
+      // Filter who can show stories to friends
+      allowedStoryOwners = friendSettings
+        ?.filter(s => s.story_visible_to === 'both' || s.story_visible_to === 'friends_only')
+        .map(s => s.user_id) || [];
+      
+      // Always include current user
+      if (!allowedStoryOwners.includes(user.id)) {
+        allowedStoryOwners.push(user.id);
+      }
     }
 
-    if (allowedUserIds.length === 0) {
+    if (allowedUserIds.length === 0 || allowedStoryOwners.length === 0) {
       setUserStories([]);
       setCurrentUserStory(null);
       return;
     }
 
-    // Get stories from allowed users (not expired)
+    // Get stories from allowed users with proper visibility (not expired)
     const { data: storiesData } = await supabase
       .from('stories')
       .select('*')
-      .in('user_id', allowedUserIds)
+      .in('user_id', allowedStoryOwners)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false });
 

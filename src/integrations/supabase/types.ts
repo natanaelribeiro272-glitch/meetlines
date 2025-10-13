@@ -709,6 +709,7 @@ export type Database = {
             | Database["public"]["Enums"]["relationship_status"]
             | null
           role: Database["public"]["Enums"]["user_role"] | null
+          story_visible_to: string | null
           tiktok_url: string | null
           twitter_url: string | null
           updated_at: string
@@ -740,6 +741,7 @@ export type Database = {
             | Database["public"]["Enums"]["relationship_status"]
             | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          story_visible_to?: string | null
           tiktok_url?: string | null
           twitter_url?: string | null
           updated_at?: string
@@ -771,6 +773,7 @@ export type Database = {
             | Database["public"]["Enums"]["relationship_status"]
             | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          story_visible_to?: string | null
           tiktok_url?: string | null
           twitter_url?: string | null
           updated_at?: string
