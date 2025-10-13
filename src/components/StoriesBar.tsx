@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Loader2, Camera, Image as ImageIcon, Eye } from "lucide-react";
+import { Plus, Loader2, Camera, Image as ImageIcon, Eye, SwitchCamera, X, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +39,8 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [showStoryOptions, setShowStoryOptions] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -270,16 +272,37 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
   const handleCameraCapture = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' },
+        video: { facingMode },
         audio: false 
       });
       
       setCameraStream(stream);
       setShowCamera(true);
       setShowUploadOptions(false);
+      setShowStoryOptions(false);
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast.error('Erro ao acessar a câmera');
+    }
+  };
+
+  const switchCamera = async () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+    }
+    
+    const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newFacingMode);
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: newFacingMode },
+        audio: false 
+      });
+      setCameraStream(stream);
+    } catch (error) {
+      console.error('Error switching camera:', error);
+      toast.error('Erro ao trocar câmera');
     }
   };
 
@@ -296,22 +319,45 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(video, 0, 0);
 
-      // Stop camera
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-      setShowCamera(false);
-
-      // Convert to blob and upload
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          await uploadStoryFile(file);
-        }
-      }, 'image/jpeg', 0.95);
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      setCapturedImage(imageDataUrl);
     } catch (error) {
       console.error('Error capturing photo:', error);
       toast.error('Erro ao capturar foto');
     }
+  };
+
+  const retakePhoto = () => {
+    setCapturedImage(null);
+  };
+
+  const postCapturedPhoto = async () => {
+    if (!capturedImage) return;
+
+    try {
+      // Convert data URL to blob
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      
+      // Stop camera
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+      
+      setShowCamera(false);
+      setCapturedImage(null);
+      
+      await uploadStoryFile(file);
+    } catch (error) {
+      console.error('Error posting photo:', error);
+      toast.error('Erro ao postar foto');
+    }
+  };
+
+  const openGallery = () => {
+    document.getElementById('story-upload')?.click();
   };
 
   const closeCamera = () => {
@@ -320,6 +366,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
       setCameraStream(null);
     }
     setShowCamera(false);
+    setCapturedImage(null);
   };
 
   // Cleanup camera stream on unmount
@@ -422,7 +469,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                   // Has story - show clickable circle with options
                   <div 
                     className="rounded-full p-[3px] bg-green-500 cursor-pointer"
-                    onClick={() => setShowStoryOptions(true)}
+                    onClick={handleCameraCapture}
                   >
                     <div className="bg-background rounded-full p-[2px]">
                       <Avatar className="h-14 w-14">
@@ -449,7 +496,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                     </div>
                     <div 
                       className="absolute bottom-0 right-0 bg-primary rounded-full p-1 z-10 cursor-pointer"
-                      onClick={() => setShowUploadOptions(true)}
+                      onClick={handleCameraCapture}
                     >
                       {uploading ? (
                         <Loader2 className="h-3 w-3 text-white animate-spin" />
@@ -515,103 +562,95 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
         />
       )}
 
-      {/* Story Options Dialog (when user already has a story) */}
-      <Dialog open={showStoryOptions} onOpenChange={setShowStoryOptions}>
-        <DialogContent className="bg-surface border-border max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Seu Story</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-4">
-            <Button
-              onClick={() => {
-                setShowStoryOptions(false);
-                if (currentUserStory) {
-                  openStoryViewer(currentUserStory.stories, 0);
-                }
-              }}
-              className="w-full h-14 text-base"
-              variant="outline"
-            >
-              <Eye className="h-5 w-5 mr-3" />
-              Ver Story
-            </Button>
-            <Button
-              onClick={() => {
-                setShowStoryOptions(false);
-                setShowUploadOptions(true);
-              }}
-              className="w-full h-14 text-base"
-              variant="outline"
-            >
-              <Plus className="h-5 w-5 mr-3" />
-              Postar Novo Story
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Story Options Dialog (when user already has a story) - REMOVED */}
 
-      {/* Upload Options Dialog */}
-      <Dialog open={showUploadOptions} onOpenChange={setShowUploadOptions}>
-        <DialogContent className="bg-surface border-border max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Adicionar Story</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-4">
-            <Button
-              onClick={handleCameraCapture}
-              className="w-full h-14 text-base"
-              variant="outline"
-            >
-              <Camera className="h-5 w-5 mr-3" />
-              Abrir Câmera
-            </Button>
-            <Button
-              onClick={() => {
-                document.getElementById('story-upload')?.click();
-                setShowUploadOptions(false);
-              }}
-              className="w-full h-14 text-base"
-              variant="outline"
-            >
-              <ImageIcon className="h-5 w-5 mr-3" />
-              Escolher da Galeria
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Upload Options Dialog - REMOVED */}
 
       {/* Camera Preview Dialog */}
       <Dialog open={showCamera} onOpenChange={closeCamera}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black border-none">
-          <div className="relative w-full aspect-[9/16] max-h-[80vh]">
-            <video
-              id="camera-preview"
-              autoPlay
-              playsInline
-              muted
-              ref={(video) => {
-                if (video && cameraStream) {
-                  video.srcObject = cameraStream;
-                }
-              }}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-6 items-center">
-              <Button
+        <DialogContent className="max-w-full w-full h-full p-0 m-0 overflow-hidden bg-black border-none">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Camera Preview or Captured Image */}
+            {capturedImage ? (
+              <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />
+            ) : (
+              <video
+                id="camera-preview"
+                autoPlay
+                playsInline
+                muted
+                ref={(video) => {
+                  if (video && cameraStream) {
+                    video.srcObject = cameraStream;
+                  }
+                }}
+                className="w-full h-full object-cover"
+              />
+            )}
+
+            {/* Top Bar */}
+            <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 bg-gradient-to-b from-black/50 to-transparent">
+              <button
                 onClick={closeCamera}
-                size="lg"
-                variant="ghost"
-                className="rounded-full w-14 h-14 bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/30"
+                className="p-2 rounded-full hover:bg-white/10 transition-smooth"
               >
-                <Plus className="h-6 w-6 text-white rotate-45" />
-              </Button>
-              <Button
-                onClick={capturePhoto}
-                size="lg"
-                className="rounded-full w-20 h-20 bg-white hover:bg-white/90 shadow-lg"
-              >
-                <div className="w-16 h-16 rounded-full border-4 border-black" />
-              </Button>
+                <X className="h-6 w-6 text-white" />
+              </button>
+              
+              {!capturedImage && (
+                <button
+                  onClick={switchCamera}
+                  className="p-2 rounded-full hover:bg-white/10 transition-smooth"
+                >
+                  <SwitchCamera className="h-6 w-6 text-white" />
+                </button>
+              )}
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="absolute bottom-0 left-0 right-0 pb-8 bg-gradient-to-t from-black/70 to-transparent">
+              {capturedImage ? (
+                /* Post or Retake */
+                <div className="flex justify-center items-center gap-8 px-8">
+                  <Button
+                    onClick={retakePhoto}
+                    size="lg"
+                    variant="ghost"
+                    className="rounded-full w-16 h-16 bg-white/10 hover:bg-white/20 border border-white/30"
+                  >
+                    <X className="h-6 w-6 text-white" />
+                  </Button>
+                  <Button
+                    onClick={postCapturedPhoto}
+                    size="lg"
+                    className="rounded-full w-16 h-16 bg-primary hover:bg-primary-glow"
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <Check className="h-6 w-6" />
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                /* Capture and Gallery */
+                <div className="flex justify-center items-center gap-8 px-8">
+                  <button
+                    onClick={openGallery}
+                    className="w-12 h-12 rounded-lg border-2 border-white/50 bg-white/10 hover:bg-white/20 transition-smooth flex items-center justify-center"
+                  >
+                    <ImageIcon className="h-6 w-6 text-white" />
+                  </button>
+                  <button
+                    onClick={capturePhoto}
+                    className="w-20 h-20 rounded-full bg-white hover:bg-white/90 transition-smooth flex items-center justify-center"
+                  >
+                    <div className="w-16 h-16 rounded-full border-4 border-black" />
+                  </button>
+                  <div className="w-12 h-12" /> {/* Spacer for symmetry */}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
