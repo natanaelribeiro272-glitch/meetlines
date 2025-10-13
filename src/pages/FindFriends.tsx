@@ -473,9 +473,8 @@ export default function FindFriends({
           return;
         }
 
-        // Calcular distância e filtrar (apenas pessoas próximas, não amigos)
+        // Calcular distância e filtrar pessoas próximas (incluindo amigos)
         const nearbyUsers = profilesData
-          .filter(profile => !friendIds.includes(profile.user_id)) // Excluir amigos
           .map(profile => {
             const R = 6371000;
             const lat1 = userLocation.lat * Math.PI / 180;
@@ -509,7 +508,7 @@ export default function FindFriends({
             phone: profile.phone || null,
             event_name: "Próximo",
             relationship_status: profile.relationship_status || "preferencia_nao_informar",
-            isFriend: false
+            isFriend: friendIds.includes(profile.user_id)
           }))
           .sort((a, b) => {
             const distA = parseFloat(a.distance);
