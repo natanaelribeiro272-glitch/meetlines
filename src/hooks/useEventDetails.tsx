@@ -50,6 +50,16 @@ export interface EventDetailsData {
   unique_attendees_count?: number;
   is_platform_event?: boolean;
   organizer_name?: string;
+  has_platform_tickets?: boolean;
+  ticket_types?: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    quantity: number;
+    sales_start_date?: string;
+    sales_end_date?: string;
+  }>;
 }
 
 export function useEventDetails(eventId: string | null) {
@@ -190,6 +200,22 @@ export function useEventDetails(eventId: string | null) {
         isLiked = !!likeData;
       }
 
+      // Buscar tipos de ingresso se o evento tem venda na plataforma
+      let ticketTypes: any[] = [];
+      let hasPlatformTickets = false;
+      if (!isPlatformEvent) {
+        const { data: ticketsData } = await supabase
+          .from('ticket_types')
+          .select('*')
+          .eq('event_id', eventId)
+          .order('price', { ascending: true });
+        
+        if (ticketsData && ticketsData.length > 0) {
+          ticketTypes = ticketsData;
+          hasPlatformTickets = true;
+        }
+      }
+
       setEvent({
         ...eventData,
         is_platform_event: isPlatformEvent,
@@ -207,6 +233,8 @@ export function useEventDetails(eventId: string | null) {
         registrations_count: registrationsCount,
         confirmed_attendees_count: confirmedAttendeesCount,
         unique_attendees_count: uniqueAttendeesCount,
+        has_platform_tickets: hasPlatformTickets,
+        ticket_types: ticketTypes,
       });
 
       // Buscar comentários (apenas para eventos regulares)

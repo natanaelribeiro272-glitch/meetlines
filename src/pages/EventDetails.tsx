@@ -645,7 +645,16 @@ export default function EventDetails({
           </div>
         </div>
 
-        {/* Interests */}
+          {/* Price Badge - Show if event has platform tickets */}
+          {event.has_platform_tickets && event.ticket_types && event.ticket_types.length > 0 && (
+            <div className="mb-4">
+              <Badge variant="default" className="bg-green-600 text-white border-0 text-base px-4 py-2">
+                💳 Evento Pago - A partir de R$ {Math.min(...event.ticket_types.map(t => t.price)).toFixed(2)}
+              </Badge>
+            </div>
+          )}
+
+          {/* Interests */}
         {event.interests && event.interests.length > 0 && (
           <div className="mb-6">
             <h3 className="font-semibold text-foreground mb-3">Meus Interesses</h3>
@@ -679,7 +688,7 @@ export default function EventDetails({
 
         {/* Action Buttons */}
         <div className="space-y-3 mb-6">
-          {/* Botão de Comprar Ingresso - Só aparece se tiver link e for pago */}
+          {/* Botão de Comprar Ingresso - Link externo */}
           {event.ticket_link && (
             <Button
               variant="default"
@@ -688,6 +697,21 @@ export default function EventDetails({
               onClick={() => window.open(event.ticket_link, "_blank")}
             >
               💳 Comprar Ingresso
+            </Button>
+          )}
+
+          {/* Botão de Comprar Ingresso - Venda na Plataforma (Stripe) */}
+          {event.has_platform_tickets && event.ticket_types && event.ticket_types.length > 0 && (
+            <Button
+              variant="default"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              size="lg"
+              onClick={() => {
+                toast.info("Sistema de compra de ingressos em desenvolvimento");
+                // TODO: Implementar fluxo de compra com Stripe
+              }}
+            >
+              💳 Comprar Ingresso - A partir de R$ {Math.min(...event.ticket_types.map(t => t.price)).toFixed(2)}
             </Button>
           )}
 
