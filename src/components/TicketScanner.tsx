@@ -29,30 +29,75 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const [manualCodeInput, setManualCodeInput] = useState(false);
   const [manualCode, setManualCode] = useState("");
+  const [forceWebScanner, setForceWebScanner] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
     return () => {
       // Cleanup scanner on unmount
-      if (scannerRef.current && isScanning) {
-        scannerRef.current.stop().catch(console.error);
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
       }
     };
-  }, [isScanning]);
+  }, []);
+
+  // Initialize Web scanner only after the dialog content is mounted
+  useEffect(() => {
+    if (!isScanning || (isNative && !forceWebScanner)) return;
+    let cancelled = false;
+
+    const init = async () => {
+      try {
+        // Wait for the #qr-reader element to exist in the DOM
+        for (let i = 0; i < 20; i++) {
+          if (document.getElementById("qr-reader")) break;
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        if (cancelled) return;
+
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        scannerRef.current = html5QrCode;
+
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          async (decodedText) => {
+            try {
+              await html5QrCode.stop().catch(() => {});
+            } finally {
+              setIsScanning(false);
+            }
+            await validateTicket(decodedText);
+          },
+          () => {}
+        );
+      } catch (error: any) {
+        console.error('Error starting web scanner:', error);
+        toast.error('Erro ao acessar câmera. Use o código manual.');
+        setIsScanning(false);
+        setManualCodeInput(true);
+      }
+    };
+
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [isScanning, isNative]);
 
   const startScan = async () => {
     if (isNative) {
       await startNativeScan();
     } else {
-      await startWebScan();
+      // Only toggles dialog; actual scanner starts in the effect above
+      setIsScanning(true);
     }
   };
 
   const startNativeScan = async () => {
     try {
       const permission = await BarcodeScanner.requestPermissions();
-      
       if (permission.camera !== 'granted') {
         toast.error('Permissão de câmera negada');
         return;
@@ -65,52 +110,33 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
         const ticketId = result.barcodes[0].rawValue;
         await validateTicket(ticketId);
       }
+
+      setIsScanning(false);
     } catch (error: any) {
       console.error('Error scanning QR code:', error);
       toast.error('Erro ao escanear QR Code');
-    } finally {
-      setIsScanning(false);
+      // Fallback to web scanner when native scan fails
+      setForceWebScanner(true);
+      setIsScanning(true);
     }
   };
 
   const startWebScan = async () => {
-    try {
-      setIsScanning(true);
-      
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      scannerRef.current = html5QrCode;
-
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
-        },
-        async (decodedText) => {
-          await html5QrCode.stop();
-          setIsScanning(false);
-          await validateTicket(decodedText);
-        },
-        (errorMessage) => {
-          // Ignore decode errors during scanning
-        }
-      );
-    } catch (error: any) {
-      console.error('Error starting web scanner:', error);
-      toast.error('Erro ao acessar câmera. Use o código manual.');
-      setIsScanning(false);
-      setManualCodeInput(true);
-    }
+    setIsScanning(true);
   };
 
   const stopScan = async () => {
-    if (scannerRef.current && isScanning) {
+    if (scannerRef.current) {
       try {
         await scannerRef.current.stop();
+        // @ts-ignore - optional API
+        // Clear preview if available
+        (scannerRef.current as any).clear?.();
       } catch (error) {
         console.error('Error stopping scanner:', error);
       }
     }
+    setForceWebScanner(false);
     setIsScanning(false);
   };
 
@@ -200,6 +226,7 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
               className="w-full h-20 flex flex-col gap-2"
               onClick={() => {
                 setOptionsDialogOpen(false);
+                setForceWebScanner(false);
                 startScan();
               }}
             >
@@ -222,7 +249,7 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
       </Dialog>
 
       {/* Web Scanner Dialog */}
-      <Dialog open={isScanning && !isNative} onOpenChange={(open) => !open && stopScan()}>
+      <Dialog open={isScanning && (!isNative || forceWebScanner)} onOpenChange={(open) => !open && stopScan()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Escanear QR Code</DialogTitle>
