@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle, Ticket, ClipboardList, DollarSign } from "lucide-react";
+import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle, Ticket, ClipboardList, DollarSign, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useNavigate } from "react-router-dom";
+import TicketScanner from "./TicketScanner";
 import event1 from "@/assets/event-1.jpg";
 import event2 from "@/assets/event-2.jpg";
 
@@ -209,15 +210,18 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         Cadastros
                       </Button>
                       {event.has_paid_tickets && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => navigate(`/event/${event.id}/sales`)}
-                        >
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          Vendas
-                        </Button>
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => navigate(`/event/${event.id}/sales`)}
+                          >
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Vendas
+                          </Button>
+                          <TicketScanner eventId={event.id} />
+                        </>
                       )}
                       <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                         <DropdownMenuTrigger asChild>
@@ -303,15 +307,18 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                       </Button>
                     )}
                     {event.has_paid_tickets && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => navigate(`/event/${event.id}/sales`)}
-                      >
-                        <DollarSign className="h-4 w-4 mr-1" />
-                        Vendas
-                      </Button>
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => navigate(`/event/${event.id}/sales`)}
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Vendas
+                        </Button>
+                        <TicketScanner eventId={event.id} />
+                      </>
                     )}
                     <Button 
                       variant="outline" 

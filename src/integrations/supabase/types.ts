@@ -1139,6 +1139,8 @@ export type Database = {
           total_amount: number
           unit_price: number
           user_id: string
+          validated_at: string | null
+          validated_by: string | null
         }
         Insert: {
           buyer_document?: string | null
@@ -1162,6 +1164,8 @@ export type Database = {
           total_amount: number
           unit_price: number
           user_id: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Update: {
           buyer_document?: string | null
@@ -1185,6 +1189,8 @@ export type Database = {
           total_amount?: number
           unit_price?: number
           user_id?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Relationships: [
           {
