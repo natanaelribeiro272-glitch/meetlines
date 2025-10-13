@@ -24,6 +24,16 @@ export function OrganizerStoryUploadDialog({
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Connect camera stream to video element
+  useEffect(() => {
+    if (cameraStream && videoRef.current && showCamera) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(err => {
+        console.error('Error playing video:', err);
+      });
+    }
+  }, [cameraStream, showCamera]);
+
   // Cleanup camera on close
   useEffect(() => {
     if (!open) {
@@ -163,33 +173,28 @@ export function OrganizerStoryUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md h-[90vh] p-0 bg-black border-none">
+      <DialogContent className="max-w-full sm:max-w-md w-full h-screen sm:h-[90vh] p-0 bg-black border-none overflow-hidden">
         {showCamera && !capturedMedia ? (
           /* Camera View */
           <div className="relative h-full w-full flex flex-col bg-black">
             {/* Video Preview */}
-            <div className="flex-1 relative overflow-hidden">
+            <div className="flex-1 relative overflow-hidden bg-black">
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
                 className="absolute inset-0 w-full h-full object-cover"
-                onLoadedMetadata={(e) => {
-                  if (cameraStream) {
-                    e.currentTarget.srcObject = cameraStream;
-                  }
-                }}
               />
             </div>
 
             {/* Top Controls */}
-            <div className="absolute top-4 left-0 right-0 flex justify-between items-center px-4 z-10">
+            <div className="absolute top-safe top-4 left-0 right-0 flex justify-between items-center px-4 z-20">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleClose}
-                className="bg-black/50 hover:bg-black/70 text-white rounded-full"
+                className="bg-black/60 hover:bg-black/80 text-white rounded-full h-10 w-10"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -198,20 +203,20 @@ export function OrganizerStoryUploadDialog({
                 variant="ghost"
                 size="icon"
                 onClick={switchCamera}
-                className="bg-black/50 hover:bg-black/70 text-white rounded-full"
+                className="bg-black/60 hover:bg-black/80 text-white rounded-full h-10 w-10"
               >
                 <SwitchCamera className="h-5 w-5" />
               </Button>
             </div>
 
             {/* Bottom Controls */}
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center items-center gap-8 px-4 z-10">
+            <div className="absolute bottom-safe bottom-8 sm:bottom-12 left-0 right-0 flex justify-center items-center gap-6 sm:gap-8 px-4 z-20 pb-safe">
               {/* Gallery Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-12 w-12 bg-white/20 hover:bg-white/30 text-white rounded-full"
+                className="h-12 w-12 sm:h-14 sm:w-14 bg-white/20 hover:bg-white/30 text-white rounded-full flex-shrink-0"
               >
                 <ImageIcon className="h-6 w-6" />
               </Button>
@@ -221,12 +226,13 @@ export function OrganizerStoryUploadDialog({
                 variant="ghost"
                 size="icon"
                 onClick={capturePhoto}
-                className="h-16 w-16 bg-white hover:bg-white/90 rounded-full ring-4 ring-white/50"
+                className="h-16 w-16 sm:h-20 sm:w-20 bg-white hover:bg-white/90 rounded-full ring-4 ring-white/50 flex-shrink-0"
               >
-                <div className="h-14 w-14 rounded-full bg-transparent border-4 border-black" />
+                <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-transparent border-4 border-black" />
               </Button>
 
-              <div className="h-12 w-12" /> {/* Spacer for symmetry */}
+              {/* Spacer for symmetry */}
+              <div className="h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0" />
             </div>
 
             <input
@@ -240,44 +246,45 @@ export function OrganizerStoryUploadDialog({
         ) : capturedMedia ? (
           /* Preview Captured Media */
           <div className="relative h-full w-full flex flex-col bg-black">
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
               {mediaType === 'video' ? (
                 <video
                   src={capturedMedia}
-                  className="max-h-full max-w-full object-contain"
+                  className="max-h-full w-full object-contain"
                   controls
                   autoPlay
                   loop
+                  playsInline
                 />
               ) : (
                 <img
                   src={capturedMedia}
                   alt="Preview"
-                  className="max-h-full max-w-full object-contain"
+                  className="max-h-full w-full object-contain"
                 />
               )}
             </div>
 
             {/* Top Controls */}
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+            <div className="absolute top-safe top-4 left-4 right-4 flex justify-between items-center z-20">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleClose}
-                className="bg-black/50 hover:bg-black/70 text-white rounded-full"
+                className="bg-black/60 hover:bg-black/80 text-white rounded-full h-10 w-10"
               >
                 <X className="h-5 w-5" />
               </Button>
             </div>
 
             {/* Bottom Controls */}
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-4 z-10">
+            <div className="absolute bottom-safe bottom-8 sm:bottom-12 left-0 right-0 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 px-4 z-20 pb-safe">
               <Button
                 variant="ghost"
                 size="lg"
                 onClick={retakeMedia}
                 disabled={uploading}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full px-8"
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full px-6 sm:px-8 h-12 sm:h-14 min-w-[140px]"
               >
                 <X className="h-5 w-5 mr-2" />
                 Refazer
@@ -288,7 +295,7 @@ export function OrganizerStoryUploadDialog({
                 size="lg"
                 onClick={postCapturedMedia}
                 disabled={uploading}
-                className="bg-primary hover:bg-primary/90 rounded-full px-8"
+                className="bg-primary hover:bg-primary/90 rounded-full px-6 sm:px-8 h-12 sm:h-14 min-w-[140px]"
               >
                 <Check className="h-5 w-5 mr-2" />
                 {uploading ? 'Publicando...' : 'Publicar'}
@@ -297,17 +304,17 @@ export function OrganizerStoryUploadDialog({
           </div>
         ) : (
           /* Initial Options */
-          <div className="h-full flex flex-col items-center justify-center gap-6 p-8">
-            <h2 className="text-2xl font-bold text-white">Criar Story</h2>
+          <div className="h-full flex flex-col items-center justify-center gap-6 sm:gap-8 p-6 sm:p-8">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Criar Story</h2>
             
-            <div className="flex flex-col gap-4 w-full max-w-xs">
+            <div className="flex flex-col gap-3 sm:gap-4 w-full max-w-xs">
               <Button
                 variant="default"
                 size="lg"
                 onClick={startCamera}
-                className="w-full h-16 text-lg rounded-xl"
+                className="w-full h-14 sm:h-16 text-base sm:text-lg rounded-xl"
               >
-                <Camera className="h-6 w-6 mr-3" />
+                <Camera className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3" />
                 Abrir Câmera
               </Button>
               
@@ -315,9 +322,9 @@ export function OrganizerStoryUploadDialog({
                 variant="outline"
                 size="lg"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-16 text-lg rounded-xl bg-surface border-border hover:bg-surface/80"
+                className="w-full h-14 sm:h-16 text-base sm:text-lg rounded-xl bg-surface border-border hover:bg-surface/80"
               >
-                <ImageIcon className="h-6 w-6 mr-3" />
+                <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3" />
                 Escolher da Galeria
               </Button>
             </div>
