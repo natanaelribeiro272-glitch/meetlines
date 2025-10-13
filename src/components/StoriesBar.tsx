@@ -532,7 +532,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
             <input
               id="story-upload"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/jpg,image/webp"
               className="hidden"
               onChange={handleUploadStory}
               disabled={uploading}
