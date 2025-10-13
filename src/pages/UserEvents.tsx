@@ -245,7 +245,7 @@ export default function UserEvents() {
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
