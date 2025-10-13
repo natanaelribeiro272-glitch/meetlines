@@ -325,7 +325,7 @@ export function OrganizerStoryUploadDialog({
                 className="w-full h-14 sm:h-16 text-base sm:text-lg rounded-xl bg-surface border-border hover:bg-surface/80"
               >
                 <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3" />
-                Escolher da Galeria
+                Upload
               </Button>
             </div>
 
