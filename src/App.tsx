@@ -27,6 +27,7 @@ import TicketPurchaseSuccess from "./pages/TicketPurchaseSuccess";
 import EventTicketSales from "./pages/EventTicketSales";
 import AdminOrganizerPayments from "./pages/AdminOrganizerPayments";
 import AdminOrganizerPaymentDetails from "./pages/AdminOrganizerPaymentDetails";
+import UserEvents from "./pages/UserEvents";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/ticket-success" element={<TicketPurchaseSuccess />} />
               <Route path="/event/:eventId/sales" element={<EventTicketSales />} />
+              <Route path="/my-events" element={<UserEvents />} />
               {/* Admin routes */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />

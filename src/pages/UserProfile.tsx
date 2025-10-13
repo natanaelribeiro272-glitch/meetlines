@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { User, Lock, Heart, Users, Briefcase, Calendar, Edit, Settings, Eye, Camera, EyeOff, ExternalLink, Instagram, MessageCircle, Music, Link, Plus, LogOut, Trash2, MapPin, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { User, Lock, Heart, Users, Briefcase, Calendar, Edit, Settings, Eye, Camera, EyeOff, ExternalLink, Instagram, MessageCircle, Music, Link, Plus, LogOut, Trash2, MapPin, Facebook, Twitter, Linkedin, Youtube, Ticket } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ const socialPlatforms = [{
 export default function UserProfile({
   userType
 }: UserProfileProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -469,6 +471,10 @@ export default function UserProfile({
           <button onClick={() => setActiveTab("profile")} className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "profile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <User className="h-4 w-4 inline mr-2" />
             Perfil
+          </button>
+          <button onClick={() => navigate("/my-events")} className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
+            <Ticket className="h-4 w-4 inline mr-2" />
+            Meus Eventos
           </button>
           <button onClick={() => setActiveTab("settings")} className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "settings" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <Settings className="h-4 w-4 inline mr-2" />
