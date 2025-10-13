@@ -189,25 +189,67 @@ export default function UserChatDialog({
             <div className="space-y-4">
               {messages.map((message) => {
                 const isMe = message.from_user_id === user?.id;
+                
+                // Check if it's a story reply message
+                let isStoryReply = false;
+                let storyData = null;
+                try {
+                  const parsed = JSON.parse(message.content);
+                  if (parsed.type === 'story_reply') {
+                    isStoryReply = true;
+                    storyData = parsed;
+                  }
+                } catch {
+                  // Not JSON, regular message
+                }
+
                 return (
                   <div
                     key={message.id}
                     className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                      className={`max-w-[70%] rounded-lg overflow-hidden ${
                         isMe
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted'
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {formatDistanceToNow(new Date(message.created_at), {
-                          addSuffix: true,
-                          locale: ptBR
-                        })}
-                      </p>
+                      {isStoryReply && storyData ? (
+                        // Story reply format
+                        <>
+                          <div className="px-3 py-2 text-xs opacity-70 border-b border-border/50">
+                            Respondeu seu story
+                          </div>
+                          <div className="p-2">
+                            <img 
+                              src={storyData.story_image} 
+                              alt="Story" 
+                              className="w-full h-32 object-cover rounded"
+                            />
+                          </div>
+                          <div className="px-4 py-2">
+                            <p className="text-sm">{storyData.reply}</p>
+                            <p className="text-xs opacity-70 mt-1">
+                              {formatDistanceToNow(new Date(message.created_at), {
+                                addSuffix: true,
+                                locale: ptBR
+                              })}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        // Regular message
+                        <div className="px-4 py-2">
+                          <p className="text-sm">{message.content}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {formatDistanceToNow(new Date(message.created_at), {
+                              addSuffix: true,
+                              locale: ptBR
+                            })}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

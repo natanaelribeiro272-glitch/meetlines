@@ -204,20 +204,21 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
       return;
     }
 
-    // Send notification to story owner via message
+    // Send message to story owner with story reply format
     if (currentStory.user_id !== user.id) {
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('user_id', user.id)
-        .single();
+      // Create special message format for story reply
+      const storyReplyMessage = JSON.stringify({
+        type: 'story_reply',
+        story_image: currentStory.image_url,
+        reply: newComment
+      });
 
       await supabase
         .from('user_messages')
         .insert({
           from_user_id: user.id,
           to_user_id: currentStory.user_id,
-          content: `Respondeu sua história: "${newComment}"`
+          content: storyReplyMessage
         });
     }
 
