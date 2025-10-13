@@ -61,6 +61,8 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
   const [showComments, setShowComments] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLikesList, setShowLikesList] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
   const { user } = useAuth();
 
   const currentStory = stories[currentIndex];
@@ -272,6 +274,31 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrevious();
+    }
+
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
+
   const handleDeleteStory = async () => {
     if (!user || !currentStory) return;
 
@@ -363,7 +390,7 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
 
           {/* Story Image */}
           <div 
-            className="flex-1 bg-center bg-cover bg-no-repeat cursor-pointer"
+            className="flex-1 bg-center bg-cover bg-no-repeat cursor-pointer select-none"
             style={{ backgroundImage: `url(${currentStory.image_url})` }}
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -374,6 +401,9 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
                 handleNext();
               }
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           />
 
           {/* Actions */}
