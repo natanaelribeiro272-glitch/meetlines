@@ -148,31 +148,26 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
         .eq('status', 'accepted')
         .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
 
-      if (!friendshipsData || friendshipsData.length === 0) {
-        setUserStories([]);
-        setCurrentUserStory(null);
-        return;
-      }
-
-      // Extract friend IDs
-      const friendIds = friendshipsData.map(f => 
+      // Extract friend IDs (can be empty)
+      const friendIds = friendshipsData?.map(f => 
         f.user_id === user.id ? f.friend_id : f.user_id
-      );
+      ) || [];
 
+      // Always include current user
       allowedUserIds = [user.id, ...friendIds];
 
       // Check story visibility settings for friends
       const { data: friendSettings } = await supabase
         .from('profiles')
         .select('user_id, story_visible_to')
-        .in('user_id', [user.id, ...friendIds]);
+        .in('user_id', allowedUserIds);
 
-      // Filter who can show stories to friends
+      // Filter who can show stories to friends (both or friends_only)
       allowedStoryOwners = friendSettings
         ?.filter(s => s.story_visible_to === 'both' || s.story_visible_to === 'friends_only')
         .map(s => s.user_id) || [];
       
-      // Always include current user
+      // Always include current user stories
       if (!allowedStoryOwners.includes(user.id)) {
         allowedStoryOwners.push(user.id);
       }
