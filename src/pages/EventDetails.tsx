@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { AuthModal } from "@/components/AuthModal";
+import { TicketPurchaseDialog } from "@/components/TicketPurchaseDialog";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
@@ -56,6 +57,8 @@ export default function EventDetails({
   const [isOrganizerUser, setIsOrganizerUser] = useState(false);
   const [organizerId, setOrganizerId] = useState<string | null>(null);
   const [requestingClaim, setRequestingClaim] = useState(false);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [ticketSettings, setTicketSettings] = useState<any>(null);
 
   const isOrganizer = user && event?.organizer?.user_id === user.id;
 
@@ -121,6 +124,29 @@ export default function EventDetails({
 
     checkAttendance();
   }, [user, eventId]);
+
+  // Load ticket settings if event has platform tickets
+  useEffect(() => {
+    const loadTicketSettings = async () => {
+      if (!event?.has_platform_tickets || !eventId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("event_ticket_settings")
+          .select("*")
+          .eq("event_id", eventId)
+          .maybeSingle();
+
+        if (!error && data) {
+          setTicketSettings(data);
+        }
+      } catch (error) {
+        console.error("Error loading ticket settings:", error);
+      }
+    };
+
+    loadTicketSettings();
+  }, [event?.has_platform_tickets, eventId]);
 
   const requireAuth = (action: () => void, actionName: string) => {
     if (!user) {
@@ -698,8 +724,9 @@ export default function EventDetails({
               className="w-full bg-green-600 hover:bg-green-700 text-white"
               size="lg"
               onClick={() => {
-                toast.info("Sistema de compra de ingressos em desenvolvimento");
-                // TODO: Implementar fluxo de compra com Stripe
+                requireAuth(() => {
+                  setTicketDialogOpen(true);
+                }, "comprar ingressos");
               }}
             >
               💳 Comprar Ingresso - A partir de R$ {Math.min(...event.ticket_types.map(t => t.price)).toFixed(2)}
@@ -854,6 +881,18 @@ export default function EventDetails({
 
       {/* Auth Modal */}
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
+
+      {/* Ticket Purchase Dialog */}
+      {event?.has_platform_tickets && event.ticket_types && ticketSettings && (
+        <TicketPurchaseDialog
+          open={ticketDialogOpen}
+          onOpenChange={setTicketDialogOpen}
+          ticketTypes={event.ticket_types}
+          ticketSettings={ticketSettings}
+          eventId={eventId!}
+          eventTitle={event.title}
+        />
+      )}
     </div>
   );
 }

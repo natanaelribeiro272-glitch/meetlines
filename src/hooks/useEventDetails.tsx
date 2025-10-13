@@ -57,6 +57,9 @@ export interface EventDetailsData {
     description?: string;
     price: number;
     quantity: number;
+    quantity_sold?: number;
+    min_quantity_per_purchase?: number;
+    max_quantity_per_purchase?: number;
     sales_start_date?: string;
     sales_end_date?: string;
   }>;
