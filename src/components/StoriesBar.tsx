@@ -36,6 +36,8 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
   const [selectedStories, setSelectedStories] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -267,20 +269,26 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
   const handleCameraCapture = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
+        video: { facingMode: 'user' },
+        audio: false 
       });
       
-      // Create video element
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.play();
+      setCameraStream(stream);
+      setShowCamera(true);
+      setShowUploadOptions(false);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast.error('Erro ao acessar a câmera');
+    }
+  };
 
-      // Wait for video to be ready
-      await new Promise(resolve => {
-        video.onloadedmetadata = resolve;
-      });
+  const capturePhoto = async () => {
+    if (!cameraStream) return;
 
-      // Create canvas and capture image
+    try {
+      const video = document.getElementById('camera-preview') as HTMLVideoElement;
+      if (!video) return;
+
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -288,22 +296,39 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
       ctx?.drawImage(video, 0, 0);
 
       // Stop camera
-      stream.getTracks().forEach(track => track.stop());
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+      setShowCamera(false);
 
       // Convert to blob and upload
       canvas.toBlob(async (blob) => {
         if (blob) {
-          const file = new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
           await uploadStoryFile(file);
         }
       }, 'image/jpeg', 0.95);
-
-      setShowUploadOptions(false);
     } catch (error) {
-      console.error('Error accessing camera:', error);
-      toast.error('Erro ao acessar câmera');
+      console.error('Error capturing photo:', error);
+      toast.error('Erro ao capturar foto');
     }
   };
+
+  const closeCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
 
   const uploadStoryFile = async (file: File) => {
     if (!user) return;
@@ -515,6 +540,43 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
               <ImageIcon className="h-5 w-5 mr-3" />
               Escolher da Galeria
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Camera Preview Dialog */}
+      <Dialog open={showCamera} onOpenChange={closeCamera}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black border-none">
+          <div className="relative w-full aspect-[9/16] max-h-[80vh]">
+            <video
+              id="camera-preview"
+              autoPlay
+              playsInline
+              muted
+              ref={(video) => {
+                if (video && cameraStream) {
+                  video.srcObject = cameraStream;
+                }
+              }}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-6 items-center">
+              <Button
+                onClick={closeCamera}
+                size="lg"
+                variant="ghost"
+                className="rounded-full w-14 h-14 bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/30"
+              >
+                <Plus className="h-6 w-6 text-white rotate-45" />
+              </Button>
+              <Button
+                onClick={capturePhoto}
+                size="lg"
+                className="rounded-full w-20 h-20 bg-white hover:bg-white/90 shadow-lg"
+              >
+                <div className="w-16 h-16 rounded-full border-4 border-black" />
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
