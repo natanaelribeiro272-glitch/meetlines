@@ -166,8 +166,8 @@ export default function UserEvents() {
 
   const EventCard = ({ event, type, registration, purchase }: any) => (
     <Card
-      className="cursor-pointer hover:shadow-lg transition-shadow"
-      onClick={() => navigate(`/events/${event.id}`)}
+      className={type === "purchase" ? "" : "cursor-pointer hover:shadow-lg transition-shadow"}
+      onClick={type === "purchase" ? undefined : () => navigate(`/events/${event.id}`)}
     >
       <div className="flex gap-4 p-4">
         {event.image_url && (
@@ -200,11 +200,7 @@ export default function UserEvents() {
               </div>
               <Button
                 size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedTicket(purchase);
-                }}
+                onClick={() => setSelectedTicket(purchase)}
               >
                 <QrCode className="h-4 w-4 mr-2" />
                 Ver Ingresso
@@ -336,29 +332,113 @@ export default function UserEvents() {
 
       {/* Ticket Dialog */}
       <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Seu Ingresso</DialogTitle>
+            <DialogTitle>Seu Ingresso Digital</DialogTitle>
             <DialogDescription>
-              Mostre este QR Code ao organizador na entrada do evento
+              Apresente este QR Code na entrada do evento
             </DialogDescription>
           </DialogHeader>
           {selectedTicket && (
-            <div className="flex flex-col items-center gap-4 py-4">
-              <div className="bg-white p-4 rounded-lg">
-                <QRCode value={selectedTicket.id} size={200} />
+            <div className="space-y-6 py-4">
+              {/* Event Info */}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Evento</p>
+                  <p className="font-semibold text-lg">{selectedTicket.event.title}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Organizador</p>
+                  <p className="font-medium">{selectedTicket.event.organizer.page_title}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Data</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedTicket.event.event_date), "dd/MM/yyyy", { locale: ptBR })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Horário</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedTicket.event.event_date), "HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Local</p>
+                  <p className="font-medium">{selectedTicket.event.location}</p>
+                </div>
               </div>
-              <div className="text-center space-y-2">
-                <p className="font-semibold">{selectedTicket.event.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  {selectedTicket.ticket_type.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Quantidade: {selectedTicket.quantity}
-                </p>
-                <p className="text-xs font-mono text-muted-foreground">
-                  ID: {selectedTicket.id.slice(0, 8)}
-                </p>
+
+              <div className="border-t border-dashed pt-4" />
+
+              {/* Ticket Details */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tipo de Ingresso</p>
+                    <p className="font-semibold">{selectedTicket.ticket_type.name}</p>
+                  </div>
+                  <Badge variant="secondary" className="text-base">
+                    {selectedTicket.quantity}x
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="font-bold text-xl text-primary">
+                    R$ {selectedTicket.total_amount.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Data da Compra</p>
+                  <p className="font-medium">
+                    {format(new Date(selectedTicket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed pt-4" />
+
+              {/* QR Code */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="bg-white p-6 rounded-lg shadow-inner">
+                  <QRCode value={selectedTicket.id} size={220} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Código do Ingresso</p>
+                  <p className="text-xs font-mono bg-muted px-3 py-1 rounded">
+                    {selectedTicket.id}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => {
+                      const canvas = document.querySelector('canvas');
+                      if (canvas) {
+                        const url = canvas.toDataURL();
+                        const link = document.createElement('a');
+                        link.download = `ingresso-${selectedTicket.id.slice(0, 8)}.png`;
+                        link.href = url;
+                        link.click();
+                        toast.success("QR Code baixado!");
+                      }
+                    }}
+                  >
+                    Baixar QR Code
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => navigate(`/events/${selectedTicket.event_id}`)}
+                  >
+                    Ver Evento
+                  </Button>
+                </div>
               </div>
             </div>
           )}
