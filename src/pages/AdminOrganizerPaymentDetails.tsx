@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,8 @@ interface EventPayout {
 export default function AdminOrganizerPaymentDetails() {
   const { organizerId } = useParams<{ organizerId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedEventId = searchParams.get("event");
   const [loading, setLoading] = useState(true);
   const [organizer, setOrganizer] = useState<OrganizerDetails | null>(null);
   const [payouts, setPayouts] = useState<EventPayout[]>([]);
@@ -88,7 +90,12 @@ export default function AdminOrganizerPaymentDetails() {
       // Fetch events with sales
       const { data: events, error: eventsError } = await supabase
         .from("events")
-        .select("*")
+        .select(`
+          *,
+          event_ticket_settings (
+            accepts_platform_payment
+          )
+        `)
         .eq("organizer_id", organizerId);
 
       if (eventsError) throw eventsError;
@@ -103,19 +110,24 @@ export default function AdminOrganizerPaymentDetails() {
           .eq("event_id", event.id)
           .eq("payment_status", "completed");
 
-        if (sales && sales.length > 0) {
-          const grossAmount = sales.reduce((sum, s) => sum + Number(s.total_amount), 0);
-          const platformFee = grossAmount * 0.05;
-          const processingFee = (grossAmount * 0.0399) + (sales.length * 0.39);
-          const netAmount = grossAmount - platformFee - processingFee;
+        const acceptsPlatform = Array.isArray((event as any).event_ticket_settings)
+          ? (event as any).event_ticket_settings[0]?.accepts_platform_payment
+          : (event as any).event_ticket_settings?.accepts_platform_payment;
 
-          // Check if payout exists
-          const { data: existingPayout } = await supabase
-            .from("organizer_payouts")
-            .select("*")
-            .eq("event_id", event.id)
-            .maybeSingle();
+        // Check if payout exists (even if no sales yet)
+        const { data: existingPayout } = await supabase
+          .from("organizer_payouts")
+          .select("*")
+          .eq("event_id", event.id)
+          .maybeSingle();
 
+        const salesList = sales || [];
+        const grossAmount = salesList.reduce((sum, s) => sum + Number(s.total_amount), 0);
+        const platformFee = salesList.length > 0 ? grossAmount * 0.05 : 0;
+        const processingFee = salesList.length > 0 ? (grossAmount * 0.0399) + (salesList.length * 0.39) : 0;
+        const netAmount = grossAmount - platformFee - processingFee;
+
+        if (salesList.length > 0 || acceptsPlatform) {
           const payoutDueDate = calculatePayoutDate(new Date(event.end_date));
 
           payoutsList.push({
@@ -140,7 +152,9 @@ export default function AdminOrganizerPaymentDetails() {
         }
       }
 
-      setPayouts(payoutsList);
+      const finalList = selectedEventId ? payoutsList.filter((p) => p.event_id === selectedEventId) : payoutsList;
+
+      setPayouts(finalList);
     } catch (error) {
       console.error("Error fetching organizer details:", error);
       toast.error("Erro ao carregar detalhes");
