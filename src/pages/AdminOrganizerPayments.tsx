@@ -15,27 +15,34 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-interface OrganizerWithSales {
-  id: string;
-  page_title: string;
-  avatar_url: string | null;
-  total_pending_amount: number;
-  pending_payouts_count: number;
-  next_payout_date: string | null;
+interface EventWithPayout {
+  event_id: string;
+  event_title: string;
+  event_end_date: string | null;
+  organizer_id: string;
+  organizer_name: string;
+  organizer_avatar: string | null;
+  total_sales: number;
+  gross_amount: number;
+  platform_fee: number;
+  processing_fee: number;
+  net_amount: number;
+  has_payout: boolean;
+  payout_status: string | null;
+  payout_date: string | null;
 }
 
 export default function AdminOrganizerPayments() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [organizers, setOrganizers] = useState<OrganizerWithSales[]>([]);
+  const [events, setEvents] = useState<EventWithPayout[]>([]);
 
   useEffect(() => {
-    fetchOrganizersWithSales();
+    fetchEventsWithSales();
   }, []);
 
-  const fetchOrganizersWithSales = async () => {
+  const fetchEventsWithSales = async () => {
     try {
-      // Fetch all ticket sales with event and organizer info
       const { data: salesData, error: salesError } = await supabase
         .from("ticket_sales")
         .select(`
@@ -46,12 +53,10 @@ export default function AdminOrganizerPayments() {
           platform_fee,
           payment_processing_fee,
           payment_status,
-          created_at,
           events!inner (
             id,
             title,
             end_date,
-            status,
             organizer_id,
             organizers!inner (
               id,
@@ -64,102 +69,79 @@ export default function AdminOrganizerPayments() {
 
       if (salesError) throw salesError;
 
-      console.log("Sales data:", salesData);
-
-      // Group sales by organizer
-      const organizerMap = new Map<string, {
-        id: string;
-        page_title: string;
-        avatar_url: string | null;
-        total_sales: number;
-        total_gross_amount: number;
-        total_pending_amount: number;
-        pending_payouts_count: number;
-        next_payout_date: string | null;
-        events: Set<string>;
+      // Group by event
+      const eventMap = new Map<string, {
+        event_id: string;
+        event_title: string;
+        event_end_date: string | null;
+        organizer_id: string;
+        organizer_name: string;
+        organizer_avatar: string | null;
+        sales: any[];
+        gross_amount: number;
       }>();
 
       for (const sale of salesData || []) {
         const event = sale.events as any;
         const organizer = event?.organizers;
         
-        if (!organizer) continue;
+        if (!event || !organizer) continue;
 
-        const organizerId = organizer.id;
-        
-        if (!organizerMap.has(organizerId)) {
-          organizerMap.set(organizerId, {
-            id: organizerId,
-            page_title: organizer.page_title,
-            avatar_url: organizer.avatar_url,
-            total_sales: 0,
-            total_gross_amount: 0,
-            total_pending_amount: 0,
-            pending_payouts_count: 0,
-            next_payout_date: null,
-            events: new Set(),
+        if (!eventMap.has(event.id)) {
+          eventMap.set(event.id, {
+            event_id: event.id,
+            event_title: event.title,
+            event_end_date: event.end_date,
+            organizer_id: organizer.id,
+            organizer_name: organizer.page_title,
+            organizer_avatar: organizer.avatar_url,
+            sales: [],
+            gross_amount: 0,
           });
         }
 
-        const orgData = organizerMap.get(organizerId)!;
-        orgData.total_sales++;
-        orgData.total_gross_amount += Number(sale.total_amount);
-        
-        // Add event to set
-        orgData.events.add(event.id);
+        const eventData = eventMap.get(event.id)!;
+        eventData.sales.push(sale);
+        eventData.gross_amount += Number(sale.total_amount);
+      }
 
-        // Check if payout already exists for this event
-        const { data: existingPayout } = await supabase
+      // Get payout info for each event
+      const eventsList: EventWithPayout[] = [];
+      
+      for (const [eventId, eventData] of eventMap.entries()) {
+        const { data: payout } = await supabase
           .from("organizer_payouts")
-          .select("payout_status")
-          .eq("event_id", event.id)
+          .select("*")
+          .eq("event_id", eventId)
           .maybeSingle();
 
-        // Calculate net amount for pending payouts
-        if (!existingPayout || existingPayout.payout_status === "pending") {
-          const grossAmount = Number(sale.total_amount);
-          const platformFee = Number(sale.platform_fee || grossAmount * 0.05);
-          const processingFee = Number(sale.payment_processing_fee || (grossAmount * 0.0399 + 0.39));
-          const netAmount = grossAmount - platformFee - processingFee;
+        const grossAmount = eventData.gross_amount;
+        const platformFee = payout?.platform_fee || grossAmount * 0.05;
+        const processingFee = payout?.processing_fee || (grossAmount * 0.0399 + 0.39);
+        const netAmount = grossAmount - platformFee - processingFee;
 
-          orgData.total_pending_amount += netAmount;
-
-          // Calculate payout date if event has ended
-          if (event.end_date) {
-            const eventEndDate = new Date(event.end_date);
-            const now = new Date();
-            
-            if (eventEndDate < now) {
-              const payoutDate = calculatePayoutDate(eventEndDate);
-              if (!orgData.next_payout_date || payoutDate < orgData.next_payout_date) {
-                orgData.next_payout_date = payoutDate;
-              }
-            }
-          }
-        }
+        eventsList.push({
+          event_id: eventData.event_id,
+          event_title: eventData.event_title,
+          event_end_date: eventData.event_end_date,
+          organizer_id: eventData.organizer_id,
+          organizer_name: eventData.organizer_name,
+          organizer_avatar: eventData.organizer_avatar,
+          total_sales: eventData.sales.length,
+          gross_amount: grossAmount,
+          platform_fee: platformFee,
+          processing_fee: processingFee,
+          net_amount: netAmount,
+          has_payout: !!payout,
+          payout_status: payout?.payout_status || null,
+          payout_date: payout?.payout_date || null,
+        });
       }
 
-      // Count unique events with pending payouts per organizer
-      for (const [organizerId, orgData] of organizerMap.entries()) {
-        orgData.pending_payouts_count = orgData.events.size;
-      }
-
-      const organizersList = Array.from(organizerMap.values())
-        .filter(org => org.total_sales > 0)
-        .map(org => ({
-          id: org.id,
-          page_title: org.page_title,
-          avatar_url: org.avatar_url,
-          total_pending_amount: org.total_pending_amount,
-          pending_payouts_count: org.pending_payouts_count,
-          next_payout_date: org.next_payout_date,
-        }));
-
-      console.log("Organizers with sales:", organizersList);
-      setOrganizers(organizersList);
+      setEvents(eventsList);
     } catch (error) {
-      console.error("Error fetching organizers:", error);
-      toast.error("Erro ao carregar organizadores");
+      console.error("Error fetching events:", error);
+      toast.error("Erro ao carregar eventos");
     } finally {
       setLoading(false);
     }
@@ -212,101 +194,116 @@ export default function AdminOrganizerPayments() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Organizadores</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Eventos</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{organizers.length}</div>
-              <p className="text-xs text-muted-foreground">com vendas pendentes</p>
+              <div className="text-2xl font-bold">{events.length}</div>
+              <p className="text-xs text-muted-foreground">com vendas</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Pendente</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Bruto</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                R$ {organizers.reduce((sum, o) => sum + o.total_pending_amount, 0).toFixed(2)}
+                R$ {events.reduce((sum, e) => sum + e.gross_amount, 0).toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">a repassar</p>
+              <p className="text-xs text-muted-foreground">em vendas</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Eventos Pendentes</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Líquido</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {organizers.reduce((sum, o) => sum + o.pending_payouts_count, 0)}
+                R$ {events.reduce((sum, e) => sum + e.net_amount, 0).toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">eventos para processar</p>
+              <p className="text-xs text-muted-foreground">a repassar</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Organizers Table */}
+        {/* Events Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Organizadores com Repasses Pendentes</CardTitle>
+            <CardTitle>Eventos com Vendas</CardTitle>
           </CardHeader>
           <CardContent>
-            {organizers.length === 0 ? (
+            {events.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Nenhum repasse pendente</p>
+                <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>Nenhum evento com vendas</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Evento</TableHead>
                       <TableHead>Organizador</TableHead>
-                      <TableHead className="text-center">Eventos</TableHead>
-                      <TableHead className="text-right">Valor Total</TableHead>
-                      <TableHead>Próximo Repasse</TableHead>
+                      <TableHead className="text-center">Vendas</TableHead>
+                      <TableHead className="text-right">Bruto</TableHead>
+                      <TableHead className="text-right">Líquido</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
                       <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {organizers.map((org) => (
-                      <TableRow key={org.id}>
+                    {events.map((event) => (
+                      <TableRow key={event.event_id}>
                         <TableCell>
-                          <div className="flex items-center gap-3">
-                            {org.avatar_url ? (
+                          <div className="font-medium">{event.event_title}</div>
+                          {event.event_end_date && (
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(event.event_end_date).toLocaleDateString("pt-BR")}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {event.organizer_avatar ? (
                               <img
-                                src={org.avatar_url}
-                                alt={org.page_title}
-                                className="w-10 h-10 rounded-full object-cover"
+                                src={event.organizer_avatar}
+                                alt={event.organizer_name}
+                                className="w-8 h-8 rounded-full object-cover"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Building2 className="h-5 w-5 text-primary" />
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Building2 className="h-4 w-4 text-primary" />
                               </div>
                             )}
-                            <div className="font-medium">{org.page_title}</div>
+                            <span className="text-sm">{event.organizer_name}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge variant="secondary">{org.pending_payouts_count}</Badge>
+                          <Badge variant="secondary">{event.total_sales}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          R$ {event.gross_amount.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-medium text-primary">
-                          R$ {org.total_pending_amount.toFixed(2)}
+                          R$ {event.net_amount.toFixed(2)}
                         </TableCell>
-                        <TableCell>
-                          {org.next_payout_date && (
-                            <span className="text-sm">
-                              {new Date(org.next_payout_date).toLocaleDateString("pt-BR")}
-                            </span>
+                        <TableCell className="text-center">
+                          {event.has_payout ? (
+                            <Badge variant={event.payout_status === "completed" ? "default" : "secondary"}>
+                              {event.payout_status === "completed" ? "Pago" : "Pendente"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Sem repasse</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
                           <Button
                             size="sm"
-                            onClick={() => navigate(`/admin/organizer-payments/${org.id}`)}
+                            onClick={() => navigate(`/admin/organizer-payments/${event.organizer_id}?event=${event.event_id}`)}
                           >
                             Ver Detalhes
                           </Button>
