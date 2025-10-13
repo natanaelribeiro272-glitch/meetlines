@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Loader2, Camera, Image as ImageIcon } from "lucide-react";
+import { Plus, Loader2, Camera, Image as ImageIcon, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +38,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [showStoryOptions, setShowStoryOptions] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -418,10 +419,10 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
             <div className="flex flex-col items-center gap-1 min-w-[70px]">
               <div className="relative">
                 {currentUserStory && currentUserStory.stories.length > 0 ? (
-                  // Has story - show clickable circle to view
+                  // Has story - show clickable circle with options
                   <div 
                     className="rounded-full p-[3px] bg-green-500 cursor-pointer"
-                    onClick={() => openStoryViewer(currentUserStory.stories, 0)}
+                    onClick={() => setShowStoryOptions(true)}
                   >
                     <div className="bg-background rounded-full p-[2px]">
                       <Avatar className="h-14 w-14">
@@ -513,6 +514,41 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
           }}
         />
       )}
+
+      {/* Story Options Dialog (when user already has a story) */}
+      <Dialog open={showStoryOptions} onOpenChange={setShowStoryOptions}>
+        <DialogContent className="bg-surface border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Seu Story</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <Button
+              onClick={() => {
+                setShowStoryOptions(false);
+                if (currentUserStory) {
+                  openStoryViewer(currentUserStory.stories, 0);
+                }
+              }}
+              className="w-full h-14 text-base"
+              variant="outline"
+            >
+              <Eye className="h-5 w-5 mr-3" />
+              Ver Story
+            </Button>
+            <Button
+              onClick={() => {
+                setShowStoryOptions(false);
+                setShowUploadOptions(true);
+              }}
+              className="w-full h-14 text-base"
+              variant="outline"
+            >
+              <Plus className="h-5 w-5 mr-3" />
+              Postar Novo Story
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Upload Options Dialog */}
       <Dialog open={showUploadOptions} onOpenChange={setShowUploadOptions}>
