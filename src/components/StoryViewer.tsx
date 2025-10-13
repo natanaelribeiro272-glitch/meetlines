@@ -55,13 +55,16 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [likesList, setLikesList] = useState<Array<{ user_name: string; user_avatar: string }>>([]);
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLikesList, setShowLikesList] = useState(false);
   const { user } = useAuth();
 
   const currentStory = stories[currentIndex];
+  const isOwnStory = currentStory?.user_id === user?.id;
 
   // Load likes and check if user liked
   useEffect(() => {
@@ -70,19 +73,36 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
     const loadLikes = async () => {
       const { data: likesData } = await supabase
         .from('story_likes')
-        .select('*')
+        .select('user_id')
         .eq('story_id', currentStory.id);
 
       setLikesCount(likesData?.length || 0);
 
-      const { data: userLike } = await supabase
-        .from('story_likes')
-        .select('*')
-        .eq('story_id', currentStory.id)
-        .eq('user_id', user.id)
-        .single();
+      // If it's own story, load list of users who liked
+      if (isOwnStory && likesData && likesData.length > 0) {
+        const userIds = likesData.map(like => like.user_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds);
 
-      setLiked(!!userLike);
+        if (profilesData) {
+          setLikesList(profilesData.map(p => ({
+            user_name: p.display_name || 'Usuário',
+            user_avatar: p.avatar_url || ''
+          })));
+        }
+      } else {
+        // Check if current user liked
+        const { data: userLike } = await supabase
+          .from('story_likes')
+          .select('*')
+          .eq('story_id', currentStory.id)
+          .eq('user_id', user.id)
+          .single();
+
+        setLiked(!!userLike);
+      }
     };
 
     loadLikes();
@@ -100,7 +120,7 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
     };
 
     markAsViewed();
-  }, [currentStory, user]);
+  }, [currentStory, user, isOwnStory]);
 
   // Load comments
   useEffect(() => {
@@ -357,72 +377,108 @@ export default function StoryViewer({ stories, initialIndex, open, onOpenChange,
 
           {/* Actions */}
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-            <div className="flex items-center gap-4 mb-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLike}
-                className="text-white hover:bg-white/20 gap-2"
-              >
-                <Heart className={`h-5 w-5 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
-                <span>{likesCount}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowComments(!showComments)}
-                className="text-white hover:bg-white/20 gap-2"
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span>{comments.length}</span>
-              </Button>
-            </div>
+            {isOwnStory ? (
+              // Own story - show who liked
+              <div className="mb-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowLikesList(!showLikesList)}
+                  className="text-white hover:bg-white/20 gap-2"
+                >
+                  <Heart className="h-5 w-5" />
+                  <span>{likesCount} {likesCount === 1 ? 'curtida' : 'curtidas'}</span>
+                </Button>
 
-            {/* Comments Section */}
-            {showComments && (
-              <div className="bg-black/50 rounded-lg p-3 mb-3 max-h-40">
-                <ScrollArea className="h-32">
-                  {comments.length === 0 ? (
-                    <p className="text-white/70 text-sm text-center">Nenhum comentário ainda</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {comments.map(comment => (
-                        <div key={comment.id} className="flex gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={comment.user_avatar} />
-                            <AvatarFallback>{comment.user_name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-white text-sm">
-                              <span className="font-semibold">{comment.user_name}</span>{' '}
-                              {comment.comment}
-                            </p>
+                {showLikesList && likesCount > 0 && (
+                  <div className="mt-2 bg-black/50 rounded-lg p-3 max-h-40">
+                    <ScrollArea className="h-32">
+                      <div className="space-y-2">
+                        {likesList.map((like, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={like.user_avatar} />
+                              <AvatarFallback>{like.user_name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-white text-sm">{like.user_name}</span>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
               </div>
-            )}
+            ) : (
+              // Other's story - show like and comment buttons
+              <>
+                <div className="flex items-center gap-4 mb-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLike}
+                    className="text-white hover:bg-white/20 gap-2"
+                  >
+                    <Heart className={`h-5 w-5 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
+                    <span>{likesCount}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowComments(!showComments)}
+                    className="text-white hover:bg-white/20 gap-2"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    <span>{comments.length}</span>
+                  </Button>
+                </div>
 
-            {/* Comment Input */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enviar mensagem..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleComment()}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-              />
-              <Button
-                onClick={handleComment}
-                disabled={!newComment.trim()}
-                className="bg-primary hover:bg-primary-glow"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
+                {/* Comments Section */}
+                {showComments && (
+                  <div className="bg-black/50 rounded-lg p-3 mb-3 max-h-40">
+                    <ScrollArea className="h-32">
+                      {comments.length === 0 ? (
+                        <p className="text-white/70 text-sm text-center">Nenhum comentário ainda</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {comments.map(comment => (
+                            <div key={comment.id} className="flex gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={comment.user_avatar} />
+                                <AvatarFallback>{comment.user_name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-white text-sm">
+                                  <span className="font-semibold">{comment.user_name}</span>{' '}
+                                  {comment.comment}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </div>
+                )}
+
+                {/* Comment Input */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enviar mensagem..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleComment()}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  />
+                  <Button
+                    onClick={handleComment}
+                    disabled={!newComment.trim()}
+                    className="bg-primary hover:bg-primary-glow"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </DialogContent>
