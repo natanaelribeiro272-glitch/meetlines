@@ -645,15 +645,6 @@ export default function EventDetails({
           </div>
         </div>
 
-          {/* Price Badge - Show if event has platform tickets */}
-          {event.has_platform_tickets && event.ticket_types && event.ticket_types.length > 0 && (
-            <div className="mb-4">
-              <Badge variant="default" className="bg-green-600 text-white border-0 text-base px-4 py-2">
-                💳 Evento Pago - A partir de R$ {Math.min(...event.ticket_types.map(t => t.price)).toFixed(2)}
-              </Badge>
-            </div>
-          )}
-
           {/* Interests */}
         {event.interests && event.interests.length > 0 && (
           <div className="mb-6">
