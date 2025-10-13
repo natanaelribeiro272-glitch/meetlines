@@ -114,15 +114,19 @@ export default function TicketPurchaseSuccess() {
 
         setTicketData(fullData);
         
-        // Update payment status to completed only if still pending
+        // Verify and complete payment status via Edge Function (bypasses RLS)
         if (baseSale.payment_status === "pending") {
-          await supabase
-            .from("ticket_sales")
-            .update({ 
-              payment_status: "completed",
-              paid_at: new Date().toISOString()
-            })
-            .eq("id", baseSale.id);
+          try {
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke("verify-ticket-payment", {
+              body: { sessionId },
+            });
+            if (verifyError) throw verifyError;
+            if (verifyData?.payment_status === "completed") {
+              // Optionally you could refetch, but we keep current data for UX
+            }
+          } catch (e) {
+            console.warn("Verify payment failed:", e);
+          }
         }
 
       } catch (error) {
