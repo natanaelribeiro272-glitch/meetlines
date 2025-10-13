@@ -265,10 +265,15 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
         });
       }
       
-      // Ordenar por data
-      allEvents.sort((a, b) => 
-        new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
-      );
+      // Ordenar: primeiro eventos pagos pela plataforma, depois por data
+      allEvents.sort((a, b) => {
+        // Priorizar eventos com tickets pagos
+        if (a.has_paid_tickets && !b.has_paid_tickets) return -1;
+        if (!a.has_paid_tickets && b.has_paid_tickets) return 1;
+        
+        // Se ambos têm ou não têm tickets pagos, ordenar por data
+        return new Date(a.event_date).getTime() - new Date(b.event_date).getTime();
+      });
 
       // Aplicar filtro de pesquisa no lado do cliente
       let filteredEvents = allEvents;
