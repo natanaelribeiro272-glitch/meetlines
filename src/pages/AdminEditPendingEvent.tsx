@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MultiCategorySelect } from '@/components/MultiCategorySelect';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, Check, Sparkles, Upload } from 'lucide-react';
 
@@ -28,11 +28,11 @@ export default function AdminEditPendingEvent() {
     end_date: '',
     location: '',
     location_link: '',
-    category: '',
     ticket_price: 0,
     ticket_link: '',
     max_attendees: null as number | null,
   });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const categories = [
     { value: "festas", label: "🎉 Festas" },
@@ -81,11 +81,12 @@ export default function AdminEditPendingEvent() {
           end_date: data.end_date || '',
           location: data.location || '',
           location_link: data.location_link || '',
-          category: data.category || '',
           ticket_price: data.ticket_price || 0,
           ticket_link: data.ticket_link || '',
           max_attendees: data.max_attendees,
         });
+        
+        setSelectedCategories(data.category || []);
         
         if (data.image_url) {
           setEventImage(data.image_url);
@@ -152,7 +153,7 @@ export default function AdminEditPendingEvent() {
           location: formData.location,
           location_link: formData.location_link || null,
           image_url: imageUrl || null,
-          category: formData.category || null,
+          category: selectedCategories.length > 0 ? selectedCategories : null,
           ticket_price: formData.ticket_price || 0,
           ticket_link: formData.ticket_link || null,
           max_attendees: formData.max_attendees,
@@ -203,7 +204,7 @@ export default function AdminEditPendingEvent() {
           organizerName: formData.organizer_name,
           eventDate: formData.event_date,
           location: formData.location,
-          category: formData.category,
+          category: selectedCategories,
           ticketPrice: formData.ticket_price,
         }
       });
@@ -364,22 +365,12 @@ export default function AdminEditPendingEvent() {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="category">Categorias</Label>
+              <MultiCategorySelect 
+                value={selectedCategories}
+                onChange={setSelectedCategories}
+                placeholder="Selecione uma ou mais categorias"
+              />
             </div>
 
             <div className="space-y-2">

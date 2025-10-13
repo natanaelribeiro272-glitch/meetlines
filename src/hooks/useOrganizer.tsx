@@ -51,7 +51,7 @@ interface Event {
   is_live: boolean;
   status: 'upcoming' | 'live' | 'completed' | 'cancelled';
   requires_registration: boolean;
-  category?: string;
+  category?: string[];
   form_fields?: any[];
   ticket_price?: number;
   ticket_link?: string;

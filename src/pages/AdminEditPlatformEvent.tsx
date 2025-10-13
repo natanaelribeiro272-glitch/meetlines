@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { MultiCategorySelect } from '@/components/MultiCategorySelect';
 import { toast } from 'sonner';
 import { Loader2, Upload, Sparkles } from 'lucide-react';
 
@@ -46,10 +46,10 @@ export default function AdminEditPlatformEvent() {
     location_link: '',
     organizer_name: '',
     max_attendees: '',
-    category: '',
     ticket_price: '',
     ticket_link: '',
   });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
@@ -86,10 +86,11 @@ export default function AdminEditPlatformEvent() {
         location_link: data.location_link || '',
         organizer_name: data.organizer_name,
         max_attendees: data.max_attendees?.toString() || '',
-        category: data.category || '',
         ticket_price: (data as any).ticket_price?.toString() || '',
         ticket_link: (data as any).ticket_link || '',
       });
+      
+      setSelectedCategories(data.category || []);
       
       setEventImage((data as any).image_url || null);
       
@@ -152,7 +153,7 @@ export default function AdminEditPlatformEvent() {
           location_link: formData.location_link || null,
           organizer_name: formData.organizer_name,
           max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
-          category: formData.category || null,
+          category: selectedCategories.length > 0 ? selectedCategories : null,
           image_url: imageUrl,
           ticket_price: isPaid && formData.ticket_price ? parseFloat(formData.ticket_price) : 0,
           ticket_link: isPaid ? (formData.ticket_link || null) : null,
@@ -186,7 +187,7 @@ export default function AdminEditPlatformEvent() {
           organizerName: formData.organizer_name,
           eventDate: formData.event_date,
           location: formData.location,
-          category: formData.category,
+          category: selectedCategories,
           ticketPrice: isPaid && formData.ticket_price ? parseFloat(formData.ticket_price) : 0,
         }
       });
@@ -301,22 +302,12 @@ export default function AdminEditPlatformEvent() {
             </div>
 
             <div>
-              <Label>Categoria</Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border z-50">
-                  {EVENT_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Categorias</Label>
+              <MultiCategorySelect 
+                value={selectedCategories}
+                onChange={setSelectedCategories}
+                placeholder="Selecione uma ou mais categorias"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { MultiCategorySelect } from '@/components/MultiCategorySelect';
 import RegistrationFormDialog from '@/components/RegistrationFormDialog';
 import { FormField } from '@/components/FormFieldsConfig';
 import { toast } from 'sonner';
@@ -55,11 +55,11 @@ export default function AdminCreatePlatformEvent() {
     end_time: '',
     address: '',
     location_link: '',
-    category: '',
     max_attendees: '',
     ticket_price: '',
     ticket_link: ''
   });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   if (!isAdmin) {
     navigate('/');
@@ -132,7 +132,7 @@ export default function AdminCreatePlatformEvent() {
         end_date: eventEndDateTime.toISOString(),
         location: eventType === "live" ? "Online" : formData.address,
         location_link: formData.location_link || null,
-        category: formData.category || null,
+        category: selectedCategories.length > 0 ? selectedCategories : null,
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
         image_url: imageUrl,
         created_by_admin_id: user.id
@@ -254,19 +254,12 @@ export default function AdminCreatePlatformEvent() {
               </div>
 
               <div>
-                <Label htmlFor="category">Categoria</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EVENT_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="category">Categorias</Label>
+                <MultiCategorySelect 
+                  value={selectedCategories}
+                  onChange={setSelectedCategories}
+                  placeholder="Selecione uma ou mais categorias"
+                />
               </div>
             </CardContent>
           </Card>

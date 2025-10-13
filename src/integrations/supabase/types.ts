@@ -289,7 +289,7 @@ export type Database = {
           bank_agency: string | null
           bank_document: string | null
           bank_name: string | null
-          category: string | null
+          category: string[] | null
           created_at: string | null
           current_attendees: number | null
           description: string | null
@@ -319,7 +319,7 @@ export type Database = {
           bank_agency?: string | null
           bank_document?: string | null
           bank_name?: string | null
-          category?: string | null
+          category?: string[] | null
           created_at?: string | null
           current_attendees?: number | null
           description?: string | null
@@ -349,7 +349,7 @@ export type Database = {
           bank_agency?: string | null
           bank_document?: string | null
           bank_name?: string | null
-          category?: string | null
+          category?: string[] | null
           created_at?: string | null
           current_attendees?: number | null
           description?: string | null
@@ -764,7 +764,7 @@ export type Database = {
         Row: {
           approval_status: string | null
           auto_generated: boolean | null
-          category: string | null
+          category: string[] | null
           claimed_by_organizer_id: string | null
           created_at: string | null
           created_by_admin_id: string
@@ -787,7 +787,7 @@ export type Database = {
         Insert: {
           approval_status?: string | null
           auto_generated?: boolean | null
-          category?: string | null
+          category?: string[] | null
           claimed_by_organizer_id?: string | null
           created_at?: string | null
           created_by_admin_id: string
@@ -810,7 +810,7 @@ export type Database = {
         Update: {
           approval_status?: string | null
           auto_generated?: boolean | null
-          category?: string | null
+          category?: string[] | null
           claimed_by_organizer_id?: string | null
           created_at?: string | null
           created_by_admin_id?: string

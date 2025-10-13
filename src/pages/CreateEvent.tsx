@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import RegistrationFormDialog from "@/components/RegistrationFormDialog";
 import TicketConfiguration from "@/components/TicketConfiguration";
 import { FormField } from "@/components/FormFieldsConfig";
+import { MultiCategorySelect } from "@/components/MultiCategorySelect";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useProfile } from "@/hooks/useProfile";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -84,9 +85,9 @@ export default function CreateEvent({
     locationLink: "",
     maxAttendees: "",
     ticketPrice: "",
-    ticketLink: "",
-    category: ""
+    ticketLink: ""
   });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
   const [requiresRegistration, setRequiresRegistration] = useState(false);
@@ -164,9 +165,10 @@ export default function CreateEvent({
               locationLink: data.location_link || "",
               maxAttendees: data.max_attendees?.toString() || "",
               ticketPrice: "",
-              ticketLink: "",
-              category: data.category || ""
+              ticketLink: ""
             });
+            
+            setSelectedCategories(data.category || []);
             
             setEventImage(data.image_url || null);
             setEventType(data.is_live ? "live" : "presencial");
@@ -292,7 +294,7 @@ export default function CreateEvent({
             interests: selectedInterest ? [selectedInterest] : [],
             is_live: eventType === "live",
             requires_registration: requiresRegistration,
-            category: eventData.category || null,
+            category: selectedCategories.length > 0 ? selectedCategories : null,
             ticket_price: eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
             ticket_link: eventData.ticketLink || null,
             updated_at: new Date().toISOString()
@@ -316,7 +318,7 @@ export default function CreateEvent({
           is_live: eventType === "live",
           status: 'upcoming' as const,
           requires_registration: requiresRegistration,
-          category: eventData.category || null,
+          category: selectedCategories.length > 0 ? selectedCategories : null,
           form_fields: requiresRegistration ? formFields : [],
           ticket_price: paymentType === "external" && eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
           ticket_link: paymentType === "external" ? eventData.ticketLink || null : null,
@@ -470,19 +472,12 @@ export default function CreateEvent({
               </div>
 
               <div>
-                <Label htmlFor="category">Categoria</Label>
-                <Select value={eventData.category} onValueChange={(value) => handleInputChange("category", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border z-50">
-                    {EVENT_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="category">Categorias</Label>
+                <MultiCategorySelect 
+                  value={selectedCategories}
+                  onChange={setSelectedCategories}
+                  placeholder="Selecione uma ou mais categorias"
+                />
               </div>
             </CardContent>
           </Card>

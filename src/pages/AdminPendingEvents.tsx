@@ -19,7 +19,7 @@ interface PendingEvent {
   location: string;
   image_url: string | null;
   organizer_name: string;
-  category: string | null;
+  category: string[] | null;
   ticket_price: number | null;
   max_attendees: number | null;
   source_data: any;

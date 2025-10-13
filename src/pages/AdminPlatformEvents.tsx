@@ -19,7 +19,7 @@ interface PlatformEvent {
   location: string;
   image_url: string | null;
   organizer_name: string;
-  category: string | null;
+  category: string[] | null;
   status: string;
   max_attendees: number | null;
 }

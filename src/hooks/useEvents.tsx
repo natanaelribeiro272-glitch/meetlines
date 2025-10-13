@@ -32,7 +32,7 @@ export interface EventData {
   price?: number;
   ticket_price?: number;
   ticket_link?: string;
-  category?: string;
+  category?: string[];
   registrations_count?: number;
   confirmed_attendees_count?: number;
   unique_attendees_count?: number;
@@ -71,7 +71,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
             )
           `)
           .eq('status', 'upcoming')
-          .eq('category', categoryFilter)
+          .contains('category', [categoryFilter])
           .order('event_date', { ascending: true });
         
         eventsData = response.data;
@@ -82,7 +82,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
           .from('platform_events')
           .select('*')
           .eq('status', 'upcoming')
-          .eq('category', categoryFilter)
+          .contains('category', [categoryFilter])
           .order('event_date', { ascending: true });
         
         platformEventsData = platformResponse.data;
@@ -260,8 +260,8 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
         
         // Filtrar eventos que correspondem aos interesses
         allEvents = allEvents.filter(event => {
-          if (!event.category) return true; // Incluir eventos sem categoria
-          return relevantCategories.has(event.category);
+          if (!event.category || event.category.length === 0) return true; // Incluir eventos sem categoria
+          return event.category.some(cat => relevantCategories.has(cat));
         });
       }
       
@@ -285,7 +285,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
           const organizerNameMatch = event.organizer?.page_title.toLowerCase().includes(query);
           const organizerDisplayNameMatch = event.organizer?.profile?.display_name?.toLowerCase().includes(query);
           const locationMatch = event.location.toLowerCase().includes(query);
-          const categoryMatch = event.category?.toLowerCase().includes(query);
+          const categoryMatch = event.category?.some(cat => cat.toLowerCase().includes(query));
           
           return titleMatch || descriptionMatch || organizerNameMatch || organizerDisplayNameMatch || locationMatch || categoryMatch;
         });
