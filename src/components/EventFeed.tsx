@@ -6,20 +6,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 const formatEventDate = (dateString: string) => {
   const date = new Date(dateString);
   const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const dayName = days[date.getDay()];
+  const day = date.getDate();
+  const month = months[date.getMonth()];
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${dayName}, ${hours}:${minutes}`;
+  return `${dayName}, ${day} ${month}, ${hours}:${minutes}`;
 };
 
 const formatEndDate = (dateString: string | null) => {
   if (!dateString) return undefined;
   const date = new Date(dateString);
   const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const dayName = days[date.getDay()];
+  const day = date.getDate();
+  const month = months[date.getMonth()];
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${dayName}, ${hours}:${minutes}`;
+  return `${dayName}, ${day} ${month}, ${hours}:${minutes}`;
 };
 
 interface EventFeedProps {
