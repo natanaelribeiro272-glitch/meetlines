@@ -28,10 +28,11 @@ interface EventFeedProps {
   userType?: "user" | "organizer";
   categoryFilter?: string;
   searchQuery?: string;
+  userInterests?: string[];
 }
 
-export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery }: EventFeedProps) {
-  const { events, loading, toggleLike } = useEvents(categoryFilter, searchQuery);
+export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests }: EventFeedProps) {
+  const { events, loading, toggleLike } = useEvents(categoryFilter, searchQuery, userInterests);
 
   const handleEventClick = (eventId: string) => {
     onEventClick(eventId);

@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Search, Filter, Crown } from "lucide-react";
 import { Header } from "@/components/Header";
 import { EventFeed } from "@/components/EventFeed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useProfile } from "@/hooks/useProfile";
+
 interface HomeProps {
   onEventClick: (eventId: string) => void;
   onFindFriends: () => void;
@@ -19,9 +21,23 @@ export default function Home({
   onShowOrganizers,
   userType
 }: HomeProps) {
+  const { profile } = useProfile();
   const [hasLiveEvent] = useState(true); // Mock live event detection
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
+  const [userInterests, setUserInterests] = useState<string[]>([]);
+  
+  // Extrair interesses do perfil do usuário
+  useEffect(() => {
+    if (profile?.notes && profile.notes.includes('Interesses:')) {
+      const interestsMatch = profile.notes.match(/Interesses:\s*(.+)/);
+      if (interestsMatch) {
+        const interests = interestsMatch[1].split(',').map(i => i.trim());
+        setUserInterests(interests);
+      }
+    }
+  }, [profile]);
+  
   const categories = [{
     id: "todos",
     label: "Todos"
@@ -107,7 +123,21 @@ export default function Home({
           </div>}
 
         {/* Event Feed */}
-        <EventFeed onEventClick={onEventClick} onOrganizerClick={onOrganizerClick} userType={userType} categoryFilter={selectedCategory} searchQuery={searchQuery} />
+        {userInterests.length > 0 && selectedCategory === "todos" && (
+          <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="text-sm text-primary font-medium">
+              ✨ Eventos recomendados baseados nos seus interesses: {userInterests.join(', ')}
+            </p>
+          </div>
+        )}
+        <EventFeed 
+          onEventClick={onEventClick} 
+          onOrganizerClick={onOrganizerClick} 
+          userType={userType} 
+          categoryFilter={selectedCategory} 
+          searchQuery={searchQuery}
+          userInterests={selectedCategory === "todos" ? userInterests : undefined}
+        />
       </main>
     </div>;
 }

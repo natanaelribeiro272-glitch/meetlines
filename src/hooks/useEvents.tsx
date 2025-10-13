@@ -41,7 +41,7 @@ export interface EventData {
   has_paid_tickets?: boolean;
 }
 
-export function useEvents(categoryFilter?: string, searchQuery?: string) {
+export function useEvents(categoryFilter?: string, searchQuery?: string, userInterests?: string[]) {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -236,7 +236,37 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
       }));
 
       // Combinar eventos regulares e platform_events
-      const allEvents = [...eventsWithStats, ...platformEventsWithStats].sort((a, b) => 
+      let allEvents = [...eventsWithStats, ...platformEventsWithStats];
+      
+      // Filtrar por interesses do usuário se fornecido
+      if (userInterests && userInterests.length > 0) {
+        // Mapeamento de interesses para categorias
+        const interestToCategoryMap: Record<string, string[]> = {
+          'balada': ['festas', 'eletronica', 'funk'],
+          'lives': ['musica', 'eletronica', 'rock', 'pop'],
+          'encontros': ['networking', 'gastronomia'],
+          'shows': ['rock', 'pop', 'sertanejo', 'jazz'],
+          'festas': ['festas', 'funk', 'samba'],
+          'networking': ['vendas', 'networking'],
+          'esportes': ['esportes'],
+          'cultura': ['arte', 'jazz', 'outros'],
+        };
+        
+        const relevantCategories = new Set<string>();
+        userInterests.forEach(interest => {
+          const categories = interestToCategoryMap[interest] || [];
+          categories.forEach(cat => relevantCategories.add(cat));
+        });
+        
+        // Filtrar eventos que correspondem aos interesses
+        allEvents = allEvents.filter(event => {
+          if (!event.category) return true; // Incluir eventos sem categoria
+          return relevantCategories.has(event.category);
+        });
+      }
+      
+      // Ordenar por data
+      allEvents.sort((a, b) => 
         new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
       );
 
@@ -312,7 +342,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string) {
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, categoryFilter, searchQuery]);
+  }, [user, categoryFilter, searchQuery, userInterests]);
 
   // Realtime updates for organizer profile/name/avatar changes
   useEffect(() => {
