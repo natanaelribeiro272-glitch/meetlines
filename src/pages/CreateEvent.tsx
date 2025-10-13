@@ -112,6 +112,15 @@ export default function CreateEvent({
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
   
+  // Payment data states
+  const [pixKey, setPixKey] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [bankAccountType, setBankAccountType] = useState<"corrente" | "poupanca">("corrente");
+  const [bankAgency, setBankAgency] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankAccountHolder, setBankAccountHolder] = useState("");
+  const [bankDocument, setBankDocument] = useState("");
+  
   // Load event data if editing
   useEffect(() => {
     const loadEventData = async () => {
@@ -220,6 +229,11 @@ export default function CreateEvent({
         toast.error('Você precisa aceitar os termos e condições');
         return;
       }
+      // Validar dados de pagamento
+      if (!pixKey && (!bankName || !bankAgency || !bankAccount || !bankAccountHolder || !bankDocument)) {
+        toast.error('Preencha sua chave PIX ou dados bancários completos para receber os pagamentos');
+        return;
+      }
     }
     
     if (paymentType === "external" && !eventData.ticketLink) {
@@ -303,7 +317,16 @@ export default function CreateEvent({
           category: eventData.category || null,
           form_fields: requiresRegistration ? formFields : [],
           ticket_price: paymentType === "external" && eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
-          ticket_link: paymentType === "external" ? eventData.ticketLink || null : null
+          ticket_link: paymentType === "external" ? eventData.ticketLink || null : null,
+          ...(paymentType === "platform" && {
+            pix_key: pixKey || null,
+            bank_name: bankName || null,
+            bank_account_type: bankAccountType || null,
+            bank_agency: bankAgency || null,
+            bank_account: bankAccount || null,
+            bank_account_holder: bankAccountHolder || null,
+            bank_document: bankDocument || null
+          })
         };
 
         await createEvent(eventPayload);
@@ -623,6 +646,114 @@ export default function CreateEvent({
               )}
             </CardContent>
           </Card>
+
+          {/* Dados Bancários para Recebimento */}
+          {paymentType === "platform" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Dados para Recebimento</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Informe seus dados para receber os valores das vendas
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-xs text-blue-400 font-medium">
+                    💰 Os valores serão transferidos em até 3 dias úteis após a finalização do evento
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="pixKey">Chave PIX</Label>
+                  <Input
+                    id="pixKey"
+                    placeholder="Digite sua chave PIX (CPF, CNPJ, email, telefone ou chave aleatória)"
+                    value={pixKey}
+                    onChange={(e) => setPixKey(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Recomendado: mais rápido e prático
+                  </p>
+                </div>
+
+                <Separator />
+                
+                <p className="text-sm font-medium">Ou informe seus dados bancários</p>
+
+                <div>
+                  <Label htmlFor="bankName">Banco</Label>
+                  <Input
+                    id="bankName"
+                    placeholder="Ex: Banco do Brasil, Nubank, Itaú..."
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>Tipo de Conta</Label>
+                  <RadioGroup
+                    value={bankAccountType}
+                    onValueChange={(value: "corrente" | "poupanca") => setBankAccountType(value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="corrente" id="corrente" />
+                      <Label htmlFor="corrente" className="cursor-pointer">
+                        Conta Corrente
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="poupanca" id="poupanca" />
+                      <Label htmlFor="poupanca" className="cursor-pointer">
+                        Conta Poupança
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="bankAgency">Agência</Label>
+                    <Input
+                      id="bankAgency"
+                      placeholder="0001"
+                      value={bankAgency}
+                      onChange={(e) => setBankAgency(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bankAccount">Conta</Label>
+                    <Input
+                      id="bankAccount"
+                      placeholder="12345-6"
+                      value={bankAccount}
+                      onChange={(e) => setBankAccount(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="bankAccountHolder">Titular da Conta</Label>
+                  <Input
+                    id="bankAccountHolder"
+                    placeholder="Nome completo do titular"
+                    value={bankAccountHolder}
+                    onChange={(e) => setBankAccountHolder(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="bankDocument">CPF/CNPJ do Titular</Label>
+                  <Input
+                    id="bankDocument"
+                    placeholder="000.000.000-00"
+                    value={bankDocument}
+                    onChange={(e) => setBankDocument(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Configuração de Venda na Plataforma */}
           {paymentType === "platform" && (

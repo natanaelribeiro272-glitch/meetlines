@@ -283,6 +283,12 @@ export type Database = {
       }
       events: {
         Row: {
+          bank_account: string | null
+          bank_account_holder: string | null
+          bank_account_type: string | null
+          bank_agency: string | null
+          bank_document: string | null
+          bank_name: string | null
           category: string | null
           created_at: string | null
           current_attendees: number | null
@@ -298,6 +304,7 @@ export type Database = {
           location_link: string | null
           max_attendees: number | null
           organizer_id: string
+          pix_key: string | null
           requires_registration: boolean | null
           status: string | null
           ticket_link: string | null
@@ -306,6 +313,12 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          bank_account?: string | null
+          bank_account_holder?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_document?: string | null
+          bank_name?: string | null
           category?: string | null
           created_at?: string | null
           current_attendees?: number | null
@@ -321,6 +334,7 @@ export type Database = {
           location_link?: string | null
           max_attendees?: number | null
           organizer_id: string
+          pix_key?: string | null
           requires_registration?: boolean | null
           status?: string | null
           ticket_link?: string | null
@@ -329,6 +343,12 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          bank_account?: string | null
+          bank_account_holder?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_document?: string | null
+          bank_name?: string | null
           category?: string | null
           created_at?: string | null
           current_attendees?: number | null
@@ -344,6 +364,7 @@ export type Database = {
           location_link?: string | null
           max_attendees?: number | null
           organizer_id?: string
+          pix_key?: string | null
           requires_registration?: boolean | null
           status?: string | null
           ticket_link?: string | null
