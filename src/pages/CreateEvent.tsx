@@ -611,7 +611,7 @@ export default function CreateEvent({
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="platform" id="platform" />
                     <Label htmlFor="platform" className="cursor-pointer">
-                      💳 Vender na Plataforma (Stripe)
+                      💳 Vender pela plataforma
                     </Label>
                   </div>
                 </RadioGroup>
