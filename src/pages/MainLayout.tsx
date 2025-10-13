@@ -25,6 +25,7 @@ export default function MainLayout() {
   const [activeTab, setActiveTab] = useState("home");
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventAttendances" | "eventRegistrations" | "organizerEvents" | "editEvent">("feed");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
@@ -136,6 +137,11 @@ export default function MainLayout() {
     setCurrentView("organizersList");
   };
 
+  const handleStoryClick = (userId: string) => {
+    setCurrentUserId(userId);
+    // O viewer de story de usuário já está sendo gerenciado no StoriesBar
+  };
+
   const handleEditEvent = (eventId: string) => {
     setEditingEventId(eventId);
     setCurrentView("editEvent");
@@ -196,7 +202,7 @@ export default function MainLayout() {
           case "eventAttendances":
             return <EventAttendances onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           default:
-          return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
+          return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} onStoryClick={handleStoryClick} userType={userRole || "user"} />;
         }
       case "create":
         // Only organizers can create events
@@ -224,7 +230,7 @@ export default function MainLayout() {
           <UserProfile userType={userRole || "user"} />
         );
       default:
-        return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} userType={userRole || "user"} />;
+        return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} onStoryClick={handleStoryClick} userType={userRole || "user"} />;
     }
   };
 

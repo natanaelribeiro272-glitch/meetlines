@@ -2,16 +2,23 @@ import { useState, useEffect } from "react";
 import { Users, Search, Filter, Crown } from "lucide-react";
 import { Header } from "@/components/Header";
 import { EventFeed } from "@/components/EventFeed";
+import StoriesBar from "@/components/StoriesBar";
+import { OrganizerStoriesBar } from "@/components/OrganizerStoriesBar";
+import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
+import { OrganizerStoryUploadDialog } from "@/components/OrganizerStoryUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useProfile } from "@/hooks/useProfile";
+import { useOrganizerStories, OrganizerWithStories } from "@/hooks/useOrganizerStories";
+import { useOrganizer } from "@/hooks/useOrganizer";
 
 interface HomeProps {
   onEventClick: (eventId: string) => void;
   onFindFriends: () => void;
   onOrganizerClick: (organizerId: string) => void;
   onShowOrganizers?: () => void;
+  onStoryClick: (userId: string) => void;
   userType: "user" | "organizer";
 }
 export default function Home({
@@ -19,6 +26,7 @@ export default function Home({
   onFindFriends,
   onOrganizerClick,
   onShowOrganizers,
+  onStoryClick,
   userType
 }: HomeProps) {
   const { profile } = useProfile();
@@ -26,6 +34,34 @@ export default function Home({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [userInterests, setUserInterests] = useState<string[]>([]);
+  
+  const { 
+    organizersWithStories, 
+    loading: storiesLoading,
+    createStory,
+    deleteStory,
+    markAsViewed,
+    toggleLike,
+  } = useOrganizerStories();
+  
+  const { organizerData } = useOrganizer();
+  const [selectedOrganizer, setSelectedOrganizer] = useState<OrganizerWithStories | null>(null);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  const handleOrganizerStoryClick = (org: OrganizerWithStories) => {
+    setSelectedOrganizer(org);
+    setStoryViewerOpen(true);
+  };
+
+  const handleCreateStory = () => {
+    setUploadDialogOpen(true);
+  };
+
+  const handleUploadStory = async (file: File) => {
+    if (!organizerData) return;
+    await createStory(organizerData.id, file);
+  };
   
   // Extrair interesses do perfil do usuário
   useEffect(() => {
@@ -77,6 +113,16 @@ export default function Home({
   }];
   return <div className="min-h-screen bg-background pb-20">
       <Header title="Eventos" userType={userType} showNotifications={true} showLocation={true} />
+      
+      {/* Organizer Stories Bar */}
+      <OrganizerStoriesBar 
+        organizersWithStories={organizersWithStories}
+        onOrganizerClick={handleOrganizerStoryClick}
+        onCreateStory={organizerData ? handleCreateStory : undefined}
+      />
+
+      {/* User Stories Bar */}
+      <StoriesBar mode="nearby" />
       
       <main className="px-4 py-4 max-w-md mx-auto">
         {/* Search Bar */}
@@ -139,5 +185,26 @@ export default function Home({
           userInterests={selectedCategory === "todos" ? userInterests : undefined}
         />
       </main>
+
+      {/* Story Viewer */}
+      {selectedOrganizer && (
+        <OrganizerStoryViewer
+          open={storyViewerOpen}
+          onClose={() => setStoryViewerOpen(false)}
+          organizer={selectedOrganizer}
+          onLike={toggleLike}
+          onDelete={organizerData?.id === selectedOrganizer.id ? deleteStory : undefined}
+          onMarkAsViewed={markAsViewed}
+        />
+      )}
+
+      {/* Upload Dialog */}
+      {organizerData && (
+        <OrganizerStoryUploadDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+          onUpload={handleUploadStory}
+        />
+      )}
     </div>;
 }
