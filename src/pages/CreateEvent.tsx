@@ -95,7 +95,7 @@ export default function CreateEvent({
   const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
   const [notesVisible, setNotesVisible] = useState(true);
   const [eventType, setEventType] = useState<"presencial" | "live">("presencial");
-  const [paymentType, setPaymentType] = useState<"free" | "external" | "platform">("free");
+  const [paymentType, setPaymentType] = useState<"free" | "platform">("free");
   
   // Ticket configuration states
   const [ticketTypes, setTicketTypes] = useState<any[]>([]);
@@ -236,11 +236,6 @@ export default function CreateEvent({
       }
     }
     
-    if (paymentType === "external" && !eventData.ticketLink) {
-      toast.error('Preencha o link de compra do ingresso');
-      return;
-    }
-    
     try {
       setIsCreating(true);
       let imageUrl = null;
@@ -316,8 +311,8 @@ export default function CreateEvent({
           requires_registration: requiresRegistration,
           category: eventData.category || null,
           form_fields: requiresRegistration ? formFields : [],
-          ticket_price: paymentType === "external" && eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
-          ticket_link: paymentType === "external" ? eventData.ticketLink || null : null,
+          ticket_price: 0,
+          ticket_link: null,
           ...(paymentType === "platform" && {
             pix_key: pixKey || null,
             bank_name: bankName || null,
@@ -605,18 +600,12 @@ export default function CreateEvent({
                 <Label className="mb-2 block">Tipo de Ingresso</Label>
                 <RadioGroup
                   value={paymentType}
-                  onValueChange={(value: "free" | "external" | "platform") => setPaymentType(value)}
+                  onValueChange={(value: "free" | "platform") => setPaymentType(value)}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="free" id="free" />
                     <Label htmlFor="free" className="cursor-pointer">
                       🎫 Evento Gratuito
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="external" id="external" />
-                    <Label htmlFor="external" className="cursor-pointer">
-                      🔗 Link Externo (Sympla, Eventbrite, etc)
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -627,23 +616,6 @@ export default function CreateEvent({
                   </div>
                 </RadioGroup>
               </div>
-
-              {/* Link Externo */}
-              {paymentType === "external" && (
-                <div className="pt-2 border-t">
-                  <Label htmlFor="ticketLink">Link de Compra do Ingresso</Label>
-                  <Input
-                    id="ticketLink"
-                    type="url"
-                    placeholder="https://www.sympla.com.br/..."
-                    value={eventData.ticketLink}
-                    onChange={e => handleInputChange("ticketLink", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Cole o link onde os participantes podem comprar o ingresso
-                  </p>
-                </div>
-              )}
             </CardContent>
           </Card>
 
