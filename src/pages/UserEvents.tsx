@@ -43,6 +43,8 @@ interface TicketPurchase {
   total_amount: number;
   payment_status: string;
   created_at: string;
+  buyer_name: string;
+  buyer_email: string;
   event: {
     id: string;
     title: string;
@@ -112,6 +114,8 @@ export default function UserEvents() {
           total_amount,
           payment_status,
           created_at,
+          buyer_name,
+          buyer_email,
           ticket_type_id,
           ticket_types!inner (
             name
@@ -341,6 +345,20 @@ export default function UserEvents() {
           </DialogHeader>
           {selectedTicket && (
             <div className="space-y-4 pb-4">
+              {/* Buyer Info */}
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">Titular do Ingresso</p>
+                  <p className="font-semibold">{selectedTicket.buyer_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="font-medium text-sm">{selectedTicket.buyer_email}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed" />
+
               {/* Event Info */}
               <div className="space-y-2">
                 <div>
@@ -419,22 +437,71 @@ export default function UserEvents() {
                   variant="outline" 
                   className="flex-1"
                   onClick={() => {
-                    const canvas = document.querySelector('canvas');
-                    if (canvas) {
-                      const url = canvas.toDataURL();
+                    // Criar um canvas temporário com o QR code
+                    const qrCanvas = document.querySelector('canvas') as HTMLCanvasElement;
+                    if (!qrCanvas) {
+                      toast.error("Erro ao gerar QR Code");
+                      return;
+                    }
+
+                    // Criar um canvas maior para incluir informações do ingresso
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+
+                    // Definir tamanho do canvas
+                    canvas.width = 400;
+                    canvas.height = 500;
+
+                    // Fundo branco
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Adicionar título
+                    ctx.fillStyle = 'black';
+                    ctx.font = 'bold 18px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Ingresso Digital', canvas.width / 2, 30);
+
+                    // Adicionar nome do evento
+                    ctx.font = '14px Arial';
+                    ctx.fillText(selectedTicket.event.title, canvas.width / 2, 60);
+
+                    // Adicionar QR Code
+                    const qrImage = qrCanvas.toDataURL();
+                    const img = new Image();
+                    img.onload = () => {
+                      ctx.drawImage(img, 100, 80, 200, 200);
+
+                      // Adicionar informações
+                      ctx.font = '12px Arial';
+                      ctx.fillText(`Tipo: ${selectedTicket.ticket_type.name}`, canvas.width / 2, 300);
+                      ctx.fillText(`Quantidade: ${selectedTicket.quantity}x`, canvas.width / 2, 320);
+                      ctx.fillText(`Titular: ${selectedTicket.buyer_name}`, canvas.width / 2, 340);
+                      
+                      // Adicionar ID
+                      ctx.font = '10px monospace';
+                      ctx.fillText(selectedTicket.id, canvas.width / 2, 380);
+
+                      // Fazer download
+                      const url = canvas.toDataURL('image/png');
                       const link = document.createElement('a');
-                      link.download = `ingresso-${selectedTicket.id.slice(0, 8)}.png`;
+                      link.download = `ingresso-${selectedTicket.event.title.replace(/\s+/g, '-').toLowerCase()}.png`;
                       link.href = url;
                       link.click();
-                      toast.success("QR Code baixado!");
-                    }
+                      toast.success("Ingresso baixado com sucesso!");
+                    };
+                    img.src = qrImage;
                   }}
                 >
-                  Baixar QR Code
+                  Baixar Ingresso
                 </Button>
                 <Button
                   className="flex-1"
-                  onClick={() => navigate(`/events/${selectedTicket.event_id}`)}
+                  onClick={() => {
+                    setSelectedTicket(null);
+                    navigate(`/events/${selectedTicket.event_id}`);
+                  }}
                 >
                   Ver Evento
                 </Button>
