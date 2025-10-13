@@ -32,6 +32,13 @@ serve(async (req) => {
         }
       );
 
+      // Privileged client for server-side updates (bypasses RLS)
+      const supabaseService = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
@@ -168,7 +175,7 @@ serve(async (req) => {
     });
 
     // Update sale record with Stripe session ID
-    const { error: updateError } = await supabaseClient
+      const { error: updateError } = await supabaseService
       .from("ticket_sales")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", saleData.id);
