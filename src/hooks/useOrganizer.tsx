@@ -55,6 +55,7 @@ interface Event {
   form_fields?: any[];
   ticket_price?: number;
   ticket_link?: string;
+  has_paid_tickets?: boolean;
 }
 
 interface CustomLink {
@@ -109,14 +110,18 @@ export function useOrganizer() {
       // Fetch events
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          ticket_types!left(id, price)
+        `)
         .eq('organizer_id', organizer.id)
         .order('event_date', { ascending: true });
 
       setEvents(eventsData?.map(event => ({
         ...event,
         status: event.status as 'upcoming' | 'live' | 'completed' | 'cancelled',
-        form_fields: (event.form_fields as any) || []
+        form_fields: (event.form_fields as any) || [],
+        has_paid_tickets: Array.isArray(event.ticket_types) && event.ticket_types.length > 0 && event.ticket_types.some((t: any) => t.price > 0)
       })) || []);
 
       // Fetch custom links

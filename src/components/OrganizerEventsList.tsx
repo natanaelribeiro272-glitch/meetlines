@@ -208,15 +208,17 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         <ClipboardList className="h-4 w-4 mr-1" />
                         Cadastros
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => navigate(`/event/${event.id}/sales`)}
-                      >
-                        <DollarSign className="h-4 w-4 mr-1" />
-                        Vendas
-                      </Button>
+                      {event.has_paid_tickets && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => navigate(`/event/${event.id}/sales`)}
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Vendas
+                        </Button>
+                      )}
                       <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
@@ -300,15 +302,17 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         Cadastros
                       </Button>
                     )}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => navigate(`/event/${event.id}/sales`)}
-                    >
-                      <DollarSign className="h-4 w-4 mr-1" />
-                      Vendas
-                    </Button>
+                    {event.has_paid_tickets && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navigate(`/event/${event.id}/sales`)}
+                      >
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        Vendas
+                      </Button>
+                    )}
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -420,10 +424,12 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                           <ClipboardList className="h-4 w-4 mr-2" />
                           Ver Cadastros
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/event/${event.id}/sales`)}>
-                          <DollarSign className="h-4 w-4 mr-2" />
-                          Ver Vendas
-                        </DropdownMenuItem>
+                        {event.has_paid_tickets && (
+                          <DropdownMenuItem onClick={() => navigate(`/event/${event.id}/sales`)}>
+                            <DollarSign className="h-4 w-4 mr-2" />
+                            Ver Vendas
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => onViewAttendances?.(event.id)}>
                           <Users className="h-4 w-4 mr-2" />
                           Ver Confirmações
