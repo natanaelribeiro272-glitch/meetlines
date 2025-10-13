@@ -359,10 +359,10 @@ export default function FindFriends({
           return;
         }
 
-        // Fetch friend profiles
+        // Fetch friend profiles (sem filtro de visibilidade ou localização)
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('user_id, display_name, avatar_url, notes, instagram_url, phone, interest, relationship_status')
+          .select('user_id, display_name, avatar_url, notes, instagram_url, phone, interest, relationship_status, latitude, longitude')
           .in('user_id', friendIds);
 
         if (profilesError) {
@@ -370,20 +370,44 @@ export default function FindFriends({
           return;
         }
 
-        const friends = (profilesData || []).map(profile => ({
-          id: profile.user_id,
-          user_id: profile.user_id,
-          name: profile.display_name || "Usuário",
-          avatar: profile.avatar_url || "",
-          interest: profile.interest || "curtição",
-          note: profile.notes || "Seu amigo",
-          distance: "Amigo",
-          instagram: profile.instagram_url || "",
-          phone: profile.phone || null,
-          event_name: "Amigo",
-          relationship_status: profile.relationship_status || "preferencia_nao_informar",
-          isFriend: true
-        }));
+        const friends = (profilesData || []).map(profile => {
+          // Calcular distância se tiver localização
+          let distanceText = "Amigo";
+          if (profile.latitude && profile.longitude && userLocation) {
+            const R = 6371000;
+            const lat1 = userLocation.lat * Math.PI / 180;
+            const lat2 = profile.latitude * Math.PI / 180;
+            const deltaLat = (profile.latitude - userLocation.lat) * Math.PI / 180;
+            const deltaLon = (profile.longitude - userLocation.lon) * Math.PI / 180;
+            
+            const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                     Math.cos(lat1) * Math.cos(lat2) *
+                     Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            
+            if (distance < 1000) {
+              distanceText = `${Math.round(distance)}m`;
+            } else {
+              distanceText = `${(distance / 1000).toFixed(1)}km`;
+            }
+          }
+          
+          return {
+            id: profile.user_id,
+            user_id: profile.user_id,
+            name: profile.display_name || "Usuário",
+            avatar: profile.avatar_url || "",
+            interest: profile.interest || "curtição",
+            note: profile.notes || "Seu amigo",
+            distance: distanceText,
+            instagram: profile.instagram_url || "",
+            phone: profile.phone || null,
+            event_name: "Amigo",
+            relationship_status: profile.relationship_status || "preferencia_nao_informar",
+            isFriend: true
+          };
+        });
 
         setFriendsList(friends);
 
@@ -660,11 +684,92 @@ export default function FindFriends({
     });
   };
 
-  const handleFriendshipChange = () => {
-    // Reload the page to fetch updated friend list
-    if (user && userLocation) {
-      window.location.reload();
+  const handleFriendshipChange = async () => {
+    // Recarregar todas as listas sem refresh da página
+    if (!user) return;
+    
+    // Recarregar amigos
+    const { data: friendshipsData, error: friendshipsError } = await supabase
+      .from('friendships')
+      .select('user_id, friend_id')
+      .eq('status', 'accepted')
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+
+    if (friendshipsError) {
+      console.error('Error fetching friendships:', friendshipsError);
+      return;
     }
+
+    const friendIds = friendshipsData?.map(f => 
+      f.user_id === user.id ? f.friend_id : f.user_id
+    ) || [];
+
+    if (friendIds.length === 0) {
+      setFriendsList([]);
+      // Atualizar pessoas próximas para remover badges de amigo
+      setAttendees(prev => prev.map(attendee => ({
+        ...attendee,
+        isFriend: false
+      })));
+      return;
+    }
+
+    // Fetch friend profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url, notes, instagram_url, phone, interest, relationship_status, latitude, longitude')
+      .in('user_id', friendIds);
+
+    if (profilesError) {
+      console.error('Error fetching friend profiles:', profilesError);
+      return;
+    }
+
+    const friends = (profilesData || []).map(profile => {
+      let distanceText = "Amigo";
+      if (profile.latitude && profile.longitude && userLocation) {
+        const R = 6371000;
+        const lat1 = userLocation.lat * Math.PI / 180;
+        const lat2 = profile.latitude * Math.PI / 180;
+        const deltaLat = (profile.latitude - userLocation.lat) * Math.PI / 180;
+        const deltaLon = (profile.longitude - userLocation.lon) * Math.PI / 180;
+        
+        const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                 Math.cos(lat1) * Math.cos(lat2) *
+                 Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        
+        if (distance < 1000) {
+          distanceText = `${Math.round(distance)}m`;
+        } else {
+          distanceText = `${(distance / 1000).toFixed(1)}km`;
+        }
+      }
+      
+      return {
+        id: profile.user_id,
+        user_id: profile.user_id,
+        name: profile.display_name || "Usuário",
+        avatar: profile.avatar_url || "",
+        interest: profile.interest || "curtição",
+        note: profile.notes || "Seu amigo",
+        distance: distanceText,
+        instagram: profile.instagram_url || "",
+        phone: profile.phone || null,
+        event_name: "Amigo",
+        relationship_status: profile.relationship_status || "preferencia_nao_informar",
+        isFriend: true
+      };
+    });
+
+    setFriendsList(friends);
+    
+    // Atualizar também a lista de pessoas próximas para mostrar o badge de amigo
+    setAttendees(prev => prev.map(attendee => ({
+      ...attendee,
+      isFriend: friendIds.includes(attendee.user_id)
+    })));
   };
 
   const displayedUsers = activeTab === 'nearby' ? attendees : friendsList;
