@@ -235,6 +235,16 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem 
+                            onClick={() => {
+                              setOpenDropdownId(null);
+                              handleEndEvent(event.id);
+                            }}
+                            className="text-orange-600"
+                          >
+                            <StopCircle className="h-4 w-4 mr-2" />
+                            Encerrar Evento
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
                             onClick={() => handleDeleteClick(event.id)}
                             className="text-destructive"
                           >
@@ -338,6 +348,16 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         <DropdownMenuItem onClick={() => handleEditEvent(event)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setOpenDropdownId(null);
+                            handleEndEvent(event.id);
+                          }}
+                          className="text-orange-600"
+                        >
+                          <StopCircle className="h-4 w-4 mr-2" />
+                          Encerrar Evento
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleDeleteClick(event.id)}
@@ -444,6 +464,16 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         <DropdownMenuItem onClick={() => handleEditEvent(event)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setOpenDropdownId(null);
+                            handleEndEvent(event.id);
+                          }}
+                          className="text-orange-600"
+                        >
+                          <StopCircle className="h-4 w-4 mr-2" />
+                          Encerrar Evento
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleDeleteClick(event.id)}
