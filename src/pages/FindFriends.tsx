@@ -449,8 +449,8 @@ export default function FindFriends({
           f.user_id === user.id ? f.friend_id : f.user_id
         ) || [];
 
-        // Buscar usuários visíveis
-        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        // Buscar usuários visíveis (localização atualizada nas últimas 2 horas)
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
         
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
@@ -458,7 +458,8 @@ export default function FindFriends({
           .eq('find_friends_visible', true)
           .neq('user_id', user.id)
           .not('latitude', 'is', null)
-          .not('longitude', 'is', null);
+          .not('longitude', 'is', null)
+          .gte('location_updated_at', twoHoursAgo);
 
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
@@ -488,17 +489,13 @@ export default function FindFriends({
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             const distance = R * c;
 
-            const hasRecentLocation = profile.location_updated_at && 
-              new Date(profile.location_updated_at) >= new Date(tenMinutesAgo);
-
             return {
               profile,
-              distance,
-              hasRecentLocation
+              distance
             };
           })
-          .filter(({ distance, hasRecentLocation }) => 
-            distance <= 100 && hasRecentLocation
+          .filter(({ distance }) => 
+            distance <= 5000 // 5km de raio
           )
           .map(({ profile, distance }) => ({
             id: profile.user_id,
