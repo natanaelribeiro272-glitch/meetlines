@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle } from "lucide-react";
+import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle, Ticket, ClipboardList, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useOrganizer } from "@/hooks/useOrganizer";
+import { useNavigate } from "react-router-dom";
 import event1 from "@/assets/event-1.jpg";
 import event2 from "@/assets/event-2.jpg";
 
@@ -21,6 +22,7 @@ interface OrganizerEventsListProps {
 }
 
 export default function OrganizerEventsList({ onCreateEvent, onManageRegistrations, onViewAttendances }: OrganizerEventsListProps) {
+  const navigate = useNavigate();
   const { events, loading, updateEvent, deleteEvent } = useOrganizer();
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
   };
 
   const handleEditEvent = (event: any) => {
-    setOpenDropdownId(null); // Fecha o dropdown primeiro
+    setOpenDropdownId(null);
     setTimeout(() => {
       setEditingEvent(event);
       setEditForm({
@@ -75,7 +77,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
   };
 
   const handleDeleteClick = (eventId: string) => {
-    setOpenDropdownId(null); // Fecha o dropdown primeiro
+    setOpenDropdownId(null);
     setTimeout(() => {
       setDeletingEventId(eventId);
     }, 100);
@@ -199,12 +201,21 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className={event.is_live ? "" : "flex-1"}
+                        className="flex-1"
                         disabled={!event.requires_registration}
                         onClick={() => onManageRegistrations?.(event.id)}
                       >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver Cadastros
+                        <ClipboardList className="h-4 w-4 mr-1" />
+                        Cadastros
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => navigate(`/event/${event.id}/sales`)}
+                      >
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        Vendas
                       </Button>
                       <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                         <DropdownMenuTrigger asChild>
@@ -282,19 +293,29 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="flex-1"
                         onClick={() => onManageRegistrations?.(event.id)}
                       >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver Cadastros
+                        <ClipboardList className="h-4 w-4 mr-1" />
+                        Cadastros
                       </Button>
                     )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => navigate(`/event/${event.id}/sales`)}
+                    >
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      Vendas
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => onViewAttendances?.(event.id)}
                     >
                       <Users className="h-4 w-4 mr-1" />
-                      Ver Confirmações
+                      Confirmações
                     </Button>
                     <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                       <DropdownMenuTrigger asChild>
@@ -395,6 +416,18 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onManageRegistrations?.(event.id)}>
+                          <ClipboardList className="h-4 w-4 mr-2" />
+                          Ver Cadastros
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/event/${event.id}/sales`)}>
+                          <DollarSign className="h-4 w-4 mr-2" />
+                          Ver Vendas
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onViewAttendances?.(event.id)}>
+                          <Users className="h-4 w-4 mr-2" />
+                          Ver Confirmações
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEditEvent(event)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
@@ -424,74 +457,74 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
         </TabsContent>
       </Tabs>
 
-      {/* Dialog de Edição */}
+      {/* Edit Dialog */}
       <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Evento</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-title">Título</Label>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Título</Label>
               <Input
-                id="edit-title"
+                id="title"
                 value={editForm.title}
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
               />
             </div>
-            <div>
-              <Label htmlFor="edit-description">Descrição</Label>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
               <Textarea
-                id="edit-description"
+                id="description"
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               />
             </div>
-            <div>
-              <Label htmlFor="edit-location">Local</Label>
+            <div className="space-y-2">
+              <Label htmlFor="location">Local</Label>
               <Input
-                id="edit-location"
+                id="location"
                 value={editForm.location}
                 onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
               />
             </div>
-            <div>
-              <Label htmlFor="edit-date">Data e Hora</Label>
+            <div className="space-y-2">
+              <Label htmlFor="event_date">Data e Hora</Label>
               <Input
-                id="edit-date"
+                id="event_date"
                 type="datetime-local"
                 value={editForm.event_date}
                 onChange={(e) => setEditForm({ ...editForm, event_date: e.target.value })}
               />
             </div>
-            <div>
-              <Label htmlFor="edit-max">Máximo de Participantes</Label>
+            <div className="space-y-2">
+              <Label htmlFor="max_attendees">Máximo de Participantes</Label>
               <Input
-                id="edit-max"
+                id="max_attendees"
                 type="number"
                 value={editForm.max_attendees}
                 onChange={(e) => setEditForm({ ...editForm, max_attendees: parseInt(e.target.value) })}
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditingEvent(null)} className="flex-1">
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveEdit} className="flex-1">
-                Salvar
-              </Button>
-            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setEditingEvent(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Salvar Alterações
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Confirmação de Exclusão */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingEventId} onOpenChange={(open) => !open && setDeletingEventId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O evento será permanentemente excluído.
+              Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
