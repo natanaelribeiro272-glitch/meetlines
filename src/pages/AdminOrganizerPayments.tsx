@@ -43,91 +43,73 @@ export default function AdminOrganizerPayments() {
 
   const fetchEventsWithSales = async () => {
     try {
-      const { data: salesData, error: salesError } = await supabase
-        .from("ticket_sales")
+      // Buscar eventos que aceitam pagamento pela plataforma
+      const { data: eventsData, error: eventsError } = await supabase
+        .from("events")
         .select(`
           id,
-          event_id,
-          total_amount,
-          subtotal,
-          platform_fee,
-          payment_processing_fee,
-          payment_status,
-          events!inner (
+          title,
+          end_date,
+          organizer_id,
+          organizers!inner (
             id,
-            title,
-            end_date,
-            organizer_id,
-            organizers!inner (
-              id,
-              page_title,
-              avatar_url
-            )
+            page_title,
+            avatar_url
+          ),
+          event_ticket_settings!inner (
+            accepts_platform_payment
           )
         `)
+        .eq("event_ticket_settings.accepts_platform_payment", true);
+
+      if (eventsError) throw eventsError;
+
+      // Buscar vendas para esses eventos
+      const { data: salesData, error: salesError } = await supabase
+        .from("ticket_sales")
+        .select("*")
         .eq("payment_status", "completed");
 
       if (salesError) throw salesError;
 
-      // Group by event
-      const eventMap = new Map<string, {
-        event_id: string;
-        event_title: string;
-        event_end_date: string | null;
-        organizer_id: string;
-        organizer_name: string;
-        organizer_avatar: string | null;
-        sales: any[];
-        gross_amount: number;
-      }>();
-
+      // Agrupar vendas por evento
+      const salesByEvent = new Map<string, any[]>();
       for (const sale of salesData || []) {
-        const event = sale.events as any;
-        const organizer = event?.organizers;
-        
-        if (!event || !organizer) continue;
-
-        if (!eventMap.has(event.id)) {
-          eventMap.set(event.id, {
-            event_id: event.id,
-            event_title: event.title,
-            event_end_date: event.end_date,
-            organizer_id: organizer.id,
-            organizer_name: organizer.page_title,
-            organizer_avatar: organizer.avatar_url,
-            sales: [],
-            gross_amount: 0,
-          });
+        if (!salesByEvent.has(sale.event_id)) {
+          salesByEvent.set(sale.event_id, []);
         }
-
-        const eventData = eventMap.get(event.id)!;
-        eventData.sales.push(sale);
-        eventData.gross_amount += Number(sale.total_amount);
+        salesByEvent.get(sale.event_id)!.push(sale);
       }
 
-      // Get payout info for each event
       const eventsList: EventWithPayout[] = [];
-      
-      for (const [eventId, eventData] of eventMap.entries()) {
+
+      for (const eventRecord of eventsData || []) {
+        const event = eventRecord as any;
+        const organizer = event.organizers;
+        const sales = salesByEvent.get(event.id) || [];
+        
+        // Calcular totais de vendas
+        const grossAmount = sales.reduce((sum, sale) => sum + Number(sale.total_amount), 0);
+        
+        // Buscar informações de repasse
         const { data: payout } = await supabase
           .from("organizer_payouts")
           .select("*")
-          .eq("event_id", eventId)
+          .eq("event_id", event.id)
           .maybeSingle();
 
-        const grossAmount = eventData.gross_amount;
-        const platformFee = payout?.platform_fee || grossAmount * 0.05;
-        const processingFee = payout?.processing_fee || (grossAmount * 0.0399 + 0.39);
+        const platformFee = payout?.platform_fee || (grossAmount > 0 ? grossAmount * 0.05 : 0);
+        const processingFee = payout?.processing_fee || (grossAmount > 0 ? grossAmount * 0.0399 + 0.39 : 0);
         const netAmount = grossAmount - platformFee - processingFee;
 
         eventsList.push({
-          event_id: eventData.event_id,
-          event_title: eventData.event_title,
-          event_end_date: eventData.event_end_date,
-          organizer_id: eventData.organizer_id,
-          organizer_name: eventData.organizer_name,
-          organizer_avatar: eventData.organizer_avatar,
-          total_sales: eventData.sales.length,
+          event_id: event.id,
+          event_title: event.title,
+          event_end_date: event.end_date,
+          organizer_id: organizer.id,
+          organizer_name: organizer.page_title,
+          organizer_avatar: organizer.avatar_url,
+          total_sales: sales.length,
           gross_amount: grossAmount,
           platform_fee: platformFee,
           processing_fee: processingFee,
