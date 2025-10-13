@@ -810,7 +810,7 @@ export default function FindFriends({
       </header>
 
       {/* Content */}
-      <div className="px-4 py-6 max-w-md mx-auto">
+      <div className="px-4 py-6 pb-24 max-w-md mx-auto">{/* pb-24 = 96px para compensar o menu de rodapé */}
         {/* Nearby Tab Controls */}
         {activeTab === 'nearby' && (
           <>
@@ -925,7 +925,7 @@ export default function FindFriends({
             <p className="text-muted-foreground">Procurando pessoas...</p>
           </div>
         ) : displayedUsers.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-4 pb-4">
             {displayedUsers.map(person => (
               <UserCard 
                 key={person.id}
