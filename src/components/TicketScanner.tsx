@@ -159,8 +159,7 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
         .select(`
           *,
           event:events!inner(id, title),
-          ticket_type:ticket_types(name),
-          user:profiles!ticket_sales_user_id_fkey(avatar_url, display_name)
+          ticket_type:ticket_types(name)
         `)
         .eq('id', ticketId)
         .eq('event_id', eventId)
@@ -174,9 +173,21 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
         return;
       }
 
+      // Buscar perfil do usuário separadamente
+      let userProfile = null;
+      if (ticket.user_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('avatar_url, display_name')
+          .eq('user_id', ticket.user_id)
+          .maybeSingle();
+        
+        userProfile = profile;
+      }
+
       // Verificar se já foi validado
       if (ticket.validated_at) {
-        setScannedTicket(ticket);
+        setScannedTicket({ ...ticket, user: userProfile });
         setDialogOpen(true);
         toast.warning('Ingresso já foi validado anteriormente');
         return;
@@ -193,7 +204,7 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
 
       if (updateError) throw updateError;
 
-      setScannedTicket({ ...ticket, validated_at: new Date().toISOString() });
+      setScannedTicket({ ...ticket, validated_at: new Date().toISOString(), user: userProfile });
       setDialogOpen(true);
       toast.success('Ingresso validado com sucesso!');
     } catch (error: any) {
