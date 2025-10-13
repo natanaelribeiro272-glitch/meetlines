@@ -14,6 +14,7 @@ import TicketConfiguration from "@/components/TicketConfiguration";
 import { FormField } from "@/components/FormFieldsConfig";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useProfile } from "@/hooks/useProfile";
+import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 const INTEREST_OPTIONS = [{
@@ -69,6 +70,7 @@ export default function CreateEvent({
     profile,
     updateProfile
   } = useProfile();
+  const { isAdmin } = useAdmin();
   const [isEditMode, setIsEditMode] = useState(false);
   const [eventData, setEventData] = useState({
     title: "",
@@ -95,7 +97,7 @@ export default function CreateEvent({
   const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
   const [notesVisible, setNotesVisible] = useState(true);
   const [eventType, setEventType] = useState<"presencial" | "live">("presencial");
-  const [paymentType, setPaymentType] = useState<"free" | "platform">("free");
+  const [paymentType, setPaymentType] = useState<"free" | "external" | "platform">("free");
   
   // Ticket configuration states
   const [ticketTypes, setTicketTypes] = useState<any[]>([]);
@@ -236,6 +238,11 @@ export default function CreateEvent({
       }
     }
     
+    if (paymentType === "external" && !eventData.ticketLink) {
+      toast.error('Preencha o link de compra do ingresso');
+      return;
+    }
+    
     try {
       setIsCreating(true);
       let imageUrl = null;
@@ -311,8 +318,8 @@ export default function CreateEvent({
           requires_registration: requiresRegistration,
           category: eventData.category || null,
           form_fields: requiresRegistration ? formFields : [],
-          ticket_price: 0,
-          ticket_link: null,
+          ticket_price: paymentType === "external" && eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
+          ticket_link: paymentType === "external" ? eventData.ticketLink || null : null,
           ...(paymentType === "platform" && {
             pix_key: pixKey || null,
             bank_name: bankName || null,
@@ -600,7 +607,7 @@ export default function CreateEvent({
                 <Label className="mb-2 block">Tipo de Ingresso</Label>
                 <RadioGroup
                   value={paymentType}
-                  onValueChange={(value: "free" | "platform") => setPaymentType(value)}
+                  onValueChange={(value: "free" | "external" | "platform") => setPaymentType(value)}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="free" id="free" />
@@ -608,6 +615,14 @@ export default function CreateEvent({
                       🎫 Evento Gratuito
                     </Label>
                   </div>
+                  {isAdmin && (
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="external" id="external" />
+                      <Label htmlFor="external" className="cursor-pointer">
+                        🔗 Link Externo (Sympla, Eventbrite, etc)
+                      </Label>
+                    </div>
+                  )}
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="platform" id="platform" />
                     <Label htmlFor="platform" className="cursor-pointer">
@@ -616,6 +631,23 @@ export default function CreateEvent({
                   </div>
                 </RadioGroup>
               </div>
+
+              {/* Link Externo */}
+              {paymentType === "external" && isAdmin && (
+                <div className="pt-2 border-t">
+                  <Label htmlFor="ticketLink">Link de Compra do Ingresso</Label>
+                  <Input
+                    id="ticketLink"
+                    type="url"
+                    placeholder="https://www.sympla.com.br/..."
+                    value={eventData.ticketLink}
+                    onChange={e => handleInputChange("ticketLink", e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cole o link onde os participantes podem comprar o ingresso
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
