@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, X } from "lucide-react";
+import { Camera, X, Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +26,7 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedTicket, setScannedTicket] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const [manualCodeInput, setManualCodeInput] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -176,14 +177,49 @@ export default function TicketScanner({ eventId }: TicketScannerProps) {
   return (
     <>
       <Button
-        onClick={startScan}
+        onClick={() => setOptionsDialogOpen(true)}
         disabled={isScanning}
         size="sm"
         variant="outline"
       >
         <Camera className="h-4 w-4 mr-2" />
-        {isScanning ? 'Escaneando...' : 'Validar'}
+        Validar
       </Button>
+
+      {/* Options Dialog */}
+      <Dialog open={optionsDialogOpen} onOpenChange={setOptionsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Validar Ingresso</DialogTitle>
+            <DialogDescription>
+              Escolha como deseja validar o ingresso
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Button 
+              className="w-full h-20 flex flex-col gap-2"
+              onClick={() => {
+                setOptionsDialogOpen(false);
+                startScan();
+              }}
+            >
+              <Camera className="h-6 w-6" />
+              <span>Escanear QR Code</span>
+            </Button>
+            <Button 
+              variant="outline"
+              className="w-full h-20 flex flex-col gap-2"
+              onClick={() => {
+                setOptionsDialogOpen(false);
+                setManualCodeInput(true);
+              }}
+            >
+              <Keyboard className="h-6 w-6" />
+              <span>Digitar Código</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Web Scanner Dialog */}
       <Dialog open={isScanning && !isNative} onOpenChange={(open) => !open && stopScan()}>
