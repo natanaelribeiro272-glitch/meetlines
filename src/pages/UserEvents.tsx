@@ -512,34 +512,36 @@ export default function UserEvents() {
                 >
                   Baixar Ingresso
                 </Button>
-                <Button
-                  className="flex-1"
-                  onClick={async () => {
-                    if (!selectedTicket) return;
-                    
-                    // Buscar os dados do organizador para obter o username correto
-                    const { data: organizer } = await supabase
-                      .from('organizers')
-                      .select('username')
-                      .eq('id', (await supabase
-                        .from('events')
-                        .select('organizer_id')
-                        .eq('id', selectedTicket.event_id)
-                        .single()
-                      ).data?.organizer_id)
-                      .single();
-                    
-                    if (organizer?.username) {
-                      const eventSlug = slugify(selectedTicket.event.title);
-                      setSelectedTicket(null);
-                      navigate(`/${organizer.username}/${eventSlug}`);
-                    } else {
-                      toast.error('Erro ao abrir evento');
-                    }
-                  }}
-                >
-                  Ver Evento
-                </Button>
+                {new Date(selectedTicket.event.event_date) > new Date() && (
+                  <Button
+                    className="flex-1"
+                    onClick={async () => {
+                      if (!selectedTicket) return;
+                      
+                      // Buscar os dados do organizador para obter o username correto
+                      const { data: organizer } = await supabase
+                        .from('organizers')
+                        .select('username')
+                        .eq('id', (await supabase
+                          .from('events')
+                          .select('organizer_id')
+                          .eq('id', selectedTicket.event_id)
+                          .maybeSingle()
+                        ).data?.organizer_id)
+                        .maybeSingle();
+                      
+                      if (organizer?.username) {
+                        const eventSlug = slugify(selectedTicket.event.title);
+                        setSelectedTicket(null);
+                        navigate(`/${organizer.username}/${eventSlug}`);
+                      } else {
+                        toast.error('Erro ao abrir evento');
+                      }
+                    }}
+                  >
+                    Ver Evento
+                  </Button>
+                )}
               </div>
             </div>
           )}
