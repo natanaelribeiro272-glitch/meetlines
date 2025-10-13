@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import RegistrationFormDialog from "@/components/RegistrationFormDialog";
+import TicketConfiguration from "@/components/TicketConfiguration";
 import { FormField } from "@/components/FormFieldsConfig";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useProfile } from "@/hooks/useProfile";
@@ -93,6 +95,22 @@ export default function CreateEvent({
   const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
   const [notesVisible, setNotesVisible] = useState(true);
   const [eventType, setEventType] = useState<"presencial" | "live">("presencial");
+  const [paymentType, setPaymentType] = useState<"free" | "external" | "platform">("free");
+  
+  // Ticket configuration states
+  const [ticketTypes, setTicketTypes] = useState<any[]>([]);
+  const [ticketSettings, setTicketSettings] = useState({
+    feePayer: "buyer" as "buyer" | "organizer",
+    platformFeePercentage: 10,
+    paymentProcessingFeePercentage: 3.99,
+    paymentProcessingFeeFixed: 0.39,
+    cancellationPolicy: "",
+    acceptsPix: true,
+    acceptsCreditCard: true,
+    acceptsDebitCard: true,
+    maxInstallments: 12
+  });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   
   // Load event data if editing
   useEffect(() => {
@@ -191,6 +209,24 @@ export default function CreateEvent({
       toast.error('Preencha o link da transmissão');
       return;
     }
+    
+    // Validação de venda na plataforma
+    if (paymentType === "platform") {
+      if (ticketTypes.length === 0) {
+        toast.error('Configure pelo menos um tipo de ingresso');
+        return;
+      }
+      if (!termsAccepted) {
+        toast.error('Você precisa aceitar os termos e condições');
+        return;
+      }
+    }
+    
+    if (paymentType === "external" && !eventData.ticketLink) {
+      toast.error('Preencha o link de compra do ingresso');
+      return;
+    }
+    
     try {
       setIsCreating(true);
       let imageUrl = null;
@@ -251,7 +287,7 @@ export default function CreateEvent({
         toast.success('Evento atualizado com sucesso!');
       } else {
         // Create new event
-        await createEvent({
+        const eventPayload = {
           title: eventData.title,
           description: eventData.description,
           event_date: eventDateTime.toISOString(),
@@ -262,14 +298,87 @@ export default function CreateEvent({
           max_attendees: eventData.maxAttendees ? parseInt(eventData.maxAttendees) : null,
           interests: selectedInterest ? [selectedInterest] : [],
           is_live: eventType === "live",
-          status: 'upcoming',
+          status: 'upcoming' as const,
           requires_registration: requiresRegistration,
           category: eventData.category || null,
           form_fields: requiresRegistration ? formFields : [],
-          ticket_price: eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
-          ticket_link: eventData.ticketLink || null
-        });
+          ticket_price: paymentType === "external" && eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
+          ticket_link: paymentType === "external" ? eventData.ticketLink || null : null
+        };
+
+        await createEvent(eventPayload);
+
+        // Get the organizer_id to query the newly created event
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { data: organizer } = await supabase
+          .from('organizers')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!organizer) throw new Error('Organizer not found');
+
+        // Get the newly created event
+        const { data: newEvent } = await supabase
+          .from('events')
+          .select('id')
+          .eq('organizer_id', organizer.id)
+          .eq('title', eventData.title)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
         toast.success('Evento criado com sucesso!');
+        
+        // If platform payment is enabled, save ticket configuration
+        if (paymentType === "platform" && newEvent) {
+          // Save ticket settings
+          const { error: settingsError } = await supabase
+            .from('event_ticket_settings')
+            .insert({
+              event_id: newEvent.id,
+              accepts_platform_payment: true,
+              fee_payer: ticketSettings.feePayer,
+              platform_fee_percentage: ticketSettings.platformFeePercentage,
+              payment_processing_fee_percentage: ticketSettings.paymentProcessingFeePercentage,
+              payment_processing_fee_fixed: ticketSettings.paymentProcessingFeeFixed,
+              cancellation_policy: ticketSettings.cancellationPolicy,
+              accepts_pix: ticketSettings.acceptsPix,
+              accepts_credit_card: ticketSettings.acceptsCreditCard,
+              accepts_debit_card: ticketSettings.acceptsDebitCard,
+              max_installments: ticketSettings.maxInstallments,
+              terms_accepted: termsAccepted,
+              terms_accepted_at: new Date().toISOString()
+            });
+
+          if (settingsError) throw settingsError;
+
+          // Save ticket types
+          const ticketTypesData = ticketTypes.map((ticket, index) => ({
+            event_id: newEvent.id,
+            name: ticket.name,
+            description: ticket.description,
+            price: ticket.price,
+            quantity: ticket.quantity,
+            sales_start_date: ticket.salesStartDate && ticket.salesStartTime 
+              ? new Date(`${ticket.salesStartDate}T${ticket.salesStartTime}`).toISOString()
+              : null,
+            sales_end_date: ticket.salesEndDate && ticket.salesEndTime
+              ? new Date(`${ticket.salesEndDate}T${ticket.salesEndTime}`).toISOString()
+              : null,
+            min_quantity_per_purchase: ticket.minQuantity,
+            max_quantity_per_purchase: ticket.maxQuantity,
+            sort_order: index
+          }));
+
+          const { error: ticketsError } = await supabase
+            .from('ticket_types')
+            .insert(ticketTypesData);
+
+          if (ticketsError) throw ticketsError;
+        }
       }
       
       onBack();
@@ -453,49 +562,59 @@ export default function CreateEvent({
             </CardContent>
           </Card>
 
-          {/* Capacidade e Preço */}
+          {/* Capacidade e Venda de Ingressos */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Capacidade e Ingresso</CardTitle>
+              <CardTitle className="text-sm">Capacidade e Ingressos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="maxAttendees" className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    Capacidade
-                  </Label>
-                  <Input id="maxAttendees" type="number" placeholder="300" value={eventData.maxAttendees} onChange={e => handleInputChange("maxAttendees", e.target.value)} />
-                </div>
-                <div>
-                  <Label htmlFor="ticketPrice" className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    Preço (R$)
-                  </Label>
-                  <Input 
-                    id="ticketPrice" 
-                    type="number" 
-                    step="0.01" 
-                    placeholder="0.00 (Gratuito)" 
-                    value={eventData.ticketPrice} 
-                    onChange={e => handleInputChange("ticketPrice", e.target.value)} 
-                  />
-                </div>
+              <div>
+                <Label htmlFor="maxAttendees" className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  Capacidade Máxima
+                </Label>
+                <Input id="maxAttendees" type="number" placeholder="300" value={eventData.maxAttendees} onChange={e => handleInputChange("maxAttendees", e.target.value)} />
               </div>
 
-              {/* Link de Compra - Só aparece se o evento for pago */}
-              {eventData.ticketPrice && parseFloat(eventData.ticketPrice) > 0 && (
+              <Separator />
+
+              <div>
+                <Label className="mb-2 block">Tipo de Ingresso</Label>
+                <RadioGroup
+                  value={paymentType}
+                  onValueChange={(value: "free" | "external" | "platform") => setPaymentType(value)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="free" id="free" />
+                    <Label htmlFor="free" className="cursor-pointer">
+                      🎫 Evento Gratuito
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="external" id="external" />
+                    <Label htmlFor="external" className="cursor-pointer">
+                      🔗 Link Externo (Sympla, Eventbrite, etc)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="platform" id="platform" />
+                    <Label htmlFor="platform" className="cursor-pointer">
+                      💳 Vender na Plataforma (Stripe)
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Link Externo */}
+              {paymentType === "external" && (
                 <div className="pt-2 border-t">
-                  <Label htmlFor="ticketLink" className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    Link de Compra do Ingresso
-                  </Label>
-                  <Input 
-                    id="ticketLink" 
-                    type="url" 
-                    placeholder="https://www.sympla.com.br/..." 
-                    value={eventData.ticketLink} 
-                    onChange={e => handleInputChange("ticketLink", e.target.value)} 
+                  <Label htmlFor="ticketLink">Link de Compra do Ingresso</Label>
+                  <Input
+                    id="ticketLink"
+                    type="url"
+                    placeholder="https://www.sympla.com.br/..."
+                    value={eventData.ticketLink}
+                    onChange={e => handleInputChange("ticketLink", e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Cole o link onde os participantes podem comprar o ingresso
@@ -504,6 +623,28 @@ export default function CreateEvent({
               )}
             </CardContent>
           </Card>
+
+          {/* Configuração de Venda na Plataforma */}
+          {paymentType === "platform" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Configuração de Venda</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Configure os tipos de ingressos, preços e formas de pagamento
+                </p>
+              </CardHeader>
+              <CardContent>
+                <TicketConfiguration
+                  ticketTypes={ticketTypes}
+                  ticketSettings={ticketSettings}
+                  onTicketTypesChange={setTicketTypes}
+                  onTicketSettingsChange={setTicketSettings}
+                  termsAccepted={termsAccepted}
+                  onTermsAccepted={setTermsAccepted}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Formulário de Cadastro */}
           <Card>

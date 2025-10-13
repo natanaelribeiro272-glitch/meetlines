@@ -210,6 +210,77 @@ export type Database = {
           },
         ]
       }
+      event_ticket_settings: {
+        Row: {
+          accepts_credit_card: boolean | null
+          accepts_debit_card: boolean | null
+          accepts_pix: boolean | null
+          accepts_platform_payment: boolean | null
+          cancellation_policy: string | null
+          created_at: string | null
+          event_id: string
+          fee_payer: string | null
+          id: string
+          max_installments: number | null
+          payment_processing_fee_fixed: number | null
+          payment_processing_fee_percentage: number | null
+          platform_fee_percentage: number | null
+          stripe_account_id: string | null
+          terms_accepted: boolean | null
+          terms_accepted_at: string | null
+          terms_accepted_ip: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accepts_credit_card?: boolean | null
+          accepts_debit_card?: boolean | null
+          accepts_pix?: boolean | null
+          accepts_platform_payment?: boolean | null
+          cancellation_policy?: string | null
+          created_at?: string | null
+          event_id: string
+          fee_payer?: string | null
+          id?: string
+          max_installments?: number | null
+          payment_processing_fee_fixed?: number | null
+          payment_processing_fee_percentage?: number | null
+          platform_fee_percentage?: number | null
+          stripe_account_id?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
+          terms_accepted_ip?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accepts_credit_card?: boolean | null
+          accepts_debit_card?: boolean | null
+          accepts_pix?: boolean | null
+          accepts_platform_payment?: boolean | null
+          cancellation_policy?: string | null
+          created_at?: string | null
+          event_id?: string
+          fee_payer?: string | null
+          id?: string
+          max_installments?: number | null
+          payment_processing_fee_fixed?: number | null
+          payment_processing_fee_percentage?: number | null
+          platform_fee_percentage?: number | null
+          stripe_account_id?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
+          terms_accepted_ip?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_ticket_settings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           category: string | null
@@ -960,6 +1031,155 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ticket_sales: {
+        Row: {
+          buyer_document: string | null
+          buyer_email: string
+          buyer_name: string
+          buyer_phone: string | null
+          cancelled_at: string | null
+          created_at: string | null
+          event_id: string
+          id: string
+          paid_at: string | null
+          payment_processing_fee: number
+          payment_status: string | null
+          platform_fee: number
+          quantity: number
+          refunded_at: string | null
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          subtotal: number
+          ticket_type_id: string
+          total_amount: number
+          unit_price: number
+          user_id: string
+        }
+        Insert: {
+          buyer_document?: string | null
+          buyer_email: string
+          buyer_name: string
+          buyer_phone?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          event_id: string
+          id?: string
+          paid_at?: string | null
+          payment_processing_fee: number
+          payment_status?: string | null
+          platform_fee: number
+          quantity: number
+          refunded_at?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          subtotal: number
+          ticket_type_id: string
+          total_amount: number
+          unit_price: number
+          user_id: string
+        }
+        Update: {
+          buyer_document?: string | null
+          buyer_email?: string
+          buyer_name?: string
+          buyer_phone?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          paid_at?: string | null
+          payment_processing_fee?: number
+          payment_status?: string | null
+          platform_fee?: number
+          quantity?: number
+          refunded_at?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          subtotal?: number
+          ticket_type_id?: string
+          total_amount?: number
+          unit_price?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_sales_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_sales_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_id: string
+          id: string
+          is_active: boolean | null
+          max_quantity_per_purchase: number | null
+          min_quantity_per_purchase: number | null
+          name: string
+          price: number
+          quantity: number
+          quantity_sold: number | null
+          sales_end_date: string | null
+          sales_start_date: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean | null
+          max_quantity_per_purchase?: number | null
+          min_quantity_per_purchase?: number | null
+          name: string
+          price: number
+          quantity: number
+          quantity_sold?: number | null
+          sales_end_date?: string | null
+          sales_start_date?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean | null
+          max_quantity_per_purchase?: number | null
+          min_quantity_per_purchase?: number | null
+          name?: string
+          price?: number
+          quantity?: number
+          quantity_sold?: number | null
+          sales_end_date?: string | null
+          sales_start_date?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_types_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_likes: {
         Row: {
