@@ -25,6 +25,8 @@ import AdminEditPendingEvent from "./pages/AdminEditPendingEvent";
 import Notifications from "./pages/Notifications";
 import TicketPurchaseSuccess from "./pages/TicketPurchaseSuccess";
 import EventTicketSales from "./pages/EventTicketSales";
+import AdminOrganizerPayments from "./pages/AdminOrganizerPayments";
+import AdminOrganizerPaymentDetails from "./pages/AdminOrganizerPaymentDetails";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,8 @@ const App = () => (
             <Route path="/admin/auto-generate-events" element={<AdminAutoGenerateEvents />} />
             <Route path="/admin/pending-events" element={<AdminPendingEvents />} />
             <Route path="/admin/pending-event/:eventId/edit" element={<AdminEditPendingEvent />} />
+            <Route path="/admin/organizer-payments" element={<AdminOrganizerPayments />} />
+            <Route path="/admin/organizer-payments/:organizerId" element={<AdminOrganizerPaymentDetails />} />
               {/* Public event share route: domain.com/@username/event-slug */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
               {/* Public organizer profile: domain.com/@username */}

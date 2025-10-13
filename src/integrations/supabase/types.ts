@@ -515,6 +515,69 @@ export type Database = {
           },
         ]
       }
+      organizer_payouts: {
+        Row: {
+          created_at: string
+          event_id: string
+          gross_amount: number
+          id: string
+          net_amount: number
+          organizer_id: string
+          payout_date: string | null
+          payout_due_date: string
+          payout_notes: string | null
+          payout_status: string
+          platform_fee: number
+          processing_fee: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          organizer_id: string
+          payout_date?: string | null
+          payout_due_date: string
+          payout_notes?: string | null
+          payout_status?: string
+          platform_fee?: number
+          processing_fee?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          organizer_id?: string
+          payout_date?: string | null
+          payout_due_date?: string
+          payout_notes?: string | null
+          payout_status?: string
+          platform_fee?: number
+          processing_fee?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_payouts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_payouts_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "organizers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizer_photos: {
         Row: {
           caption: string | null

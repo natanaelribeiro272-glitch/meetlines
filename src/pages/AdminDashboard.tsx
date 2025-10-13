@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, MessageSquare, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Users, Calendar, MessageSquare, AlertCircle, ArrowLeft, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -127,6 +127,19 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Repasses de Organizadores</CardTitle>
+            <CardDescription>Gerencie pagamentos e repasses para organizadores</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/admin/organizer-payments')} className="w-full">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Ver Repasses
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Eventos da Plataforma</CardTitle>
