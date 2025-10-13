@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import StoryViewer from "./StoryViewer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface UserStory {
   user_id: string;
@@ -33,6 +35,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [selectedStories, setSelectedStories] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showUploadOptions, setShowUploadOptions] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -257,6 +260,53 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
     if (!user || !e.target.files || e.target.files.length === 0) return;
 
     const file = e.target.files[0];
+    await uploadStoryFile(file);
+    e.target.value = '';
+  };
+
+  const handleCameraCapture = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      });
+      
+      // Create video element
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
+
+      // Wait for video to be ready
+      await new Promise(resolve => {
+        video.onloadedmetadata = resolve;
+      });
+
+      // Create canvas and capture image
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0);
+
+      // Stop camera
+      stream.getTracks().forEach(track => track.stop());
+
+      // Convert to blob and upload
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          const file = new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          await uploadStoryFile(file);
+        }
+      }, 'image/jpeg', 0.95);
+
+      setShowUploadOptions(false);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast.error('Erro ao acessar câmera');
+    }
+  };
+
+  const uploadStoryFile = async (file: File) => {
+    if (!user) return;
     
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
@@ -325,7 +375,6 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
       toast.error('Erro ao publicar story');
     } finally {
       setUploading(false);
-      e.target.value = '';
     }
   };
 
@@ -361,22 +410,26 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                   <>
                     <div className="rounded-full p-[3px] bg-gray-600">
                       <div className="bg-background rounded-full p-[2px]">
-                        <label htmlFor="story-upload" className="cursor-pointer">
+                        <div 
+                          onClick={() => setShowUploadOptions(true)}
+                          className="cursor-pointer"
+                        >
                           <Avatar className="h-14 w-14">
                             <AvatarImage src={user?.user_metadata?.avatar_url} />
                             <AvatarFallback>Eu</AvatarFallback>
                           </Avatar>
-                        </label>
+                        </div>
                       </div>
                     </div>
-                    <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1 z-10">
-                      <label htmlFor="story-upload" className="cursor-pointer">
-                        {uploading ? (
-                          <Loader2 className="h-3 w-3 text-white animate-spin" />
-                        ) : (
-                          <Plus className="h-3 w-3 text-white" />
-                        )}
-                      </label>
+                    <div 
+                      className="absolute bottom-0 right-0 bg-primary rounded-full p-1 z-10 cursor-pointer"
+                      onClick={() => setShowUploadOptions(true)}
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-3 w-3 text-white animate-spin" />
+                      ) : (
+                        <Plus className="h-3 w-3 text-white" />
+                      )}
                     </div>
                     <input
                       id="story-upload"
@@ -435,6 +488,36 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
           }}
         />
       )}
+
+      {/* Upload Options Dialog */}
+      <Dialog open={showUploadOptions} onOpenChange={setShowUploadOptions}>
+        <DialogContent className="bg-surface border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Adicionar Story</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <Button
+              onClick={handleCameraCapture}
+              className="w-full h-14 text-base"
+              variant="outline"
+            >
+              <Camera className="h-5 w-5 mr-3" />
+              Abrir Câmera
+            </Button>
+            <Button
+              onClick={() => {
+                document.getElementById('story-upload')?.click();
+                setShowUploadOptions(false);
+              }}
+              className="w-full h-14 text-base"
+              variant="outline"
+            >
+              <ImageIcon className="h-5 w-5 mr-3" />
+              Escolher da Galeria
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
