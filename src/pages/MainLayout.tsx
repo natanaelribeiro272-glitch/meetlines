@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
@@ -96,11 +96,20 @@ export default function MainLayout() {
 
     checkUserOnboarding();
   }, [user, userRole, loading, navigate]);
+  // Sync active tab from navigation state (e.g., navigate('/', { state: { initialTab: 'profile' } }))
+  const location = useLocation();
+  useEffect(() => {
+    const state = (location.state as { initialTab?: string } | null) || null;
+    if (state?.initialTab) {
+      setActiveTab(state.initialTab);
+      // Clear the state to avoid re-triggering when navigating within the app
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const handleLogin = (type: "user" | "organizer") => {
     // This is handled by the auth provider now
   };
-
   const handleEventClick = (eventId: string) => {
     if (eventId === "live-events") {
       setCurrentView("liveEvents");
