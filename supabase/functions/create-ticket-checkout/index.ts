@@ -158,7 +158,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/event/${eventId}?payment=success`,
+      success_url: `${req.headers.get("origin")}/ticket-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/event/${eventId}?payment=cancelled`,
       metadata: {
         ticket_sale_id: saleData.id,
