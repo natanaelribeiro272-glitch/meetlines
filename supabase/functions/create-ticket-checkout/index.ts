@@ -168,10 +168,16 @@ serve(async (req) => {
     });
 
     // Update sale record with Stripe session ID
-    await supabaseClient
+    const { error: updateError } = await supabaseClient
       .from("ticket_sales")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", saleData.id);
+
+    if (updateError) {
+      logStep("Error updating sale with session ID", { error: updateError });
+    } else {
+      logStep("Sale updated with session ID", { saleId: saleData.id, sessionId: session.id });
+    }
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 

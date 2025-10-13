@@ -42,37 +42,62 @@ export default function TicketPurchaseSuccess() {
       }
 
       try {
-        // Fetch ticket sale by Stripe session ID
-        const { data, error } = await supabase
-          .from("ticket_sales")
-          .select(`
-            id,
-            quantity,
-            total_amount,
-            buyer_name,
-            event:events(title, event_date, location, image_url),
-            ticket_type:ticket_types(name)
-          `)
-          .eq("stripe_checkout_session_id", sessionId)
-          .single();
+        // Retry logic to handle race condition
+        let retries = 3;
+        let data = null;
+        
+        while (retries > 0 && !data) {
+          const { data: saleData, error } = await supabase
+            .from("ticket_sales")
+            .select(`
+              id,
+              quantity,
+              total_amount,
+              buyer_name,
+              payment_status,
+              event:events(title, event_date, location, image_url),
+              ticket_type:ticket_types(name)
+            `)
+            .eq("stripe_checkout_session_id", sessionId)
+            .maybeSingle();
 
-        if (error) throw error;
+          if (saleData) {
+            data = saleData;
+            break;
+          }
+
+          if (error && error.code !== 'PGRST116') {
+            throw error;
+          }
+
+          // Wait before retry
+          if (retries > 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          retries--;
+        }
+
+        if (!data) {
+          throw new Error("Ingresso não encontrado");
+        }
 
         setTicketData(data);
         
-        // Update payment status to completed
-        await supabase
-          .from("ticket_sales")
-          .update({ 
-            payment_status: "completed",
-            paid_at: new Date().toISOString()
-          })
-          .eq("id", data.id);
+        // Update payment status to completed only if still pending
+        if (data.payment_status === "pending") {
+          await supabase
+            .from("ticket_sales")
+            .update({ 
+              payment_status: "completed",
+              paid_at: new Date().toISOString()
+            })
+            .eq("id", data.id);
+        }
 
       } catch (error) {
         console.error("Error fetching ticket details:", error);
         toast.error("Erro ao carregar detalhes do ingresso");
-        navigate("/");
+        setTimeout(() => navigate("/"), 2000);
       } finally {
         setLoading(false);
       }
