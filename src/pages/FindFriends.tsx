@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import UserChatDialog from "@/components/UserChatDialog";
 import { useFriendship } from "@/hooks/useFriendship";
 import StoriesBar from "@/components/StoriesBar";
+import StorySettingsDialog from "@/components/StorySettingsDialog";
 
 interface Attendee {
   id: string;
@@ -683,6 +684,7 @@ export default function FindFriends({
           <div className="flex-1">
             <h1 className="font-bold text-foreground">Conectar</h1>
           </div>
+          <StorySettingsDialog />
         </div>
 
         {/* Tabs */}

@@ -1,6 +1,5 @@
 import { MapPin, Sun, Moon, Shield } from "lucide-react";
 import { NotificationDropdown } from "./NotificationDropdown";
-import StorySettingsDialog from "./StorySettingsDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "@/hooks/useTheme";
@@ -51,7 +50,6 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-2">
-          {user && <StorySettingsDialog />}
           {isAdmin && (
             <Button
               variant="ghost"
