@@ -332,7 +332,7 @@ export default function UserEvents() {
 
       {/* Ticket Dialog */}
       <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Seu Ingresso Digital</DialogTitle>
             <DialogDescription>
@@ -340,105 +340,104 @@ export default function UserEvents() {
             </DialogDescription>
           </DialogHeader>
           {selectedTicket && (
-            <div className="space-y-6 py-4">
+            <div className="space-y-4 pb-4">
               {/* Event Info */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">Evento</p>
-                  <p className="font-semibold text-lg">{selectedTicket.event.title}</p>
+                  <p className="text-xs text-muted-foreground">Evento</p>
+                  <p className="font-semibold">{selectedTicket.event.title}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Organizador</p>
-                  <p className="font-medium">{selectedTicket.event.organizer.page_title}</p>
+                  <p className="text-xs text-muted-foreground">Organizador</p>
+                  <p className="font-medium text-sm">{selectedTicket.event.organizer.page_title}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Data</p>
-                    <p className="font-medium">
+                    <p className="text-xs text-muted-foreground">Data</p>
+                    <p className="font-medium text-sm">
                       {format(new Date(selectedTicket.event.event_date), "dd/MM/yyyy", { locale: ptBR })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Horário</p>
-                    <p className="font-medium">
+                    <p className="text-xs text-muted-foreground">Horário</p>
+                    <p className="font-medium text-sm">
                       {format(new Date(selectedTicket.event.event_date), "HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Local</p>
-                  <p className="font-medium">{selectedTicket.event.location}</p>
+                  <p className="text-xs text-muted-foreground">Local</p>
+                  <p className="font-medium text-sm">{selectedTicket.event.location}</p>
                 </div>
               </div>
 
-              <div className="border-t border-dashed pt-4" />
+              <div className="border-t border-dashed" />
 
               {/* Ticket Details */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Tipo de Ingresso</p>
-                    <p className="font-semibold">{selectedTicket.ticket_type.name}</p>
+                    <p className="text-xs text-muted-foreground">Tipo de Ingresso</p>
+                    <p className="font-semibold text-sm">{selectedTicket.ticket_type.name}</p>
                   </div>
-                  <Badge variant="secondary" className="text-base">
+                  <Badge variant="secondary">
                     {selectedTicket.quantity}x
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="font-bold text-xl text-primary">
+                  <p className="text-xs text-muted-foreground">Valor Total</p>
+                  <p className="font-bold text-lg text-primary">
                     R$ {selectedTicket.total_amount.toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Data da Compra</p>
-                  <p className="font-medium">
+                  <p className="text-xs text-muted-foreground">Data da Compra</p>
+                  <p className="font-medium text-sm">
                     {format(new Date(selectedTicket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
               </div>
 
-              <div className="border-t border-dashed pt-4" />
+              <div className="border-t border-dashed" />
 
               {/* QR Code */}
-              <div className="flex flex-col items-center gap-4">
-                <div className="bg-white p-6 rounded-lg shadow-inner">
-                  <QRCode value={selectedTicket.id} size={220} />
+              <div className="flex flex-col items-center gap-3 py-2">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <QRCode value={selectedTicket.id} size={200} />
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">Código do Ingresso</p>
-                  <p className="text-xs font-mono bg-muted px-3 py-1 rounded">
+                  <p className="text-xs font-mono bg-muted px-2 py-1 rounded">
                     {selectedTicket.id}
                   </p>
                 </div>
               </div>
 
-              <div className="border-t pt-4">
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => {
-                      const canvas = document.querySelector('canvas');
-                      if (canvas) {
-                        const url = canvas.toDataURL();
-                        const link = document.createElement('a');
-                        link.download = `ingresso-${selectedTicket.id.slice(0, 8)}.png`;
-                        link.href = url;
-                        link.click();
-                        toast.success("QR Code baixado!");
-                      }
-                    }}
-                  >
-                    Baixar QR Code
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={() => navigate(`/events/${selectedTicket.event_id}`)}
-                  >
-                    Ver Evento
-                  </Button>
-                </div>
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    const canvas = document.querySelector('canvas');
+                    if (canvas) {
+                      const url = canvas.toDataURL();
+                      const link = document.createElement('a');
+                      link.download = `ingresso-${selectedTicket.id.slice(0, 8)}.png`;
+                      link.href = url;
+                      link.click();
+                      toast.success("QR Code baixado!");
+                    }
+                  }}
+                >
+                  Baixar QR Code
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => navigate(`/events/${selectedTicket.event_id}`)}
+                >
+                  Ver Evento
+                </Button>
               </div>
             </div>
           )}
