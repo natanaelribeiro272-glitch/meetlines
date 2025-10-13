@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Users, Search, Filter, Crown } from "lucide-react";
 import { Header } from "@/components/Header";
 import { EventFeed } from "@/components/EventFeed";
-import StoriesBar from "@/components/StoriesBar";
 import { OrganizerStoriesBar } from "@/components/OrganizerStoriesBar";
 import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { OrganizerStoryUploadDialog } from "@/components/OrganizerStoryUploadDialog";
@@ -120,9 +119,6 @@ export default function Home({
         onOrganizerClick={handleOrganizerStoryClick}
         onCreateStory={organizerData ? handleCreateStory : undefined}
       />
-
-      {/* User Stories Bar */}
-      <StoriesBar mode="nearby" />
       
       <main className="px-4 py-4 max-w-md mx-auto">
         {/* Search Bar */}
