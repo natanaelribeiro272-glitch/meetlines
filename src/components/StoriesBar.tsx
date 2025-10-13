@@ -317,6 +317,13 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
+      
+      // Se for câmera frontal, inverter a imagem
+      if (facingMode === 'user') {
+        ctx?.translate(canvas.width, 0);
+        ctx?.scale(-1, 1);
+      }
+      
       ctx?.drawImage(video, 0, 0);
 
       const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
@@ -357,7 +364,10 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
   };
 
   const openGallery = () => {
-    document.getElementById('story-upload')?.click();
+    const input = document.getElementById('story-upload') as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
   };
 
   const closeCamera = () => {
@@ -484,7 +494,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                     <div className="rounded-full p-[3px] bg-gray-600">
                       <div className="bg-background rounded-full p-[2px]">
                         <div 
-                          onClick={() => setShowUploadOptions(true)}
+                          onClick={handleCameraCapture}
                           className="cursor-pointer"
                         >
                           <Avatar className="h-14 w-14">
@@ -504,19 +514,21 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                         <Plus className="h-3 w-3 text-white" />
                       )}
                     </div>
-                    <input
-                      id="story-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleUploadStory}
-                      disabled={uploading}
-                    />
                   </>
                 )}
               </div>
               <span className="text-xs text-muted-foreground text-center line-clamp-1">Seu story</span>
             </div>
+
+            {/* Hidden file input - always in DOM */}
+            <input
+              id="story-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleUploadStory}
+              disabled={uploading}
+            />
 
             {/* Other users' stories */}
             {userStories.map((userStory) => (
@@ -585,6 +597,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                   }
                 }}
                 className="w-full h-full object-cover"
+                style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
               />
             )}
 
