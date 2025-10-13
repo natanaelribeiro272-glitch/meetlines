@@ -101,7 +101,7 @@ export default function CreateEvent({
   const [ticketTypes, setTicketTypes] = useState<any[]>([]);
   const [ticketSettings, setTicketSettings] = useState({
     feePayer: "buyer" as "buyer" | "organizer",
-    platformFeePercentage: 10,
+    platformFeePercentage: 5,
     paymentProcessingFeePercentage: 3.99,
     paymentProcessingFeeFixed: 0.39,
     cancellationPolicy: "",
