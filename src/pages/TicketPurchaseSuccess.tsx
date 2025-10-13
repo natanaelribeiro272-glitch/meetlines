@@ -42,11 +42,11 @@ export default function TicketPurchaseSuccess() {
       }
 
       try {
-        // Retry logic to handle race condition
-        let retries = 3;
-        let data = null;
+        // More robust retry logic to handle possible delays
+        let retries = 5;
+        let baseSale: any = null;
         
-        while (retries > 0 && !data) {
+        while (retries > 0 && !baseSale) {
           const { data: saleData, error } = await supabase
             .from("ticket_sales")
             .select(`
@@ -55,43 +55,74 @@ export default function TicketPurchaseSuccess() {
               total_amount,
               buyer_name,
               payment_status,
-              event:events(title, event_date, location, image_url),
-              ticket_type:ticket_types(name)
+              event_id,
+              ticket_type_id
             `)
             .eq("stripe_checkout_session_id", sessionId)
             .maybeSingle();
 
           if (saleData) {
-            data = saleData;
+            baseSale = saleData;
             break;
           }
 
-          if (error && error.code !== 'PGRST116') {
+          if (error && (error as any).code !== 'PGRST116') {
             throw error;
           }
 
-          // Wait before retry
+          // Wait before retry (exponential backoff)
           if (retries > 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const backoffMs = (6 - retries) * 400 + 600; // 600ms, 1000ms, 1400ms, ...
+            await new Promise(resolve => setTimeout(resolve, backoffMs));
           }
           retries--;
         }
 
-        if (!data) {
+        if (!baseSale) {
           throw new Error("Ingresso não encontrado");
         }
 
-        setTicketData(data);
+        // Fetch related data separately to avoid PostgREST embedding issues when FKs are missing
+        const [eventRes, ticketTypeRes] = await Promise.all([
+          supabase
+            .from("events")
+            .select("title, event_date, location, image_url")
+            .eq("id", baseSale.event_id)
+            .single(),
+          supabase
+            .from("ticket_types")
+            .select("name, is_active")
+            .eq("id", baseSale.ticket_type_id)
+            .maybeSingle(),
+        ]);
+
+        const fullData: TicketSaleDetails = {
+          id: baseSale.id,
+          quantity: baseSale.quantity,
+          total_amount: baseSale.total_amount,
+          buyer_name: baseSale.buyer_name,
+          event: {
+            title: eventRes.data?.title ?? "Ingresso",
+            event_date: eventRes.data?.event_date ?? new Date().toISOString(),
+            location: eventRes.data?.location ?? "",
+            image_url: eventRes.data?.image_url ?? null,
+          },
+          ticket_type: {
+            name: ticketTypeRes.data?.name ?? "Ingresso",
+          },
+        };
+
+        setTicketData(fullData);
         
         // Update payment status to completed only if still pending
-        if (data.payment_status === "pending") {
+        if (baseSale.payment_status === "pending") {
           await supabase
             .from("ticket_sales")
             .update({ 
               payment_status: "completed",
               paid_at: new Date().toISOString()
             })
-            .eq("id", data.id);
+            .eq("id", baseSale.id);
         }
 
       } catch (error) {
