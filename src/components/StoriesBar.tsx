@@ -265,6 +265,14 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
     if (!user || !e.target.files || e.target.files.length === 0) return;
 
     const file = e.target.files[0];
+    
+    // Fechar câmera se estiver aberta
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+    
     await uploadStoryFile(file);
     e.target.value = '';
   };
@@ -476,10 +484,10 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
             <div className="flex flex-col items-center gap-1 min-w-[70px]">
               <div className="relative">
                 {currentUserStory && currentUserStory.stories.length > 0 ? (
-                  // Has story - show clickable circle with options
+                  // Has story - show options dialog
                   <div 
                     className="rounded-full p-[3px] bg-green-500 cursor-pointer"
-                    onClick={handleCameraCapture}
+                    onClick={() => setShowStoryOptions(true)}
                   >
                     <div className="bg-background rounded-full p-[2px]">
                       <Avatar className="h-14 w-14">
@@ -489,7 +497,7 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
                     </div>
                   </div>
                 ) : (
-                  // No story - show upload button
+                  // No story - open camera directly
                   <>
                     <div className="rounded-full p-[3px] bg-gray-600">
                       <div className="bg-background rounded-full p-[2px]">
@@ -574,9 +582,40 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
         />
       )}
 
-      {/* Story Options Dialog (when user already has a story) - REMOVED */}
-
-      {/* Upload Options Dialog - REMOVED */}
+      {/* Story Options Dialog (when user already has a story) */}
+      <Dialog open={showStoryOptions} onOpenChange={setShowStoryOptions}>
+        <DialogContent className="bg-surface border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Seu Story</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <Button
+              onClick={() => {
+                setShowStoryOptions(false);
+                if (currentUserStory) {
+                  openStoryViewer(currentUserStory.stories, 0);
+                }
+              }}
+              className="w-full h-14 text-base"
+              variant="outline"
+            >
+              <Eye className="h-5 w-5 mr-3" />
+              Ver Story
+            </Button>
+            <Button
+              onClick={() => {
+                setShowStoryOptions(false);
+                handleCameraCapture();
+              }}
+              className="w-full h-14 text-base"
+              variant="outline"
+            >
+              <Camera className="h-5 w-5 mr-3" />
+              Tirar Nova Foto
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Camera Preview Dialog */}
       <Dialog open={showCamera} onOpenChange={closeCamera}>
