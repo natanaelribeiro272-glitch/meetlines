@@ -31,7 +31,7 @@ export function OrganizerStoryViewer({
   const { organizerData } = useOrganizer();
 
   const currentStory = organizer.stories[currentIndex];
-  const isOwner = organizerData?.id === organizer.id;
+  const isOwner = !!organizerData && organizerData.id === organizer.id;
   const duration = currentStory?.media_type === 'video' ? 10000 : 5000; // 10s para vídeo, 5s para imagem
 
   useEffect(() => {
@@ -86,7 +86,8 @@ export function OrganizerStoryViewer({
   };
 
   const handleDelete = () => {
-    if (onDelete && window.confirm('Deseja excluir este story?')) {
+    if (!onDelete) return;
+    if (window.confirm('Deseja excluir este story?')) {
       onDelete(currentStory.id);
       if (currentIndex < organizer.stories.length - 1) {
         handleNext();
@@ -170,8 +171,8 @@ export function OrganizerStoryViewer({
                 className="w-full h-full object-contain"
                 autoPlay
                 playsInline
-                muted
                 loop={false}
+                controls={false}
               />
             ) : (
               <img
@@ -222,7 +223,7 @@ export function OrganizerStoryViewer({
                 )}
 
                 {/* Delete button (apenas para o dono) */}
-                {isOwner && onDelete && (
+                {isOwner && (
                   <Button
                     variant="ghost"
                     size="icon"
