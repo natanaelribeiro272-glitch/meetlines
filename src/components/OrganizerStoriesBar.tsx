@@ -8,12 +8,14 @@ interface OrganizerStoriesBarProps {
   organizersWithStories: OrganizerWithStories[];
   onOrganizerClick: (organizer: OrganizerWithStories) => void;
   onCreateStory?: () => void;
+  uploadingStory?: boolean;
 }
 
 export function OrganizerStoriesBar({ 
   organizersWithStories, 
   onOrganizerClick,
-  onCreateStory 
+  onCreateStory,
+  uploadingStory = false
 }: OrganizerStoriesBarProps) {
   const { organizerData } = useOrganizer();
   const { user } = useAuth();
@@ -28,8 +30,9 @@ export function OrganizerStoriesBar({
           {/* Botão de criar story (apenas para organizadores) */}
           {isOrganizer && onCreateStory && (
             <button
-              onClick={onCreateStory}
+              onClick={uploadingStory ? undefined : onCreateStory}
               className="flex-shrink-0 flex flex-col items-center gap-2 group hover-scale"
+              disabled={uploadingStory}
             >
               <div className="relative">
                 <Avatar className="h-16 w-16 ring-2 ring-background">
@@ -38,12 +41,18 @@ export function OrganizerStoriesBar({
                     {organizerData.page_title.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-primary rounded-full flex items-center justify-center ring-2 ring-background group-hover:scale-110 transition-transform">
-                  <Plus className="h-4 w-4 text-primary-foreground" />
-                </div>
+                {uploadingStory ? (
+                  <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                    <div className="h-8 w-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-primary rounded-full flex items-center justify-center ring-2 ring-background group-hover:scale-110 transition-transform">
+                    <Plus className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                )}
               </div>
               <span className="text-xs text-muted-foreground max-w-[64px] truncate story-link">
-                Seu Story
+                {uploadingStory ? 'Enviando...' : 'Seu Story'}
               </span>
             </button>
           )}

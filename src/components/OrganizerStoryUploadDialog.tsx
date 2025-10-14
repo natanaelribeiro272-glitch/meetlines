@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface OrganizerStoryUploadDialogProps {
   open: boolean;
   onClose: () => void;
-  onUpload: (file: File) => Promise<void>;
+  onUpload: (file: File) => void;
 }
 
 export function OrganizerStoryUploadDialog({
@@ -130,27 +130,31 @@ export function OrganizerStoryUploadDialog({
     reader.readAsDataURL(file);
   };
 
-  const postCapturedMedia = async () => {
+  const postCapturedMedia = () => {
     if (!capturedMedia) return;
 
     try {
-      setUploading(true);
-      
-      const response = await fetch(capturedMedia);
-      const blob = await response.blob();
-      const file = new File(
-        [blob], 
-        `story-${Date.now()}.${mediaType === 'video' ? 'mp4' : 'jpg'}`, 
-        { type: mediaType === 'video' ? 'video/mp4' : 'image/jpeg' }
-      );
-      
-      await onUpload(file);
-      handleClose();
+      // Converter para blob de forma síncrona
+      fetch(capturedMedia)
+        .then(response => response.blob())
+        .then(blob => {
+          const file = new File(
+            [blob], 
+            `story-${Date.now()}.${mediaType === 'video' ? 'mp4' : 'jpg'}`, 
+            { type: mediaType === 'video' ? 'video/mp4' : 'image/jpeg' }
+          );
+          
+          // Chamar onUpload e fechar imediatamente
+          onUpload(file);
+          handleClose();
+        })
+        .catch(error => {
+          console.error('Error preparing story:', error);
+          toast.error('Erro ao preparar story');
+        });
     } catch (error) {
       console.error('Error uploading story:', error);
       toast.error('Erro ao publicar story');
-    } finally {
-      setUploading(false);
     }
   };
 

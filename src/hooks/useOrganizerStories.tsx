@@ -32,6 +32,7 @@ export interface OrganizerWithStories {
 export function useOrganizerStories() {
   const [organizersWithStories, setOrganizersWithStories] = useState<OrganizerWithStories[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploadingStory, setUploadingStory] = useState(false);
   const { user } = useAuth();
 
   const fetchOrganizerStories = async () => {
@@ -141,6 +142,8 @@ export function useOrganizerStories() {
       return null;
     }
 
+    setUploadingStory(true);
+
     try {
       // Upload do arquivo
       const fileExt = file.name.split('.').pop();
@@ -179,6 +182,8 @@ export function useOrganizerStories() {
       console.error('Error creating story:', error);
       toast.error('Erro ao criar story');
       return null;
+    } finally {
+      setUploadingStory(false);
     }
   };
 
@@ -318,6 +323,7 @@ export function useOrganizerStories() {
   return {
     organizersWithStories,
     loading,
+    uploadingStory,
     createStory,
     deleteStory,
     markAsViewed,

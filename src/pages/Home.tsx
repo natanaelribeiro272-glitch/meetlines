@@ -37,6 +37,7 @@ export default function Home({
   const { 
     organizersWithStories, 
     loading: storiesLoading,
+    uploadingStory,
     createStory,
     deleteStory,
     markAsViewed,
@@ -57,9 +58,10 @@ export default function Home({
     setUploadDialogOpen(true);
   };
 
-  const handleUploadStory = async (file: File) => {
+  const handleUploadStory = (file: File) => {
     if (!organizerData) return;
-    await createStory(organizerData.id, file);
+    // Inicia o upload em background
+    createStory(organizerData.id, file);
   };
   
   // Extrair interesses do perfil do usuário
@@ -118,6 +120,7 @@ export default function Home({
         organizersWithStories={organizersWithStories}
         onOrganizerClick={handleOrganizerStoryClick}
         onCreateStory={organizerData ? handleCreateStory : undefined}
+        uploadingStory={uploadingStory}
       />
       
       <main className="px-4 py-4 max-w-md mx-auto">
