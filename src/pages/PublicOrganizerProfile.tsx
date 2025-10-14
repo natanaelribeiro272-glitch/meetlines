@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganizerStories } from "@/hooks/useOrganizerStories";
+import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -348,6 +350,9 @@ export default function PublicOrganizerProfile() {
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalAction, setAuthModalAction] = useState("");
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  
+  const { organizersWithStories, toggleLike, markAsViewed, deleteStory } = useOrganizerStories();
 
   // Buscar todos os eventos quando está na aba fotos
   useEffect(() => {
@@ -673,7 +678,15 @@ export default function PublicOrganizerProfile() {
 
       {/* Profile Info - fora da área da capa */}
       <div className="px-4 pb-6 text-center -mt-24 relative z-10">
-        <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
+        <Avatar 
+          className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => {
+            const currentOrganizerStories = organizersWithStories.find(o => o.id === organizer.id);
+            if (currentOrganizerStories && currentOrganizerStories.stories.length > 0) {
+              setStoryViewerOpen(true);
+            }
+          }}
+        >
           {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
             <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
           ) : (
@@ -991,6 +1004,19 @@ export default function PublicOrganizerProfile() {
           </div>
         )}
       </div>
+
+      {/* Story Viewer */}
+      {storyViewerOpen && organizersWithStories.find(o => o.id === organizer.id) && (
+        <OrganizerStoryViewer
+          open={storyViewerOpen}
+          onClose={() => setStoryViewerOpen(false)}
+          organizer={organizersWithStories.find(o => o.id === organizer.id)!}
+          initialStoryIndex={0}
+          onLike={toggleLike}
+          onDelete={deleteStory}
+          onMarkAsViewed={markAsViewed}
+        />
+      )}
 
       {/* Footer */}
       <footer className="mt-8 pb-6 text-center border-t border-border pt-6">

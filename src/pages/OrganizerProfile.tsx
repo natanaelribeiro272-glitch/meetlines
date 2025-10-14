@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, Upload, UserPlus, UserCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useOrganizerStories } from "@/hooks/useOrganizerStories";
+import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -205,7 +207,10 @@ export default function OrganizerProfile({
   const [removingCover, setRemovingCover] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalAction, setAuthModalAction] = useState("");
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { organizersWithStories, toggleLike, markAsViewed, deleteStory } = useOrganizerStories();
   const {
     organizer,
     events,
@@ -439,7 +444,17 @@ export default function OrganizerProfile({
 
       {/* Profile Info - fora da área da capa */}
       <div className="px-4 pb-6 text-center -mt-24 relative z-10">
-        <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg">
+        <Avatar 
+          className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => {
+            if (organizerId) {
+              const currentOrganizerStories = organizersWithStories.find(o => o.id === organizerId);
+              if (currentOrganizerStories && currentOrganizerStories.stories.length > 0) {
+                setStoryViewerOpen(true);
+              }
+            }
+          }}
+        >
           {organizer.avatar_url || organizer.profile?.avatar_url ? <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} /> : <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
               {organizer.page_title.charAt(0)}
             </AvatarFallback>}
@@ -679,6 +694,19 @@ export default function OrganizerProfile({
                 </div>)}
           </div>}
       </div>
+
+      {/* Story Viewer */}
+      {storyViewerOpen && organizerId && organizersWithStories.find(o => o.id === organizerId) && (
+        <OrganizerStoryViewer
+          open={storyViewerOpen}
+          onClose={() => setStoryViewerOpen(false)}
+          organizer={organizersWithStories.find(o => o.id === organizerId)!}
+          initialStoryIndex={0}
+          onLike={toggleLike}
+          onDelete={deleteStory}
+          onMarkAsViewed={markAsViewed}
+        />
+      )}
 
       {/* Footer */}
       <footer className="mt-8 pb-6 text-center border-t border-border pt-6">
