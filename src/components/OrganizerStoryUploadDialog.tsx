@@ -246,7 +246,20 @@ export function OrganizerStoryUploadDialog({
         ) : capturedMedia ? (
           /* Preview Captured Media */
           <div className="relative h-full w-full flex flex-col bg-black">
-            <div className="flex-1 flex items-center justify-center overflow-hidden">
+            {/* Top Controls */}
+            <div className="absolute top-0 left-0 right-0 flex justify-between items-center px-4 py-4 z-30 bg-gradient-to-b from-black/80 to-transparent">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+                className="bg-black/60 hover:bg-black/80 text-white rounded-full h-10 w-10"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Preview Content - with padding for buttons */}
+            <div className="flex-1 flex items-center justify-center overflow-hidden pt-16 pb-32">
               {mediaType === 'video' ? (
                 <video
                   src={capturedMedia}
@@ -265,41 +278,31 @@ export function OrganizerStoryUploadDialog({
               )}
             </div>
 
-            {/* Top Controls */}
-            <div className="absolute top-safe top-4 left-4 right-4 flex justify-between items-center z-20">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleClose}
-                className="bg-black/60 hover:bg-black/80 text-white rounded-full h-10 w-10"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-
-            {/* Bottom Controls */}
-            <div className="absolute bottom-safe bottom-8 sm:bottom-12 left-0 right-0 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 px-4 z-20 pb-safe">
-              <Button
-                variant="ghost"
-                size="lg"
-                onClick={retakeMedia}
-                disabled={uploading}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full px-6 sm:px-8 h-12 sm:h-14 min-w-[140px]"
-              >
-                <X className="h-5 w-5 mr-2" />
-                Refazer
-              </Button>
-              
-              <Button
-                variant="default"
-                size="lg"
-                onClick={postCapturedMedia}
-                disabled={uploading}
-                className="bg-primary hover:bg-primary/90 rounded-full px-6 sm:px-8 h-12 sm:h-14 min-w-[140px]"
-              >
-                <Check className="h-5 w-5 mr-2" />
-                {uploading ? 'Publicando...' : 'Publicar'}
-              </Button>
+            {/* Bottom Controls - Fixed position with gradient background */}
+            <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/90 to-transparent pt-8 pb-6 px-4">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-3 max-w-md mx-auto">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={retakeMedia}
+                  disabled={uploading}
+                  className="w-full sm:w-auto bg-white/20 hover:bg-white/30 text-white rounded-full px-8 h-14 min-w-[140px] font-semibold"
+                >
+                  <X className="h-5 w-5 mr-2" />
+                  Refazer
+                </Button>
+                
+                <Button
+                  variant="default"
+                  size="lg"
+                  onClick={postCapturedMedia}
+                  disabled={uploading}
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 rounded-full px-8 h-14 min-w-[140px] font-semibold"
+                >
+                  <Check className="h-5 w-5 mr-2" />
+                  {uploading ? 'Publicando...' : 'Publicar'}
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
