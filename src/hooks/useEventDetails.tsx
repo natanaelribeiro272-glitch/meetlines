@@ -107,24 +107,48 @@ export function useEventDetails(eventId: string | null) {
           .maybeSingle();
 
         if (platformEventData) {
-          eventData = {
-            ...platformEventData,
-            is_platform_event: true,
-            organizer_id: 'platform',
-            organizer: {
-              id: 'platform',
-              page_title: platformEventData.organizer_name,
-              user_id: 'platform',
-              avatar_url: null,
-              profile: {
-                display_name: platformEventData.organizer_name,
-                avatar_url: null
-              }
-            },
-            current_attendees: 0,
-            is_live: false,
-          };
-          isPlatformEvent = true;
+          // Verificar se este platform_event já foi reivindicado e tem um evento criado
+          const { data: claimedEvent } = await supabase
+            .from('events')
+            .select(`
+              *,
+              organizer:organizers!inner(
+                id,
+                page_title,
+                user_id,
+                avatar_url
+              )
+            `)
+            .eq('title', platformEventData.title)
+            .eq('event_date', platformEventData.event_date)
+            .eq('location', platformEventData.location)
+            .maybeSingle();
+
+          // Se encontrou o evento criado para um organizador, usar ele em vez do platform_event
+          if (claimedEvent) {
+            eventData = claimedEvent;
+            isPlatformEvent = false;
+          } else {
+            // Se não foi reivindicado, mostrar como platform_event
+            eventData = {
+              ...platformEventData,
+              is_platform_event: true,
+              organizer_id: 'platform',
+              organizer: {
+                id: 'platform',
+                page_title: platformEventData.organizer_name,
+                user_id: 'platform',
+                avatar_url: null,
+                profile: {
+                  display_name: platformEventData.organizer_name,
+                  avatar_url: null
+                }
+              },
+              current_attendees: 0,
+              is_live: false,
+            };
+            isPlatformEvent = true;
+          }
         }
       }
 

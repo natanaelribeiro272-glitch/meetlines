@@ -671,13 +671,11 @@ export default function EventDetails({
               <p className="font-medium text-foreground">
                 {event.organizer?.profile?.display_name || event.organizer?.page_title || "Organizador"}
               </p>
-              <p className="text-sm text-muted-foreground">
-                {event.is_platform_event ? "Evento criado automaticamente" : "Organizador"}
-              </p>
+              <p className="text-sm text-muted-foreground">Organizador</p>
             </div>
           </div>
 
-          {/* Botão de solicitar associação para organizadores */}
+          {/* Botão de solicitar associação para organizadores - apenas se ainda for platform_event não reivindicado */}
           {event.is_platform_event && isOrganizerUser && !eventClaimStatus.claimed && (
             <div className="mb-4">
               <Button onClick={handleClaimEvent} disabled={requestingClaim} variant="outline" className="w-full">
@@ -687,20 +685,6 @@ export default function EventDetails({
               <p className="text-xs text-muted-foreground mt-2 text-center">
                 Você pode solicitar para vincular este evento ao seu perfil de organizador
               </p>
-            </div>
-          )}
-
-          {/* Mostrar que o evento já foi aprovado */}
-          {event.is_platform_event && isOrganizerUser && eventClaimStatus.claimed && (
-            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <p className="text-sm text-green-600 text-center font-medium">
-                ✓ Este evento já foi aprovado para você
-              </p>
-              {eventClaimStatus.alreadyCreated && (
-                <p className="text-xs text-muted-foreground mt-1 text-center">
-                  Você pode encontrá-lo na sua página de organizador
-                </p>
-              )}
             </div>
           )}
 
