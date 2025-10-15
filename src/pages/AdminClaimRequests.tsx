@@ -80,6 +80,45 @@ export default function AdminClaimRequests() {
     if (!user) return;
 
     try {
+      // Get platform event details
+      const { data: platformEvent, error: fetchError } = await supabase
+        .from('platform_events')
+        .select('*')
+        .eq('id', platformEventId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!platformEvent) throw new Error('Evento não encontrado');
+
+      // Create event for organizer
+      const { error: createError } = await supabase
+        .from('events')
+        .insert({
+          organizer_id: organizerId,
+          title: platformEvent.title,
+          description: platformEvent.description,
+          event_date: platformEvent.event_date,
+          end_date: platformEvent.end_date,
+          location: platformEvent.location,
+          location_link: platformEvent.location_link,
+          image_url: platformEvent.image_url,
+          category: platformEvent.category,
+          max_attendees: platformEvent.max_attendees,
+          ticket_price: platformEvent.ticket_price,
+          ticket_link: platformEvent.ticket_link,
+          status: platformEvent.status
+        });
+
+      if (createError) throw createError;
+
+      // Update platform event as claimed
+      const { error: eventError } = await supabase
+        .from('platform_events')
+        .update({ claimed_by_organizer_id: organizerId })
+        .eq('id', platformEventId);
+
+      if (eventError) throw eventError;
+
       // Update request status
       const { error: updateError } = await supabase
         .from('event_claim_requests')
@@ -92,15 +131,7 @@ export default function AdminClaimRequests() {
 
       if (updateError) throw updateError;
 
-      // Update platform event with organizer
-      const { error: eventError } = await supabase
-        .from('platform_events')
-        .update({ claimed_by_organizer_id: organizerId })
-        .eq('id', platformEventId);
-
-      if (eventError) throw eventError;
-
-      toast.success('Solicitação aprovada!');
+      toast.success('Solicitação aprovada! Evento criado para o organizador.');
       fetchRequests();
     } catch (error: any) {
       console.error('Error approving request:', error);
