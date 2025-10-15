@@ -480,6 +480,21 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
     };
   }, []);
 
+  // Realtime updates for new events (when claim is approved)
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-new-events')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'events' }, () => {
+        // Recarregar todos os eventos quando um novo for criado
+        fetchEvents();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     events,
     loading,

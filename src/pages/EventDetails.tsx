@@ -466,6 +466,46 @@ export default function EventDetails({
     }
   };
 
+  // Verificar se o evento já foi reivindicado
+  const [eventClaimStatus, setEventClaimStatus] = useState<{claimed: boolean, alreadyCreated: boolean}>({claimed: false, alreadyCreated: false});
+
+  useEffect(() => {
+    const checkClaimStatus = async () => {
+      if (!eventId || !organizerId || !event?.is_platform_event) return;
+
+      try {
+        // Verificar se existe um evento criado para este organizador baseado no platform_event
+        const { data: createdEvent } = await supabase
+          .from('events')
+          .select('id')
+          .eq('organizer_id', organizerId)
+          .eq('title', event.title)
+          .maybeSingle();
+
+        if (createdEvent) {
+          setEventClaimStatus({claimed: true, alreadyCreated: true});
+          return;
+        }
+
+        // Verificar se já existe uma solicitação aprovada
+        const { data: existingRequest } = await supabase
+          .from("event_claim_requests")
+          .select("id, status")
+          .eq("platform_event_id", eventId)
+          .eq("organizer_id", organizerId)
+          .maybeSingle();
+
+        if (existingRequest?.status === 'approved') {
+          setEventClaimStatus({claimed: true, alreadyCreated: false});
+        }
+      } catch (error) {
+        console.error("Error checking claim status:", error);
+      }
+    };
+
+    checkClaimStatus();
+  }, [eventId, organizerId, event?.is_platform_event, event?.title]);
+
   const handleClaimEvent = async () => {
     if (!user || !organizerId || !eventId) {
       toast.error("Você precisa ser um organizador para solicitar associação");
@@ -488,6 +528,7 @@ export default function EventDetails({
           toast.info("Você já tem uma solicitação pendente para este evento");
         } else if (existingRequest.status === "approved") {
           toast.info("Este evento já foi aprovado para você");
+          setEventClaimStatus({claimed: true, alreadyCreated: false});
         } else if (existingRequest.status === "rejected") {
           toast.error("Sua solicitação anterior foi rejeitada");
         }
@@ -637,7 +678,7 @@ export default function EventDetails({
           </div>
 
           {/* Botão de solicitar associação para organizadores */}
-          {event.is_platform_event && isOrganizerUser && (
+          {event.is_platform_event && isOrganizerUser && !eventClaimStatus.claimed && (
             <div className="mb-4">
               <Button onClick={handleClaimEvent} disabled={requestingClaim} variant="outline" className="w-full">
                 <LinkIcon className="h-4 w-4 mr-2" />
@@ -646,6 +687,20 @@ export default function EventDetails({
               <p className="text-xs text-muted-foreground mt-2 text-center">
                 Você pode solicitar para vincular este evento ao seu perfil de organizador
               </p>
+            </div>
+          )}
+
+          {/* Mostrar que o evento já foi aprovado */}
+          {event.is_platform_event && isOrganizerUser && eventClaimStatus.claimed && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-sm text-green-600 text-center font-medium">
+                ✓ Este evento já foi aprovado para você
+              </p>
+              {eventClaimStatus.alreadyCreated && (
+                <p className="text-xs text-muted-foreground mt-1 text-center">
+                  Você pode encontrá-lo na sua página de organizador
+                </p>
+              )}
             </div>
           )}
 
