@@ -80,6 +80,8 @@ export function useEventDetails(eventId: string | null) {
       // Tentar buscar primeiro em events, depois em platform_events
       let eventData: any = null;
       let isPlatformEvent = false;
+      let shouldRedirect = false;
+      let redirectEventId = null;
       
       // Buscar em events regulares
       const { data: regularEventData, error: regularError } = await supabase
@@ -107,29 +109,52 @@ export function useEventDetails(eventId: string | null) {
           .maybeSingle();
 
         if (platformEventData) {
-          // Verificar se este platform_event já foi reivindicado e tem um evento criado
-          const { data: claimedEvent } = await supabase
-            .from('events')
-            .select(`
-              *,
-              organizer:organizers!inner(
-                id,
-                page_title,
-                user_id,
-                avatar_url
-              )
-            `)
-            .eq('title', platformEventData.title)
-            .eq('event_date', platformEventData.event_date)
-            .eq('location', platformEventData.location)
-            .maybeSingle();
+          // Verificar se já foi reivindicado (claimed_by_organizer_id preenchido)
+          if (platformEventData.claimed_by_organizer_id) {
+            // Buscar o evento criado para este organizador
+            const { data: claimedEvent } = await supabase
+              .from('events')
+              .select(`
+                *,
+                organizer:organizers!inner(
+                  id,
+                  page_title,
+                  user_id,
+                  avatar_url
+                )
+              `)
+              .eq('organizer_id', platformEventData.claimed_by_organizer_id)
+              .eq('title', platformEventData.title)
+              .eq('event_date', platformEventData.event_date)
+              .maybeSingle();
 
-          // Se encontrou o evento criado para um organizador, usar ele em vez do platform_event
-          if (claimedEvent) {
-            eventData = claimedEvent;
-            isPlatformEvent = false;
+            if (claimedEvent) {
+              // Usar o evento reivindicado ao invés do platform_event
+              eventData = claimedEvent;
+              isPlatformEvent = false;
+            } else {
+              // Se não encontrou o evento criado, mostrar como platform_event normalmente
+              eventData = {
+                ...platformEventData,
+                is_platform_event: true,
+                organizer_id: 'platform',
+                organizer: {
+                  id: 'platform',
+                  page_title: platformEventData.organizer_name,
+                  user_id: 'platform',
+                  avatar_url: null,
+                  profile: {
+                    display_name: platformEventData.organizer_name,
+                    avatar_url: null
+                  }
+                },
+                current_attendees: 0,
+                is_live: false,
+              };
+              isPlatformEvent = true;
+            }
           } else {
-            // Se não foi reivindicado, mostrar como platform_event
+            // Não foi reivindicado ainda, mostrar como platform_event
             eventData = {
               ...platformEventData,
               is_platform_event: true,
