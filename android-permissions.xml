@@ -1,0 +1,22 @@
+<!--
+  Este arquivo contém as permissões necessárias para Android
+  Copie este conteúdo para android/app/src/main/AndroidManifest.xml
+  depois de gerar o projeto Android com: npx cap add android
+-->
+
+<!-- Permissões para Câmera (Scanner de QR Code e Upload de fotos) -->
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-feature android:name="android.hardware.camera" android:required="false" />
+<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+<!-- Permissões para Galeria -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+<!-- Permissões para Internet -->
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- Permissões para Notificações -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

@@ -1,17 +1,31 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.e6b636ea6cdd49b2bbe1fd78ce5bb5d3',
-  appName: 'meetlines',
+  appId: 'com.meetlines.app',
+  appName: 'Meetlines',
   webDir: 'dist',
-  server: {
-    url: 'https://e6b636ea-6cdd-49b2-bbe1-fd78ce5bb5d3.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
   plugins: {
     BarcodeScanner: {
-      // Configure permissions
+      cameraPermission: 'always'
+    },
+    Camera: {
+      permissions: {
+        photos: 'always',
+        camera: 'always'
+      }
+    },
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: '#000000',
+      showSpinner: false
     }
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true
+  },
+  ios: {
+    contentInset: 'automatic'
   }
 };
 
