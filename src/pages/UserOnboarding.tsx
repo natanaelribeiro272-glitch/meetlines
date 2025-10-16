@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, User, Instagram, MessageCircle, Sparkles, Upload, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Instagram, MessageCircle, Sparkles, Upload, Check, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { CATEGORIES } from '@/constants/categories';
 
 interface NavState {
   email?: string;
@@ -17,16 +18,20 @@ interface NavState {
   name?: string;
 }
 
-const AVAILABLE_INTERESTS = [
-  { id: 'festas', label: 'Festas', icon: '🎉' },
-  { id: 'shows', label: 'Shows', icon: '🎤' },
-  { id: 'fitness', label: 'Fitness', icon: '💪' },
-  { id: 'igreja', label: 'Igreja', icon: '🙏' },
-  { id: 'cursos', label: 'Cursos', icon: '📚' },
-  { id: 'bares', label: 'Bares', icon: '🍻' },
-  { id: 'boates', label: 'Boates', icon: '🪩' },
-  { id: 'esportes', label: 'Esportes', icon: '⚽' },
-];
+const AVAILABLE_INTERESTS = CATEGORIES.map(c => ({
+  id: c.value,
+  label: c.label.replace(/^.+\s/, ''), // Remove emoji
+  icon: c.label.match(/^(.+?)\s/)?.[1] || '✨'
+}));
+
+interface SuggestedOrganizer {
+  id: string;
+  page_title: string;
+  avatar_url?: string;
+  category?: string;
+  followers_count: number;
+  events_count: number;
+}
 
 export default function UserOnboarding() {
   const navigate = useNavigate();
@@ -43,13 +48,15 @@ export default function UserOnboarding() {
   const [instagramUrl, setInstagramUrl] = useState('');
   const [whatsappUrl, setWhatsappUrl] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [suggestedOrganizers, setSuggestedOrganizers] = useState<SuggestedOrganizer[]>([]);
+  const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
 
   // UI state
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [usernameError, setUsernameError] = useState('');
 
-  const steps = ['Dados Básicos', 'Foto de Perfil', 'Redes Sociais', 'Interesses'];
+  const steps = ['Dados Básicos', 'Foto de Perfil', 'Redes Sociais', 'Interesses', 'Sugestões'];
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   // Validate username
@@ -132,12 +139,83 @@ export default function UserOnboarding() {
     setCurrentStep(3);
   };
 
-  const handleComplete = async () => {
+  const handleStep3Next = async () => {
     if (selectedInterests.length === 0) {
       toast.error('Selecione pelo menos um interesse');
       return;
     }
+    setCurrentStep(4);
+  };
 
+  // Buscar organizadores baseados nos interesses selecionados
+  useEffect(() => {
+    if (currentStep === 4 && selectedInterests.length > 0) {
+      fetchSuggestedOrganizers();
+    }
+  }, [currentStep, selectedInterests]);
+
+  const fetchSuggestedOrganizers = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: organizersData, error } = await supabase
+        .from('organizers')
+        .select(`
+          id,
+          page_title,
+          avatar_url,
+          category,
+          user_id
+        `)
+        .eq('is_page_active', true)
+        .limit(10);
+
+      if (error) throw error;
+
+      // Buscar stats para cada organizador
+      const processedOrganizers = await Promise.all(
+        (organizersData || []).map(async (org) => {
+          const [followersRes, eventsRes] = await Promise.all([
+            supabase
+              .from('followers')
+              .select('id', { count: 'exact', head: true })
+              .eq('organizer_id', org.id),
+            supabase
+              .from('events')
+              .select('id', { count: 'exact', head: true })
+              .eq('organizer_id', org.id)
+          ]);
+
+          return {
+            ...org,
+            followers_count: followersRes.count ?? 0,
+            events_count: eventsRes.count ?? 0
+          };
+        })
+      );
+
+      // Ordenar por relevância (mais eventos e seguidores)
+      processedOrganizers.sort((a, b) => 
+        (b.followers_count + b.events_count) - (a.followers_count + a.events_count)
+      );
+
+      setSuggestedOrganizers(processedOrganizers.slice(0, 6));
+    } catch (error) {
+      console.error('Error fetching suggested organizers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleFollowOrganizer = (organizerId: string) => {
+    setFollowedOrganizers(prev => 
+      prev.includes(organizerId)
+        ? prev.filter(id => id !== organizerId)
+        : [...prev, organizerId]
+    );
+  };
+
+  const handleComplete = async () => {
     setLoading(true);
 
     try {
@@ -219,6 +297,19 @@ export default function UserOnboarding() {
       if (profileError) {
         console.error('Profile update error:', profileError);
         throw new Error(`Erro ao atualizar perfil: ${profileError.message}`);
+      }
+
+      // 5. Seguir organizadores selecionados
+      if (followedOrganizers.length > 0) {
+        const followPromises = followedOrganizers.map(organizerId =>
+          supabase
+            .from('followers')
+            .insert({
+              user_id: authData.user.id,
+              organizer_id: organizerId
+            })
+        );
+        await Promise.all(followPromises);
       }
 
       toast.success('Perfil criado com sucesso!');
@@ -440,8 +531,74 @@ export default function UserOnboarding() {
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
                 <Button 
+                  onClick={handleStep3Next} 
+                  disabled={selectedInterests.length === 0}
+                  className="flex-1"
+                >
+                  Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Suggested Organizers */}
+          {currentStep === 4 && (
+            <div className="space-y-4">
+              <div>
+                <Label className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4" />
+                  Siga organizadores que te interessam
+                </Label>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Personalize sua experiência seguindo organizadores
+                </p>
+                
+                {loading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Carregando sugestões...
+                  </div>
+                ) : suggestedOrganizers.length > 0 ? (
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {suggestedOrganizers.map((org) => (
+                      <div
+                        key={org.id}
+                        onClick={() => toggleFollowOrganizer(org.id)}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:bg-accent/50 ${
+                          followedOrganizers.includes(org.id) 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border'
+                        }`}
+                      >
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={org.avatar_url} />
+                          <AvatarFallback>{org.page_title[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{org.page_title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {org.followers_count} seguidores • {org.events_count} eventos
+                          </p>
+                        </div>
+                        {followedOrganizers.includes(org.id) && (
+                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum organizador encontrado
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setCurrentStep(3)} className="flex-1">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button 
                   onClick={handleComplete} 
-                  disabled={loading || selectedInterests.length === 0}
+                  disabled={loading}
                   className="flex-1"
                 >
                   {loading ? 'Criando...' : 'Concluir'}
