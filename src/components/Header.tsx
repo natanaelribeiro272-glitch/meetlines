@@ -18,12 +18,18 @@ export function Header({
   showNotifications = true,
   userType
 }: HeaderProps) {
-  const { user } = useAuth();
-  const { isAdmin } = useAdmin();
-  const { theme, toggleTheme } = useTheme();
+  const {
+    user
+  } = useAuth();
+  const {
+    isAdmin
+  } = useAdmin();
+  const {
+    theme,
+    toggleTheme
+  } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-
   const handleNotificationClick = () => {
     if (!user) {
       const currentPath = location.pathname;
@@ -31,14 +37,11 @@ export function Header({
       toast.info('Faça login para ver suas notificações');
     }
   };
-
   return <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <h1 className="gradient-primary bg-clip-text text-[#1480cd] font-bold text-lg">
-              {title}
-            </h1>
+            
             {userType && <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                 {userType === "organizer" ? "🎯 Organizador" : "👤 Usuário"}
               </span>}
@@ -50,28 +53,11 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/admin')}
-              className="h-8 w-8"
-              title="Painel Admin"
-            >
+          {isAdmin && <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="h-8 w-8" title="Painel Admin">
               <Shield className="h-4 w-4 text-primary" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-8 w-8"
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+            </Button>}
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8">
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           {showNotifications && <NotificationDropdown onUnauthorizedClick={handleNotificationClick} />}
         </div>
