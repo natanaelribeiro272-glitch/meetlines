@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { useProfile } from "@/hooks/useProfile";
 import { useOrganizerStories, OrganizerWithStories } from "@/hooks/useOrganizerStories";
 import { useOrganizer } from "@/hooks/useOrganizer";
-
 interface HomeProps {
   onEventClick: (eventId: string) => void;
   onFindFriends: () => void;
@@ -28,42 +27,41 @@ export default function Home({
   onStoryClick,
   userType
 }: HomeProps) {
-  const { profile } = useProfile();
+  const {
+    profile
+  } = useProfile();
   const [hasLiveEvent] = useState(true); // Mock live event detection
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [userInterests, setUserInterests] = useState<string[]>([]);
-  
-  const { 
-    organizersWithStories, 
+  const {
+    organizersWithStories,
     loading: storiesLoading,
     uploadingStory,
     createStory,
     deleteStory,
     markAsViewed,
-    toggleLike,
+    toggleLike
   } = useOrganizerStories();
-  
-  const { organizerData } = useOrganizer();
+  const {
+    organizerData
+  } = useOrganizer();
   const [selectedOrganizer, setSelectedOrganizer] = useState<OrganizerWithStories | null>(null);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-
   const handleOrganizerStoryClick = (org: OrganizerWithStories) => {
     setSelectedOrganizer(org);
     setStoryViewerOpen(true);
   };
-
   const handleCreateStory = () => {
     setUploadDialogOpen(true);
   };
-
   const handleUploadStory = (file: File) => {
     if (!organizerData) return;
     // Inicia o upload em background
     createStory(organizerData.id, file);
   };
-  
+
   // Extrair interesses do perfil do usuário a partir de profiles.interests (fallback para notes)
   useEffect(() => {
     if (Array.isArray((profile as any)?.interests) && (profile as any).interests.length > 0) {
@@ -78,28 +76,39 @@ export default function Home({
       }
     }
   }, [profile]);
-  
-  const categories = [
-    { id: "todos", label: "Todos" },
-    { id: "festas", label: "🎉 Festas" },
-    { id: "shows", label: "🎤 Shows" },
-    { id: "fitness", label: "💪 Fitness" },
-    { id: "igreja", label: "🙏 Igreja" },
-    { id: "cursos", label: "📚 Cursos" },
-    { id: "bares", label: "🍻 Bares" },
-    { id: "boates", label: "🪩 Boates" },
-    { id: "esportes", label: "⚽ Esportes" },
-  ];
+  const categories = [{
+    id: "todos",
+    label: "Todos"
+  }, {
+    id: "festas",
+    label: "🎉 Festas"
+  }, {
+    id: "shows",
+    label: "🎤 Shows"
+  }, {
+    id: "fitness",
+    label: "💪 Fitness"
+  }, {
+    id: "igreja",
+    label: "🙏 Igreja"
+  }, {
+    id: "cursos",
+    label: "📚 Cursos"
+  }, {
+    id: "bares",
+    label: "🍻 Bares"
+  }, {
+    id: "boates",
+    label: "🪩 Boates"
+  }, {
+    id: "esportes",
+    label: "⚽ Esportes"
+  }];
   return <div className="min-h-screen bg-background pb-20">
       <Header title="Eventos" userType={userType} showNotifications={true} showLocation={true} />
       
       {/* Organizer Stories Bar */}
-      <OrganizerStoriesBar 
-        organizersWithStories={organizersWithStories}
-        onOrganizerClick={handleOrganizerStoryClick}
-        onCreateStory={organizerData ? handleCreateStory : undefined}
-        uploadingStory={uploadingStory}
-      />
+      <OrganizerStoriesBar organizersWithStories={organizersWithStories} onOrganizerClick={handleOrganizerStoryClick} onCreateStory={organizerData ? handleCreateStory : undefined} uploadingStory={uploadingStory} />
       
       <main className="px-4 py-4 max-w-md mx-auto">
         {/* Search Bar */}
@@ -146,42 +155,14 @@ export default function Home({
           </div>}
 
         {/* Event Feed */}
-        {userInterests.length > 0 && selectedCategory === "todos" && (
-          <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
-            <p className="text-sm text-primary font-medium">
-              ✨ Eventos recomendados baseados nos seus interesses: {userInterests.join(', ')}
-            </p>
-          </div>
-        )}
-        <EventFeed 
-          onEventClick={onEventClick} 
-          onOrganizerClick={onOrganizerClick} 
-          userType={userType} 
-          categoryFilter={selectedCategory} 
-          searchQuery={searchQuery}
-          userInterests={selectedCategory === "todos" ? userInterests : undefined}
-        />
+        {userInterests.length > 0 && selectedCategory === "todos"}
+        <EventFeed onEventClick={onEventClick} onOrganizerClick={onOrganizerClick} userType={userType} categoryFilter={selectedCategory} searchQuery={searchQuery} userInterests={selectedCategory === "todos" ? userInterests : undefined} />
       </main>
 
       {/* Story Viewer */}
-      {selectedOrganizer && (
-        <OrganizerStoryViewer
-          open={storyViewerOpen}
-          onClose={() => setStoryViewerOpen(false)}
-          organizer={selectedOrganizer}
-          onLike={toggleLike}
-          onDelete={organizerData?.id === selectedOrganizer.id ? deleteStory : undefined}
-          onMarkAsViewed={markAsViewed}
-        />
-      )}
+      {selectedOrganizer && <OrganizerStoryViewer open={storyViewerOpen} onClose={() => setStoryViewerOpen(false)} organizer={selectedOrganizer} onLike={toggleLike} onDelete={organizerData?.id === selectedOrganizer.id ? deleteStory : undefined} onMarkAsViewed={markAsViewed} />}
 
       {/* Upload Dialog */}
-      {organizerData && (
-        <OrganizerStoryUploadDialog
-          open={uploadDialogOpen}
-          onClose={() => setUploadDialogOpen(false)}
-          onUpload={handleUploadStory}
-        />
-      )}
+      {organizerData && <OrganizerStoryUploadDialog open={uploadDialogOpen} onClose={() => setUploadDialogOpen(false)} onUpload={handleUploadStory} />}
     </div>;
 }
