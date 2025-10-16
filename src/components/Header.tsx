@@ -40,12 +40,7 @@ export function Header({
   return <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            
-            {userType && <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                {userType === "organizer" ? "🎯 Organizador" : "👤 Usuário"}
-              </span>}
-          </div>
+          
           {showLocation && <div className="flex items-center gap-1 text-sm text-muted-foreground ml-2">
               <MapPin className="h-4 w-4" />
               <span>Parauapebas</span>
