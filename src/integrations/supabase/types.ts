@@ -945,6 +945,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           interest: Database["public"]["Enums"]["user_interest"] | null
+          interests: string[] | null
           latitude: number | null
           linkedin_url: string | null
           location: string | null
@@ -977,6 +978,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           interest?: Database["public"]["Enums"]["user_interest"] | null
+          interests?: string[] | null
           latitude?: number | null
           linkedin_url?: string | null
           location?: string | null
@@ -1009,6 +1011,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           interest?: Database["public"]["Enums"]["user_interest"] | null
+          interests?: string[] | null
           latitude?: number | null
           linkedin_url?: string | null
           location?: string | null

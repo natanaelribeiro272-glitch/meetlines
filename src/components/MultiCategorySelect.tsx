@@ -5,22 +5,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Check, X, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const EVENT_CATEGORIES = [
-  { value: "cristao", label: "🙏 Cristão" },
-  { value: "vendas", label: "💰 Vendas" },
-  { value: "streemer", label: "🎮 Streemer" },
-  { value: "festas", label: "🎉 Festas" },
-  { value: "eventos", label: "📅 Eventos" },
-  { value: "eletronica", label: "🎵 Eletrônica" },
-  { value: "rock", label: "🎸 Rock" },
-  { value: "pop", label: "🎤 Pop" },
-  { value: "forro", label: "🪗 Forró" },
-  { value: "sertanejo", label: "🤠 Sertanejo" },
-  { value: "funk", label: "🕺 Funk" },
-  { value: "samba", label: "🥁 Samba" },
-  { value: "jazz", label: "🎺 Jazz" },
-  { value: "outros", label: "🎭 Outros" }
-];
+import { CATEGORIES as EVENT_CATEGORIES } from "@/constants/categories";
 
 interface MultiCategorySelectProps {
   value: string[];

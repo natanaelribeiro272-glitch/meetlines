@@ -18,14 +18,14 @@ interface NavState {
 }
 
 const AVAILABLE_INTERESTS = [
-  { id: 'balada', label: 'Balada', icon: '🎉' },
-  { id: 'lives', label: 'Lives', icon: '🎵' },
-  { id: 'encontros', label: 'Encontros', icon: '☕' },
-  { id: 'shows', label: 'Shows', icon: '🎸' },
-  { id: 'festas', label: 'Festas', icon: '🎊' },
-  { id: 'networking', label: 'Networking', icon: '🤝' },
+  { id: 'festas', label: 'Festas', icon: '🎉' },
+  { id: 'shows', label: 'Shows', icon: '🎤' },
+  { id: 'fitness', label: 'Fitness', icon: '💪' },
+  { id: 'igreja', label: 'Igreja', icon: '🙏' },
+  { id: 'cursos', label: 'Cursos', icon: '📚' },
+  { id: 'bares', label: 'Bares', icon: '🍻' },
+  { id: 'boates', label: 'Boates', icon: '🪩' },
   { id: 'esportes', label: 'Esportes', icon: '⚽' },
-  { id: 'cultura', label: 'Cultura', icon: '🎭' },
 ];
 
 export default function UserOnboarding() {
@@ -211,6 +211,7 @@ export default function UserOnboarding() {
           avatar_url: avatarUrl || null,
           instagram_url: instagramUrl || null,
           phone: whatsappUrl || null,
+          interests: selectedInterests,
           notes: `Interesses: ${selectedInterests.join(', ')}`,
         })
         .eq('user_id', authData.user.id);

@@ -64,8 +64,12 @@ export default function Home({
     createStory(organizerData.id, file);
   };
   
-  // Extrair interesses do perfil do usuário
+  // Extrair interesses do perfil do usuário a partir de profiles.interests (fallback para notes)
   useEffect(() => {
+    if (Array.isArray((profile as any)?.interests) && (profile as any).interests.length > 0) {
+      setUserInterests((profile as any).interests as string[]);
+      return;
+    }
     if (profile?.notes && profile.notes.includes('Interesses:')) {
       const interestsMatch = profile.notes.match(/Interesses:\s*(.+)/);
       if (interestsMatch) {
@@ -75,43 +79,17 @@ export default function Home({
     }
   }, [profile]);
   
-  const categories = [{
-    id: "todos",
-    label: "Todos"
-  }, {
-    id: "festas",
-    label: "🎉 Festas"
-  }, {
-    id: "shows",
-    label: "🎤 Shows"
-  }, {
-    id: "encontros",
-    label: "👥 Encontros"
-  }, {
-    id: "cristao",
-    label: "🙏 Cristão"
-  }, {
-    id: "esportes",
-    label: "⚽ Esportes"
-  }, {
-    id: "educacao",
-    label: "📚 Educação"
-  }, {
-    id: "networking",
-    label: "💼 Networking"
-  }, {
-    id: "gastronomia",
-    label: "🍽️ Gastronomia"
-  }, {
-    id: "arte",
-    label: "🎨 Arte & Cultura"
-  }, {
-    id: "musica",
-    label: "🎵 Música"
-  }, {
-    id: "outros",
-    label: "🎭 Outros"
-  }];
+  const categories = [
+    { id: "todos", label: "Todos" },
+    { id: "festas", label: "🎉 Festas" },
+    { id: "shows", label: "🎤 Shows" },
+    { id: "fitness", label: "💪 Fitness" },
+    { id: "igreja", label: "🙏 Igreja" },
+    { id: "cursos", label: "📚 Cursos" },
+    { id: "bares", label: "🍻 Bares" },
+    { id: "boates", label: "🪩 Boates" },
+    { id: "esportes", label: "⚽ Esportes" },
+  ];
   return <div className="min-h-screen bg-background pb-20">
       <Header title="Eventos" userType={userType} showNotifications={true} showLocation={true} />
       

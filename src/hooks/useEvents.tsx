@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { NORMALIZE_CATEGORY_MAP } from '@/constants/categories';
 
 export interface EventData {
   id: string;
@@ -237,31 +238,29 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
 
       // Combinar eventos regulares e platform_events
       let allEvents = [...eventsWithStats, ...platformEventsWithStats];
+
+      // Buscar organizadores seguidos (se logado)
+      let followedOrganizerIds: string[] = [];
+      if (user) {
+        const { data: follows } = await supabase
+          .from('followers')
+          .select('organizer_id')
+          .eq('user_id', user.id);
+        followedOrganizerIds = (follows || []).map((f: any) => f.organizer_id);
+      }
       
       // Filtrar por interesses do usuário se fornecido
       if (userInterests && userInterests.length > 0) {
-        // Mapeamento de interesses para categorias
-        const interestToCategoryMap: Record<string, string[]> = {
-          'balada': ['festas', 'eletronica', 'funk'],
-          'lives': ['musica', 'eletronica', 'rock', 'pop'],
-          'encontros': ['networking', 'gastronomia'],
-          'shows': ['rock', 'pop', 'sertanejo', 'jazz'],
-          'festas': ['festas', 'funk', 'samba'],
-          'networking': ['vendas', 'networking'],
-          'esportes': ['esportes'],
-          'cultura': ['arte', 'jazz', 'outros'],
-        };
-        
-        const relevantCategories = new Set<string>();
-        userInterests.forEach(interest => {
-          const categories = interestToCategoryMap[interest] || [];
-          categories.forEach(cat => relevantCategories.add(cat));
-        });
-        
-        // Filtrar eventos que correspondem aos interesses
+        const normalizedInterests = new Set(
+          userInterests.map(i => i.toLowerCase())
+        );
+
         allEvents = allEvents.filter(event => {
-          if (!event.category || event.category.length === 0) return true; // Incluir eventos sem categoria
-          return event.category.some(cat => relevantCategories.has(cat));
+          const isFollowed = followedOrganizerIds.includes(event.organizer_id);
+          const normalizedEventCats = (event.category || [])
+            .map((c: string) => (NORMALIZE_CATEGORY_MAP[c] ?? c).toLowerCase());
+          const matchesInterest = normalizedEventCats.some(cat => normalizedInterests.has(cat));
+          return isFollowed || matchesInterest;
         });
       }
       

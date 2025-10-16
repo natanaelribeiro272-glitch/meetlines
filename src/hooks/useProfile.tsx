@@ -15,6 +15,7 @@ export interface ProfileData {
   phone: string | null;
   website: string | null;
   notes: string | null;
+  interests: string[] | null;
   notes_visible: boolean | null;
   find_friends_visible: boolean | null;
   instagram_url: string | null;
