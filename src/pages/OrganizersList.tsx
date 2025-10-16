@@ -23,37 +23,17 @@ export default function OrganizersList({
     organizers,
     loading
   } = useOrganizersList();
-  const categories = [{
-    id: "todos",
-    label: "Todos"
-  }, {
-    id: "festas",
-    label: "Festas"
-  }, {
-    id: "eventos",
-    label: "Eventos"
-  }, {
-    id: "encontros",
-    label: "Encontros"
-  }, {
-    id: "lives",
-    label: "Lives"
-  }, {
-    id: "geek",
-    label: "Geek"
-  }, {
-    id: "esporte",
-    label: "Esporte"
-  }, {
-    id: "saúde",
-    label: "Saúde"
-  }, {
-    id: "igreja",
-    label: "Igreja"
-  }, {
-    id: "outro",
-    label: "Outro"
-  }];
+  const categories = [
+    { id: "todos", label: "Todos" },
+    { id: "festas", label: "🎉 Festas" },
+    { id: "shows", label: "🎤 Shows" },
+    { id: "fitness", label: "💪 Fitness" },
+    { id: "igreja", label: "🙏 Igreja" },
+    { id: "cursos", label: "📚 Cursos" },
+    { id: "bares", label: "🍻 Bares" },
+    { id: "boates", label: "🪩 Boates" },
+    { id: "esportes", label: "⚽ Esportes" },
+  ];
   const filteredOrganizers = organizers.filter(organizer => {
     const matchesSearch = organizer.page_title.toLowerCase().includes(searchQuery.toLowerCase()) || (organizer.profile?.bio || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "todos" || (organizer.category || '') === selectedCategory;
