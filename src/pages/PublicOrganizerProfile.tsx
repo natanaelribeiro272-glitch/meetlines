@@ -682,21 +682,29 @@ export default function PublicOrganizerProfile() {
           const currentOrganizerStories = organizersWithStories.find(o => o.id === organizer.id);
           const hasStories = currentOrganizerStories && currentOrganizerStories.stories.length > 0;
 
+          console.log('Debug Stories:', {
+            organizerId: organizer.id,
+            organizersWithStories,
+            currentOrganizerStories,
+            hasStories
+          });
+
           return (
             <div className="relative inline-block mb-4">
               {hasStories && (
                 <div
-                  className="absolute -inset-[3px] rounded-full animate-pulse"
+                  className="absolute -inset-[3px] rounded-full"
                   style={{
                     background: 'linear-gradient(45deg, hsl(var(--primary)), hsl(280 80% 55%), hsl(320 80% 55%), hsl(var(--primary)))',
-                    padding: '3px'
+                    padding: '3px',
+                    zIndex: 0
                   }}
                 >
                   <div className="w-full h-full rounded-full bg-background" />
                 </div>
               )}
               <Avatar
-                className="h-24 w-24 mx-auto border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity relative"
+                className="h-24 w-24 mx-auto border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity relative z-10"
                 onClick={() => {
                   if (hasStories) {
                     setStoryViewerOpen(true);
