@@ -139,6 +139,11 @@ export default function MainLayout() {
   };
 
   const handleOrganizerClick = (organizerId: string) => {
+    console.log('handleOrganizerClick chamado com ID:', organizerId);
+    if (!organizerId) {
+      console.error('ID do organizador está vazio!');
+      return;
+    }
     setCurrentOrganizerId(organizerId);
     setCurrentView("organizerProfile");
   };

@@ -78,9 +78,10 @@ export function EventCard({
         <div
           className={isPlatformEvent ? "flex items-center gap-3" : "flex items-center gap-3 cursor-pointer hover:bg-accent/50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"}
           onClick={(e) => {
-            if (!isPlatformEvent) {
+            if (!isPlatformEvent && onOrganizerClick) {
               e.stopPropagation();
-              onOrganizerClick?.();
+              console.log('Clicou no organizador!');
+              onOrganizerClick();
             }
           }}
         >

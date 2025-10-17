@@ -111,7 +111,10 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 hasPaidTickets={event.has_paid_tickets}
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
-                onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}
+                onOrganizerClick={() => {
+                  console.log('Organizador clicado:', event.organizer);
+                  onOrganizerClick(event.organizer?.id || '');
+                }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
                 onManageRegistrations={() => onEventClick("registrations")}
@@ -149,7 +152,10 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 hasPaidTickets={event.has_paid_tickets}
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
-                onOrganizerClick={() => onOrganizerClick(event.organizer?.id || '')}
+                onOrganizerClick={() => {
+                  console.log('Organizador clicado:', event.organizer);
+                  onOrganizerClick(event.organizer?.id || '');
+                }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
                 onManageRegistrations={() => onEventClick("registrations")}
