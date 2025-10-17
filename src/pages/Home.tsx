@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { Users, Search, Filter, Crown } from "lucide-react";
+import { Users, Search, Crown } from "lucide-react";
 import { Header } from "@/components/Header";
 import { EventFeed } from "@/components/EventFeed";
 import { OrganizerStoriesBar } from "@/components/OrganizerStoriesBar";
 import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { OrganizerStoryUploadDialog } from "@/components/OrganizerStoryUploadDialog";
-import { EventFiltersDialog, EventFilters } from "@/components/EventFiltersDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -35,12 +34,6 @@ export default function Home({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [userInterests, setUserInterests] = useState<string[]>([]);
-  const [eventFilters, setEventFilters] = useState<EventFilters>({
-    cities: profile?.city_id ? [profile.city_id] : [],
-    categories: [],
-    dateRange: 'all',
-    showAllCities: false
-  });
   const {
     organizersWithStories,
     loading: storiesLoading,
@@ -122,12 +115,7 @@ export default function Home({
         <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input type="text" placeholder="Buscar eventos..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 pr-12" />
-            <EventFiltersDialog
-              filters={eventFilters}
-              onChange={setEventFilters}
-              userCityId={profile?.city_id}
-            />
+            <Input type="text" placeholder="Buscar eventos..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
           </div>
         </div>
 
@@ -172,7 +160,6 @@ export default function Home({
           categoryFilter={selectedCategory}
           searchQuery={searchQuery}
           userInterests={selectedCategory === "todos" ? userInterests : undefined}
-          filters={eventFilters}
         />
       </main>
 
