@@ -410,7 +410,7 @@ export default function EventDetails({
     const organizerSlug = createSlug(organizerName);
     const eventSlug = createSlug(eventName);
 
-    const eventUrl = `${getPublicBaseUrl()}/${organizerSlug}/${eventSlug}`;
+    const eventUrl = `${getPublicBaseUrl()}/${organizerSlug}_${eventSlug}`;
 
     // 1) Tenta compartilhamento nativo
     try {
@@ -628,16 +628,16 @@ export default function EventDetails({
                   <Edit className="h-5 w-5" />
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
-                onClick={handleShare}
-              >
-                <Share2 className="h-5 w-5" />
-              </Button>
             </>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="bg-surface/80 backdrop-blur-sm hover:bg-surface"
+            onClick={handleShare}
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Live indicator */}
