@@ -54,9 +54,35 @@ export function LocationSelector() {
 
   const loadCities = async () => {
     try {
+      const { data: organizersData, error: organizersError } = await supabase
+        .from("organizers")
+        .select("city_id")
+        .not("city_id", "is", null);
+
+      if (organizersError) throw organizersError;
+
+      const { data: eventsData, error: eventsError } = await supabase
+        .from("events")
+        .select("city_id")
+        .not("city_id", "is", null);
+
+      if (eventsError) throw eventsError;
+
+      const cityIds = new Set([
+        ...(organizersData?.map((o) => o.city_id) || []),
+        ...(eventsData?.map((e) => e.city_id) || []),
+      ]);
+
+      if (cityIds.size === 0) {
+        setCities([]);
+        setFilteredCities([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("cities")
         .select("*")
+        .in("id", Array.from(cityIds))
         .order("state")
         .order("name");
 
