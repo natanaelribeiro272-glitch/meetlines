@@ -1,5 +1,6 @@
-import { MapPin, Sun, Moon, Shield } from "lucide-react";
+import { Sun, Moon, Shield } from "lucide-react";
 import { NotificationDropdown } from "./NotificationDropdown";
+import { LocationSelector } from "./LocationSelector";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "@/hooks/useTheme";
@@ -40,11 +41,7 @@ export function Header({
   return <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
         <div className="flex items-center gap-2">
-          
-          {showLocation && <div className="flex items-center gap-1 text-sm text-muted-foreground ml-2">
-              <MapPin className="h-4 w-4" />
-              <span>Parauapebas</span>
-            </div>}
+          {showLocation && <LocationSelector />}
         </div>
 
         <div className="flex items-center gap-2">
