@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, User, Instagram, MessageCircle, Sparkles, Upload, Check, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Instagram, MessageCircle, Sparkles, Upload, Check, Users, MapPin } from 'lucide-react';
+import { CitySelect } from '@/components/CitySelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CATEGORIES } from '@/constants/categories';
@@ -50,6 +51,7 @@ export default function UserOnboarding() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [suggestedOrganizers, setSuggestedOrganizers] = useState<SuggestedOrganizer[]>([]);
   const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
+  const [cityId, setCityId] = useState<string>('');
 
   // UI state
   const [currentStep, setCurrentStep] = useState(0);
@@ -58,7 +60,7 @@ export default function UserOnboarding() {
   const [isExistingUser, setIsExistingUser] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const steps = ['Dados Básicos', 'Foto de Perfil', 'Redes Sociais', 'Interesses', 'Sugestões'];
+  const steps = ['Dados Básicos', 'Localização', 'Foto de Perfil', 'Redes Sociais', 'Interesses', 'Sugestões'];
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   // Check if user is already logged in
@@ -173,11 +175,11 @@ export default function UserOnboarding() {
   const handleStep1Next = async () => {
     const isValid = await validateUsername(username);
     if (!isValid) return;
-    setCurrentStep(2);
+    setCurrentStep(3);
   };
 
   const handleStep2Next = () => {
-    setCurrentStep(3);
+    setCurrentStep(4);
   };
 
   const handleStep3Next = async () => {
@@ -185,12 +187,12 @@ export default function UserOnboarding() {
       toast.error('Selecione pelo menos um interesse');
       return;
     }
-    setCurrentStep(4);
+    setCurrentStep(5);
   };
 
   // Buscar organizadores baseados nos interesses selecionados
   useEffect(() => {
-    if (currentStep === 4 && selectedInterests.length > 0) {
+    if (currentStep === 5 && selectedInterests.length > 0) {
       fetchSuggestedOrganizers();
     }
   }, [currentStep, selectedInterests]);
@@ -356,6 +358,7 @@ export default function UserOnboarding() {
           instagram_url: instagramUrl || null,
           phone: whatsappUrl || null,
           interests: selectedInterests,
+          city_id: cityId || null,
           notes: `Interesses: ${selectedInterests.join(', ')}`,
         })
         .eq('user_id', userId);
@@ -506,8 +509,51 @@ export default function UserOnboarding() {
             </div>
           )}
 
-          {/* Step 1: Username & Avatar */}
+          {/* Step 1: Location */}
           {currentStep === 1 && (
+            <div className="space-y-4">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                  <MapPin className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-xl font-semibold mb-2">Onde você está?</h2>
+                <p className="text-sm text-muted-foreground">
+                  Selecione sua cidade para ver eventos próximos
+                </p>
+              </div>
+
+              <CitySelect
+                value={cityId}
+                onChange={setCityId}
+                label="Sua Cidade"
+                placeholder="Selecione sua cidade"
+              />
+
+              <p className="text-xs text-muted-foreground text-center">
+                💡 Você verá eventos da sua cidade automaticamente. Para ver eventos de outras cidades, use a busca.
+              </p>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => isExistingUser ? navigate('/auth') : setCurrentStep(0)}
+                  className="flex-1"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  onClick={() => setCurrentStep(2)}
+                  className="flex-1"
+                  disabled={!cityId}
+                >
+                  Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Username & Avatar */}
+          {currentStep === 2 && (
             <div className="space-y-4">
               <div>
                 <Label htmlFor="username">Username (ID único)</Label>
@@ -563,7 +609,7 @@ export default function UserOnboarding() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => isExistingUser ? navigate('/auth') : setCurrentStep(0)}
+                  onClick={() => setCurrentStep(1)}
                   className="flex-1"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
@@ -575,8 +621,8 @@ export default function UserOnboarding() {
             </div>
           )}
 
-          {/* Step 2: Social Media */}
-          {currentStep === 2 && (
+          {/* Step 3: Social Media */}
+          {currentStep === 3 && (
             <div className="space-y-4">
               <div>
                 <Label htmlFor="instagram">Instagram (opcional)</Label>
@@ -615,8 +661,8 @@ export default function UserOnboarding() {
             </div>
           )}
 
-          {/* Step 3: Interests */}
-          {currentStep === 3 && (
+          {/* Step 4: Interests */}
+          {currentStep === 4 && (
             <div className="space-y-4">
               <div>
                 <Label className="flex items-center gap-2 mb-3">
@@ -645,11 +691,11 @@ export default function UserOnboarding() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1">
+                <Button variant="outline" onClick={() => setCurrentStep(3)} className="flex-1">
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button 
-                  onClick={handleStep3Next} 
+                <Button
+                  onClick={handleStep3Next}
                   disabled={selectedInterests.length === 0}
                   className="flex-1"
                 >
@@ -659,8 +705,8 @@ export default function UserOnboarding() {
             </div>
           )}
 
-          {/* Step 4: Suggested Organizers */}
-          {currentStep === 4 && (
+          {/* Step 5: Suggested Organizers */}
+          {currentStep === 5 && (
             <div className="space-y-4">
               <div>
                 <Label className="flex items-center gap-2 mb-3">
@@ -711,11 +757,11 @@ export default function UserOnboarding() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(3)} className="flex-1">
+                <Button variant="outline" onClick={() => setCurrentStep(4)} className="flex-1">
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button 
-                  onClick={handleComplete} 
+                <Button
+                  onClick={handleComplete}
                   disabled={loading}
                   className="flex-1"
                 >
