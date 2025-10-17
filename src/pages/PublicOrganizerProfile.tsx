@@ -689,28 +689,34 @@ export default function PublicOrganizerProfile() {
             hasStories
           });
 
+          if (hasStories) {
+            return (
+              <div
+                className="relative inline-block mb-4 p-1 rounded-full cursor-pointer hover:opacity-90 transition-opacity animate-pulse"
+                style={{
+                  background: 'linear-gradient(45deg, #a855f7, #d946ef, #ec4899, #a855f7)',
+                  backgroundSize: '300% 300%',
+                }}
+                onClick={() => setStoryViewerOpen(true)}
+              >
+                <div className="p-[3px] bg-background rounded-full">
+                  <Avatar className="h-24 w-24 shadow-lg">
+                    {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
+                      <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
+                    ) : (
+                      <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                        {organizer.page_title.charAt(0)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div className="relative inline-block mb-4">
-              {hasStories && (
-                <div
-                  className="absolute -inset-[3px] rounded-full"
-                  style={{
-                    background: 'linear-gradient(45deg, hsl(var(--primary)), hsl(280 80% 55%), hsl(320 80% 55%), hsl(var(--primary)))',
-                    padding: '3px',
-                    zIndex: 0
-                  }}
-                >
-                  <div className="w-full h-full rounded-full bg-background" />
-                </div>
-              )}
-              <Avatar
-                className="h-24 w-24 mx-auto border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity relative z-10"
-                onClick={() => {
-                  if (hasStories) {
-                    setStoryViewerOpen(true);
-                  }
-                }}
-              >
+              <Avatar className="h-24 w-24 mx-auto border-4 border-background shadow-lg">
                 {(organizer.avatar_url || organizer.profile?.avatar_url) ? (
                   <AvatarImage src={organizer.avatar_url || organizer.profile?.avatar_url} alt={organizer.page_title} />
                 ) : (
