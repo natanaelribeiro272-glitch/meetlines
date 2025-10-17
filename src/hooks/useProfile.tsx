@@ -11,6 +11,7 @@ export interface ProfileData {
   bio: string | null;
   location: string | null;
   age: number | null;
+  birth_date: string | null;
   avatar_url: string | null;
   phone: string | null;
   website: string | null;
@@ -28,6 +29,22 @@ export interface ProfileData {
   relationship_status: "solteiro" | "namorando" | "casado" | "relacionamento_aberto" | "preferencia_nao_informar" | null;
   created_at: string;
   updated_at: string;
+}
+
+// Helper function to calculate age from birth_date
+export function calculateAge(birthDate: string | null): number | null {
+  if (!birthDate) return null;
+
+  const today = new Date();
+  const birth = new Date(birthDate);
+  const age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    return age - 1;
+  }
+
+  return age;
 }
 
 export function useProfile() {

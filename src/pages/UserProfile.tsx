@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile, calculateAge } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 interface UserProfileProps {
@@ -100,6 +100,9 @@ export default function UserProfile({
     }
   };
 
+  // Calculate age from birth_date
+  const userAge = profile?.birth_date ? calculateAge(profile.birth_date) : null;
+
   // Update form data when profile changes
   useEffect(() => {
     if (profile) {
@@ -107,7 +110,7 @@ export default function UserProfile({
         display_name: profile.display_name || "",
         bio: profile.bio || "",
         location: profile.location || "",
-        age: profile.age?.toString() || "",
+        age: userAge?.toString() || "",
         notes: profile.notes || "",
         notes_visible: profile.notes_visible ?? true,
         phone: profile.phone || "",
@@ -117,7 +120,7 @@ export default function UserProfile({
       });
       setNotesEdited(false);
     }
-  }, [profile]);
+  }, [profile, userAge]);
   const handleSaveField = async (field: keyof typeof formData) => {
     const value = formData[field];
     const updateData: any = {
@@ -205,21 +208,16 @@ export default function UserProfile({
               </div>
               
               <div className="mb-2">
-                {editingField === 'location' || editingField === 'age' ? <div className="space-y-2">
+                {editingField === 'location' ? <div className="space-y-2">
                     <div className="flex gap-2">
                       <Input value={formData.location} onChange={e => setFormData(prev => ({
                     ...prev,
                     location: e.target.value
                   }))} placeholder="Localização" className="text-sm" />
-                      <Input value={formData.age} onChange={e => setFormData(prev => ({
-                    ...prev,
-                    age: e.target.value
-                  }))} placeholder="Idade" type="number" className="text-sm w-20" />
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => {
                     handleSaveField('location');
-                    handleSaveField('age');
                   }} disabled={saving}>
                         Salvar
                       </Button>
@@ -230,7 +228,7 @@ export default function UserProfile({
                   </div> : <div className="flex items-center gap-2">
                     <p className="text-sm text-muted-foreground">
                       <MapPin className="h-3 w-3 inline mr-1" />
-                      {profile?.location || 'Localização'} • {profile?.age ? `${profile.age} anos` : 'Idade não informada'}
+                      {profile?.location || 'Localização'} • {userAge ? `${userAge} anos` : 'Idade não informada'}
                     </p>
                     <Button size="sm" variant="ghost" onClick={() => setEditingField('location')} className="h-6 w-6 p-0">
                       <Edit className="h-3 w-3" />
