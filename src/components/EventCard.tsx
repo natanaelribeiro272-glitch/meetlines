@@ -74,9 +74,9 @@ export function EventCard({
   return (
     <div className="event-card bg-card rounded-lg overflow-hidden shadow-card cursor-pointer" onClick={onClick}>
       {/* Header - Organizer info */}
-      <div className="flex items-center gap-3 p-4 pb-3">
-        <div 
-          className={isPlatformEvent ? "avatar-story" : "avatar-story cursor-pointer"}
+      <div className="p-4 pb-3">
+        <div
+          className={isPlatformEvent ? "flex items-center gap-3" : "flex items-center gap-3 cursor-pointer hover:bg-accent/50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"}
           onClick={(e) => {
             if (!isPlatformEvent) {
               e.stopPropagation();
@@ -84,42 +84,36 @@ export function EventCard({
             }
           }}
         >
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={organizerAvatar} alt={organizerName} />
-            <AvatarFallback className="bg-surface text-xs">
-              {organizerName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-        <div 
-          className={isPlatformEvent ? "flex-1" : "flex-1 cursor-pointer"}
-          onClick={(e) => {
-            if (!isPlatformEvent) {
-              e.stopPropagation();
-              onOrganizerClick?.();
-            }
-          }}
-        >
-          <p className={`text-sm font-medium text-foreground ${!isPlatformEvent ? 'hover:text-primary transition-colors' : ''}`}>
-            {organizerName}
-          </p>
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              <span>{date}</span>
-              {isLive && (
-                <span className="flex items-center gap-1 text-destructive font-medium">
-                  <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
-                  ACONTECENDO AGORA
-                </span>
+          <div className="avatar-story">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={organizerAvatar} alt={organizerName} />
+              <AvatarFallback className="bg-surface text-xs">
+                {organizerName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+          <div className="flex-1">
+            <p className={`text-sm font-medium text-foreground ${!isPlatformEvent ? 'group-hover:text-primary transition-colors' : ''}`}>
+              {organizerName}
+            </p>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                <span>{date}</span>
+                {isLive && (
+                  <span className="flex items-center gap-1 text-destructive font-medium">
+                    <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
+                    ACONTECENDO AGORA
+                  </span>
+                )}
+              </div>
+              {endDate && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
+                  <Clock className="h-3 w-3" />
+                  <span>Encerra: {endDate}</span>
+                </div>
               )}
             </div>
-            {endDate && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
-                <Clock className="h-3 w-3" />
-                <span>Encerra: {endDate}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
