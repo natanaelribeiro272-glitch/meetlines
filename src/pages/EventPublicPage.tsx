@@ -19,7 +19,7 @@ const slugify = (text: string) =>
     .trim();
 
 export default function EventPublicPage() {
-  const { organizerSlug, eventSlug } = useParams();
+  const params = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [eventId, setEventId] = useState<string | null>(null);
@@ -30,10 +30,36 @@ export default function EventPublicPage() {
     const resolveEvent = async () => {
       try {
         setLoading(true);
+
+        // Detectar formato da URL: organizador_evento ou organizador/evento
+        let organizerSlug: string | undefined;
+        let eventSlug: string | undefined;
+
+        if (params.combinedSlug && params.combinedSlug.includes('_')) {
+          // Formato: organizador_evento
+          const parts = params.combinedSlug.split('_');
+          organizerSlug = parts[0];
+          eventSlug = parts.slice(1).join('_'); // Caso o nome do evento tenha underline
+        } else if (params.organizerSlug && params.eventSlug) {
+          // Formato: organizador/evento
+          organizerSlug = params.organizerSlug;
+          eventSlug = params.eventSlug;
+        } else if (params.combinedSlug) {
+          // Tentativa de dividir por último hífen se não tiver underline
+          const lastHyphen = params.combinedSlug.lastIndexOf('-');
+          if (lastHyphen > 0) {
+            organizerSlug = params.combinedSlug.substring(0, lastHyphen);
+            eventSlug = params.combinedSlug.substring(lastHyphen + 1);
+          }
+        }
+
         if (!organizerSlug || !eventSlug) {
+          console.log('Não foi possível extrair organizador e evento da URL');
           setLoading(false);
           return;
         }
+
+        console.log('Procurando evento:', { organizerSlug, eventSlug });
 
         // Try multiple strategies to resolve organizer
         let organizerId: string | null = null;
@@ -145,7 +171,7 @@ export default function EventPublicPage() {
       root.classList.remove('dark', 'light');
       root.classList.add(savedTheme);
     };
-  }, [organizerSlug, eventSlug, user]);
+  }, [params.organizerSlug, params.eventSlug, params.combinedSlug, user]);
 
   if (loading) {
     return (

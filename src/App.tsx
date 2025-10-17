@@ -61,10 +61,9 @@ const App = () => (
             <Route path="/admin/pending-event/:eventId/edit" element={<AdminEditPendingEvent />} />
             <Route path="/admin/organizer-payments" element={<AdminOrganizerPayments />} />
             <Route path="/admin/organizer-payments/:organizerId" element={<AdminOrganizerPaymentDetails />} />
-              {/* Public event share route: domain.com/@username/event-slug */}
+              {/* Public routes - ordem importa: mais específico primeiro */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
-              {/* Public organizer profile: domain.com/@username */}
-              <Route path= "/:slug" element={<PublicOrganizerProfile />} />
+              <Route path="/:combinedSlug" element={<EventPublicPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
