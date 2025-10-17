@@ -43,6 +43,7 @@ export default function UserOnboarding() {
   const [email, setEmail] = useState(state?.email || '');
   const [password, setPassword] = useState(state?.password || '');
   const [name, setName] = useState(state?.name || '');
+  const [birthDate, setBirthDate] = useState('');
   const [username, setUsername] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
@@ -165,10 +166,23 @@ export default function UserOnboarding() {
 
   // Step handlers
   const handleStep0Next = () => {
-    if (!email || !password || !name) {
+    if (!email || !password || !name || !birthDate) {
       toast.error('Preencha todos os campos');
       return;
     }
+
+    // Validar idade mínima (13 anos)
+    const today = new Date();
+    const birth = new Date(birthDate);
+    const age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate()) ? age - 1 : age;
+
+    if (actualAge < 13) {
+      toast.error('Você precisa ter pelo menos 13 anos para se cadastrar');
+      return;
+    }
+
     setCurrentStep(1);
   };
 
@@ -359,6 +373,7 @@ export default function UserOnboarding() {
           phone: whatsappUrl || null,
           interests: selectedInterests,
           city_id: cityId || null,
+          birth_date: birthDate || null,
           notes: `Interesses: ${selectedInterests.join(', ')}`,
         })
         .eq('user_id', userId);
@@ -491,6 +506,19 @@ export default function UserOnboarding() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Mínimo 6 caracteres"
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="birthDate">Data de Nascimento</Label>
+                    <Input
+                      id="birthDate"
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sua idade será calculada automaticamente
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button
