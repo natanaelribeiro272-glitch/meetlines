@@ -16,6 +16,8 @@ import { MultiCategorySelect } from "@/components/MultiCategorySelect";
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useProfile } from "@/hooks/useProfile";
 import { useAdmin } from "@/hooks/useAdmin";
+import { usePlatformDetection } from "@/hooks/usePlatformDetection";
+import PlatformRestrictedFeatureAlert from "@/components/PlatformRestrictedFeatureAlert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 const INTEREST_OPTIONS = [{
@@ -72,6 +74,7 @@ export default function CreateEvent({
     updateProfile
   } = useProfile();
   const { isAdmin } = useAdmin();
+  const { isNativeApp } = usePlatformDetection();
   const [isEditMode, setIsEditMode] = useState(false);
   const [eventData, setEventData] = useState({
     title: "",
@@ -114,6 +117,7 @@ export default function CreateEvent({
     maxInstallments: 12
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showPlatformAlert, setShowPlatformAlert] = useState(false);
   
   // Payment data states
   const [pixKey, setPixKey] = useState("");
@@ -225,6 +229,11 @@ export default function CreateEvent({
     
     // Validação de venda na plataforma
     if (paymentType === "platform") {
+      if (isNativeApp) {
+        toast.error('Venda pela plataforma disponível apenas no navegador');
+        setShowPlatformAlert(true);
+        return;
+      }
       if (ticketTypes.length === 0) {
         toast.error('Configure pelo menos um tipo de ingresso');
         return;
@@ -602,7 +611,15 @@ export default function CreateEvent({
                 <Label className="mb-2 block">Tipo de Ingresso</Label>
                 <RadioGroup
                   value={paymentType}
-                  onValueChange={(value: "free" | "external" | "platform") => setPaymentType(value)}
+                  onValueChange={(value: "free" | "external" | "platform") => {
+                    if (value === "platform" && isNativeApp) {
+                      setShowPlatformAlert(true);
+                      toast.info('Esta opção está disponível apenas no navegador');
+                      return;
+                    }
+                    setPaymentType(value);
+                    setShowPlatformAlert(false);
+                  }}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="free" id="free" />
@@ -619,13 +636,25 @@ export default function CreateEvent({
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="platform" id="platform" />
-                    <Label htmlFor="platform" className="cursor-pointer">
-                      💳 Vender pela plataforma
+                    <RadioGroupItem value="platform" id="platform" disabled={isNativeApp} />
+                    <Label htmlFor="platform" className={isNativeApp ? "cursor-not-allowed opacity-50" : "cursor-pointer"}>
+                      💳 Vender pela plataforma {isNativeApp && "🔒"}
                     </Label>
                   </div>
                 </RadioGroup>
+                {isNativeApp && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 A venda pela plataforma está disponível apenas no navegador web
+                  </p>
+                )}
               </div>
+
+              {/* Platform Alert */}
+              {showPlatformAlert && isNativeApp && (
+                <div className="pt-4">
+                  <PlatformRestrictedFeatureAlert />
+                </div>
+              )}
 
               {/* Link Externo */}
               {paymentType === "external" && isAdmin && (
