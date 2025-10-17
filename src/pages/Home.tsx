@@ -5,6 +5,7 @@ import { EventFeed } from "@/components/EventFeed";
 import { OrganizerStoriesBar } from "@/components/OrganizerStoriesBar";
 import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { OrganizerStoryUploadDialog } from "@/components/OrganizerStoryUploadDialog";
+import { EventFiltersDialog, EventFilters } from "@/components/EventFiltersDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,10 +31,16 @@ export default function Home({
   const {
     profile
   } = useProfile();
-  const [hasLiveEvent] = useState(true); // Mock live event detection
+  const [hasLiveEvent] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [eventFilters, setEventFilters] = useState<EventFilters>({
+    cities: profile?.city_id ? [profile.city_id] : [],
+    categories: [],
+    dateRange: 'all',
+    showAllCities: false
+  });
   const {
     organizersWithStories,
     loading: storiesLoading,
@@ -116,9 +123,11 @@ export default function Home({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input type="text" placeholder="Buscar eventos..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 pr-12" />
-            <Button size="icon" variant="ghost" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8">
-              <Filter className="h-4 w-4" />
-            </Button>
+            <EventFiltersDialog
+              filters={eventFilters}
+              onChange={setEventFilters}
+              userCityId={profile?.city_id}
+            />
           </div>
         </div>
 
@@ -156,7 +165,15 @@ export default function Home({
 
         {/* Event Feed */}
         {userInterests.length > 0 && selectedCategory === "todos"}
-        <EventFeed onEventClick={onEventClick} onOrganizerClick={onOrganizerClick} userType={userType} categoryFilter={selectedCategory} searchQuery={searchQuery} userInterests={selectedCategory === "todos" ? userInterests : undefined} />
+        <EventFeed
+          onEventClick={onEventClick}
+          onOrganizerClick={onOrganizerClick}
+          userType={userType}
+          categoryFilter={selectedCategory}
+          searchQuery={searchQuery}
+          userInterests={selectedCategory === "todos" ? userInterests : undefined}
+          filters={eventFilters}
+        />
       </main>
 
       {/* Story Viewer */}

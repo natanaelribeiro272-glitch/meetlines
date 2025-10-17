@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { NORMALIZE_CATEGORY_MAP } from '@/constants/categories';
+import { EventFilters } from '@/components/EventFiltersDialog';
 
 export interface EventData {
   id: string;
@@ -42,7 +43,7 @@ export interface EventData {
   has_paid_tickets?: boolean;
 }
 
-export function useEvents(categoryFilter?: string, searchQuery?: string, userInterests?: string[]) {
+export function useEvents(categoryFilter?: string, searchQuery?: string, userInterests?: string[], filters?: EventFilters) {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -285,11 +286,69 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
           const organizerDisplayNameMatch = event.organizer?.profile?.display_name?.toLowerCase().includes(query);
           const locationMatch = event.location.toLowerCase().includes(query);
           const categoryMatch = event.category?.some(cat => cat.toLowerCase().includes(query));
-          
+
           return titleMatch || descriptionMatch || organizerNameMatch || organizerDisplayNameMatch || locationMatch || categoryMatch;
         });
       }
-      
+
+      // Aplicar filtros adicionais
+      if (filters) {
+        // Filtro de cidade
+        if (!filters.showAllCities && filters.cities.length > 0) {
+          const cityIds = filters.cities;
+          filteredEvents = filteredEvents.filter(event => {
+            // Para platform_events, não temos city_id ainda, então mantemos todos
+            if (event.is_platform_event) return true;
+
+            // Verificar se o evento está em uma das cidades selecionadas
+            // TODO: Implementar busca em event_visible_cities quando disponível
+            return true; // Por enquanto, mantém todos os eventos
+          });
+        }
+
+        // Filtro de categorias
+        if (filters.categories.length > 0) {
+          filteredEvents = filteredEvents.filter(event => {
+            const eventCategories = event.category || [];
+            return filters.categories.some(filterCat =>
+              eventCategories.some(eventCat =>
+                eventCat.toLowerCase().includes(filterCat.toLowerCase()) ||
+                filterCat.toLowerCase().includes(eventCat.toLowerCase())
+              )
+            );
+          });
+        }
+
+        // Filtro de período
+        if (filters.dateRange !== 'all') {
+          const now = new Date();
+          filteredEvents = filteredEvents.filter(event => {
+            const eventDate = new Date(event.event_date);
+
+            switch (filters.dateRange) {
+              case 'today': {
+                const isToday = eventDate.getDate() === now.getDate() &&
+                               eventDate.getMonth() === now.getMonth() &&
+                               eventDate.getFullYear() === now.getFullYear();
+                return isToday;
+              }
+              case 'week': {
+                const weekFromNow = new Date(now);
+                weekFromNow.setDate(now.getDate() + 7);
+                return eventDate >= now && eventDate <= weekFromNow;
+              }
+              case 'month': {
+                const monthFromNow = new Date(now);
+                monthFromNow.setMonth(now.getMonth() + 1);
+                return eventDate >= now && eventDate <= monthFromNow;
+              }
+              default:
+                return true;
+            }
+          });
+        }
+      }
+
       setEvents(filteredEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -346,7 +405,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, categoryFilter, searchQuery, userInterests]);
+  }, [user, categoryFilter, searchQuery, userInterests, filters]);
 
   // Realtime updates for organizer profile/name/avatar changes
   useEffect(() => {

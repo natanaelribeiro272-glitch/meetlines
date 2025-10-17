@@ -1,6 +1,7 @@
 import { EventCard } from "./EventCard";
 import { useEvents } from "@/hooks/useEvents";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EventFilters } from "@/components/EventFiltersDialog";
 
 // Função auxiliar para formatizar data
 const formatEventDate = (dateString: string) => {
@@ -35,10 +36,11 @@ interface EventFeedProps {
   categoryFilter?: string;
   searchQuery?: string;
   userInterests?: string[];
+  filters?: EventFilters;
 }
 
-export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests }: EventFeedProps) {
-  const { events, loading, toggleLike } = useEvents(categoryFilter, searchQuery, userInterests);
+export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests, filters }: EventFeedProps) {
+  const { events, loading, toggleLike } = useEvents(categoryFilter, searchQuery, userInterests, filters);
 
   const handleEventClick = (eventId: string) => {
     onEventClick(eventId);
