@@ -685,12 +685,18 @@ export default function PublicOrganizerProfile() {
           return (
             <div className="relative inline-block mb-4">
               {hasStories && (
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[3px] animate-pulse">
+                <div
+                  className="absolute -inset-[3px] rounded-full animate-pulse"
+                  style={{
+                    background: 'linear-gradient(45deg, hsl(var(--primary)), hsl(280 80% 55%), hsl(320 80% 55%), hsl(var(--primary)))',
+                    padding: '3px'
+                  }}
+                >
                   <div className="w-full h-full rounded-full bg-background" />
                 </div>
               )}
               <Avatar
-                className={`h-24 w-24 mx-auto border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity relative ${hasStories ? 'ring-2 ring-offset-2 ring-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600' : ''}`}
+                className="h-24 w-24 mx-auto border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity relative"
                 onClick={() => {
                   if (hasStories) {
                     setStoryViewerOpen(true);
