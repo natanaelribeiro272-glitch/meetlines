@@ -141,9 +141,19 @@ export default function AuthPage({
 
           {/* Right Side - Auth Form */}
           <div className="w-full max-w-md mx-auto lg:mx-0 space-y-6">
-        {/* Back to Home & Theme Toggle */}
+        {/* Organizer Link & Theme Toggle */}
         <div className="flex justify-between items-center">
-          <div className="w-8"></div> {/* Spacer */}
+          {isLogin ? (
+            <button
+              type="button"
+              onClick={handleOrganizerSignup}
+              className="text-xs text-muted-foreground hover:text-primary transition-smooth"
+            >
+              Quer criar eventos? <span className="text-primary font-medium">Registrar como organizador</span>
+            </button>
+          ) : (
+            <div className="w-8"></div>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -202,7 +212,7 @@ export default function AuthPage({
         </div>
 
         {/* Toggle Auth Mode */}
-        <div className="text-center space-y-3">
+        <div className="text-center">
           <button
             type="button"
             onClick={() => {
@@ -215,18 +225,6 @@ export default function AuthPage({
               {isLogin ? "Cadastre-se" : "Entre"}
             </span>
           </button>
-
-          {isLogin && (
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleOrganizerSignup}
-                className="text-sm text-muted-foreground hover:text-primary transition-smooth"
-              >
-                Quer criar eventos? <span className="text-primary font-medium">Registrar como organizador</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Demo Login */}
