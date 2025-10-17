@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Upload, User, Link as LinkIcon, CheckCircle, MessageCircle, Instagram, Music, MapPin, Globe, Mail, Lock, Palette } from "lucide-react";
+import { Upload, User, Link as LinkIcon, CheckCircle, MessageCircle, Instagram, Music, MapPin, Globe, Mail, Lock, Palette, ArrowLeft } from "lucide-react";
 
 interface NavState {
   email?: string;
@@ -249,6 +249,17 @@ export default function OrganizerOnboarding() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
+          <div className="flex items-center justify-between mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/auth')}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+          </div>
           <CardTitle>Configure seu Perfil de Organizador</CardTitle>
           <CardDescription>
             Etapa {currentStep + 1} de {totalSteps}
@@ -276,7 +287,18 @@ export default function OrganizerOnboarding() {
                 <Label htmlFor="name">Seu nome ou da marca</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Minha Marca" />
               </div>
-              <Button onClick={handleStep0Next} className="w-full">Próxima Etapa</Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/auth')}
+                  className="flex-1"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button onClick={handleStep0Next} className="flex-1">
+                  Próximo
+                </Button>
+              </div>
             </div>
           )}
 
@@ -306,9 +328,19 @@ export default function OrganizerOnboarding() {
                 <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Nome da sua empresa/marca" maxLength={50} />
                 <p className="text-xs text-muted-foreground mt-1">Este nome pode ser alterado depois</p>
               </div>
-              <Button onClick={handleStep1Next} className="w-full" disabled={isLoading || !username || !displayName || !!usernameError}>
-                {isLoading ? "Verificando..." : "Próxima Etapa"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentStep(0)}
+                  className="flex-1"
+                  disabled={isLoading}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button onClick={handleStep1Next} className="flex-1" disabled={isLoading || !username || !displayName || !!usernameError}>
+                  {isLoading ? "Verificando..." : "Próximo"}
+                </Button>
+              </div>
             </div>
           )}
 
@@ -355,8 +387,12 @@ export default function OrganizerOnboarding() {
                 <p className="text-xs text-muted-foreground mt-1">{bio.length}/500 caracteres</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(1)} className="w-full">Voltar</Button>
-                <Button onClick={handleStep2Next} className="w-full" disabled={!bio}>Próxima Etapa</Button>
+                <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button onClick={handleStep2Next} className="flex-1" disabled={!bio}>
+                  Próximo
+                </Button>
               </div>
             </div>
           )}
@@ -525,11 +561,11 @@ export default function OrganizerOnboarding() {
               )}
 
               <div className="flex gap-2 mt-6">
-                <Button variant="outline" onClick={() => setCurrentStep(2)} className="w-full">
-                  Voltar
+                <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button onClick={handleStep3Next} className="w-full">
-                  Próxima Etapa
+                <Button onClick={handleStep3Next} className="flex-1">
+                  Próximo
                 </Button>
               </div>
             </div>
@@ -595,14 +631,14 @@ export default function OrganizerOnboarding() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(3)} className="w-full">
-                  Voltar
+                <Button variant="outline" onClick={() => setCurrentStep(3)} className="flex-1" disabled={isLoading}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button onClick={handleComplete} className="w-full" disabled={isLoading}>
+                <Button onClick={handleComplete} className="flex-1" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Criando Perfil...
+                      Criando...
                     </>
                   ) : (
                     <>

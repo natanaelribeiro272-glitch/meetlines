@@ -403,34 +403,47 @@ export default function UserOnboarding() {
       <Card className="w-full max-w-md">
         <CardContent className="p-6">
           {/* Header */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <User className="h-8 w-8 text-primary" />
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/auth')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
             </div>
-            <h1 className="text-2xl font-bold mb-2">Complete seu Perfil</h1>
-            <p className="text-muted-foreground text-sm">{steps[currentStep]}</p>
-            {!isExistingUser && currentStep === 0 && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Já tem conta?{' '}
-                <button
-                  onClick={() => navigate('/auth')}
-                  className="text-primary hover:underline font-medium"
-                >
-                  Fazer login
-                </button>
-              </p>
-            )}
-            {isExistingUser && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Conectado como {email}.{' '}
-                <button
-                  onClick={handleLogout}
-                  className="text-destructive hover:underline font-medium"
-                >
-                  Sair
-                </button>
-              </p>
-            )}
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                <User className="h-8 w-8 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold mb-2">Complete seu Perfil</h1>
+              <p className="text-muted-foreground text-sm">{steps[currentStep]}</p>
+              {!isExistingUser && currentStep === 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Já tem conta?{' '}
+                  <button
+                    onClick={() => navigate('/auth')}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Fazer login
+                  </button>
+                </p>
+              )}
+              {isExistingUser && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Conectado como {email}.{' '}
+                  <button
+                    onClick={handleLogout}
+                    className="text-destructive hover:underline font-medium"
+                  >
+                    Sair
+                  </button>
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Progress */}
@@ -476,9 +489,18 @@ export default function UserOnboarding() {
                       placeholder="Mínimo 6 caracteres"
                     />
                   </div>
-                  <Button onClick={handleStep0Next} className="w-full">
-                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/auth')}
+                      className="flex-1"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                    </Button>
+                    <Button onClick={handleStep0Next} className="flex-1">
+                      Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
                 </>
               )}
             </div>
@@ -539,7 +561,11 @@ export default function UserOnboarding() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(0)} className="flex-1">
+                <Button
+                  variant="outline"
+                  onClick={() => isExistingUser ? navigate('/auth') : setCurrentStep(0)}
+                  className="flex-1"
+                >
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
                 <Button onClick={handleStep1Next} className="flex-1">
