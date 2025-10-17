@@ -86,28 +86,44 @@ export function ImageCropDialog({
 
     ctx.restore();
 
-    const cropSize = Math.min(canvas.width, canvas.height) * 0.8;
-    const cropX = (canvas.width - cropSize) / 2;
-    const cropY = (canvas.height - cropSize) / 2;
+    // Calculate crop area (larger and better positioned)
+    let cropSize = Math.min(canvas.width, canvas.height) * 0.9;
+    let cropX = (canvas.width - cropSize) / 2;
+    let cropY = (canvas.height - cropSize) / 2;
+    let cropWidth = cropSize;
+    let cropHeight = cropSize;
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
-
-    if (aspectRatio === 1) {
-      ctx.strokeRect(cropX, cropY, cropSize, cropSize);
-    } else {
-      const cropWidth = cropSize;
-      const cropHeight = cropSize / aspectRatio;
-      const adjustedCropY = (canvas.height - cropHeight) / 2;
-      ctx.strokeRect(cropX, adjustedCropY, cropWidth, cropHeight);
+    if (aspectRatio !== 1) {
+      cropWidth = Math.min(canvas.width * 0.9, canvas.height * 0.9 * aspectRatio);
+      cropHeight = cropWidth / aspectRatio;
+      cropX = (canvas.width - cropWidth) / 2;
+      cropY = (canvas.height - cropHeight) / 2;
     }
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    // Draw overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fillRect(0, 0, canvas.width, cropY);
-    ctx.fillRect(0, cropY + cropSize, canvas.width, canvas.height - cropY - cropSize);
-    ctx.fillRect(0, cropY, cropX, cropSize);
-    ctx.fillRect(cropX + cropSize, cropY, canvas.width - cropX - cropSize, cropSize);
+    ctx.fillRect(0, cropY + cropHeight, canvas.width, canvas.height - cropY - cropHeight);
+    ctx.fillRect(0, cropY, cropX, cropHeight);
+    ctx.fillRect(cropX + cropWidth, cropY, canvas.width - cropX - cropWidth, cropHeight);
+
+    // Draw crop area border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([]);
+    ctx.strokeRect(cropX, cropY, cropWidth, cropHeight);
+
+    // Draw corner handles
+    const handleSize = 20;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(cropX - 2, cropY - 2, handleSize, 4);
+    ctx.fillRect(cropX - 2, cropY - 2, 4, handleSize);
+    ctx.fillRect(cropX + cropWidth - handleSize + 2, cropY - 2, handleSize, 4);
+    ctx.fillRect(cropX + cropWidth - 2, cropY - 2, 4, handleSize);
+    ctx.fillRect(cropX - 2, cropY + cropHeight - 2, handleSize, 4);
+    ctx.fillRect(cropX - 2, cropY + cropHeight - handleSize + 2, 4, handleSize);
+    ctx.fillRect(cropX + cropWidth - handleSize + 2, cropY + cropHeight - 2, handleSize, 4);
+    ctx.fillRect(cropX + cropWidth - 2, cropY + cropHeight - handleSize + 2, 4, handleSize);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -151,13 +167,22 @@ export function ImageCropDialog({
     const ctx = cropCanvas.getContext('2d');
     if (!ctx) return null;
 
-    const outputSize = 400;
+    const outputSize = 800;
     cropCanvas.width = outputSize;
     cropCanvas.height = aspectRatio === 1 ? outputSize : outputSize / aspectRatio;
 
     const containerWidth = canvas.width;
     const containerHeight = canvas.height;
-    const cropSize = Math.min(containerWidth, containerHeight) * 0.8;
+
+    // Calculate crop area (same as display)
+    let cropSize = Math.min(containerWidth, containerHeight) * 0.9;
+    let cropWidth = cropSize;
+    let cropHeight = cropSize;
+
+    if (aspectRatio !== 1) {
+      cropWidth = Math.min(containerWidth * 0.9, containerHeight * 0.9 * aspectRatio);
+      cropHeight = cropWidth / aspectRatio;
+    }
 
     ctx.save();
     ctx.translate(cropCanvas.width / 2, cropCanvas.height / 2);
@@ -171,10 +196,10 @@ export function ImageCropDialog({
     const scaledWidth = imgWidth * scale;
     const scaledHeight = imgHeight * scale;
 
-    const sourceX = (scaledWidth / 2) - (cropSize / 2) * (scaledWidth / containerWidth) - (position.x * scaledWidth / containerWidth);
-    const sourceY = (scaledHeight / 2) - (cropSize / 2) * (scaledHeight / containerHeight) - (position.y * scaledHeight / containerHeight);
-    const sourceWidth = cropSize * (scaledWidth / containerWidth);
-    const sourceHeight = cropSize * (scaledHeight / containerHeight);
+    const sourceX = (scaledWidth / 2) - (cropWidth / 2) * (scaledWidth / containerWidth) - (position.x * scaledWidth / containerWidth);
+    const sourceY = (scaledHeight / 2) - (cropHeight / 2) * (scaledHeight / containerHeight) - (position.y * scaledHeight / containerHeight);
+    const sourceWidth = cropWidth * (scaledWidth / containerWidth);
+    const sourceHeight = cropHeight * (scaledHeight / containerHeight);
 
     ctx.drawImage(
       image,
@@ -214,15 +239,18 @@ export function ImageCropDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Ajustar Foto</DialogTitle>
+      <DialogContent className="max-w-3xl p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 space-y-1">
+          <DialogTitle className="text-xl">Ajustar Foto</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Arraste para posicionar, use o zoom e gire a imagem conforme necessário
+          </p>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="px-6 pb-6 space-y-6">
           <div
             ref={containerRef}
-            className="relative w-full h-[400px] bg-black rounded-lg overflow-hidden cursor-move select-none"
+            className="relative w-full h-[500px] bg-black rounded-lg overflow-hidden cursor-move select-none touch-none"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -237,44 +265,43 @@ export function ImageCropDialog({
             />
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
+          <div className="space-y-6 bg-muted/50 p-4 rounded-lg">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium flex items-center gap-2">
+                <label className="text-sm font-semibold flex items-center gap-2">
                   <ZoomIn className="h-4 w-4" />
                   Zoom
                 </label>
-                <span className="text-sm text-muted-foreground">{Math.round(zoom * 100)}%</span>
+                <span className="text-sm font-medium tabular-nums">{Math.round(zoom * 100)}%</span>
               </div>
               <Slider
                 value={[zoom]}
                 onValueChange={([value]) => setZoom(value)}
                 min={0.5}
                 max={3}
-                step={0.1}
+                step={0.05}
                 className="w-full"
               />
             </div>
 
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center pt-2">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleRotate}
-                className="gap-2"
+                className="gap-2 h-11"
               >
-                <RotateCw className="h-4 w-4" />
+                <RotateCw className="h-5 w-5" />
                 Girar 90°
               </Button>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="px-6 pb-6 pt-0 gap-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
             Cancelar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="flex-1">
             Salvar Foto
           </Button>
         </DialogFooter>
