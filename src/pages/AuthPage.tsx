@@ -16,8 +16,6 @@ export default function AuthPage({
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [showUserTypeChoice, setShowUserTypeChoice] = useState(false);
-  const [userType, setUserType] = useState<"user" | "organizer" | null>(null);
   const [previewUserType, setPreviewUserType] = useState<"user" | "organizer">("user");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,7 +39,7 @@ export default function AuthPage({
   }, [user, navigate, searchParams]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isLogin) {
       setLoading(true);
       try {
@@ -54,35 +52,18 @@ export default function AuthPage({
         setLoading(false);
       }
     } else {
-      // Mostrar escolha de tipo de usuário
-      if (!showUserTypeChoice) {
-        setShowUserTypeChoice(true);
-        return;
-      }
-      
-      // Prosseguir com onboarding
-      if (!userType) {
-        return;
-      }
-      
-      if (userType === "organizer") {
-        navigate('/organizer-onboarding', {
-          state: {
-            email: formData.email,
-            password: formData.password,
-            name: formData.name,
-          }
-        });
-      } else {
-        navigate('/user-onboarding', {
-          state: {
-            email: formData.email,
-            password: formData.password,
-            name: formData.name,
-          }
-        });
-      }
+      navigate('/user-onboarding', {
+        state: {
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+        }
+      });
     }
+  };
+
+  const handleOrganizerSignup = () => {
+    navigate('/organizer-onboarding');
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -180,67 +161,12 @@ export default function AuthPage({
         {/* Auth Header */}
         <div className="text-center space-y-2 bg-card/50 p-6 rounded-lg border border-border/50">
           <p className="text-lg font-semibold">
-            {isLogin ? "Entre na sua conta" : showUserTypeChoice ? "O que você deseja fazer?" : "Crie sua conta"}
+            {isLogin ? "Entre na sua conta" : "Crie sua conta"}
           </p>
         </div>
 
-        {/* User Type Choice (only shown during signup after initial form) */}
-        {!isLogin && showUserTypeChoice && (
-          <div className="space-y-4">
-            <button
-              type="button"
-              onClick={() => {
-                setUserType("user");
-                handleSubmit(new Event('submit') as any);
-              }}
-              className="w-full p-6 rounded-lg border-2 border-border hover:border-primary bg-card hover:bg-card/80 transition-all text-left"
-            >
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Encontrar Eventos</h3>
-                  <p className="text-sm text-muted-foreground">Quero descobrir e participar de eventos na minha cidade</p>
-                </div>
-              </div>
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => {
-                setUserType("organizer");
-                handleSubmit(new Event('submit') as any);
-              }}
-              className="w-full p-6 rounded-lg border-2 border-border hover:border-primary bg-card hover:bg-card/80 transition-all text-left"
-            >
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Criar Eventos</h3>
-                  <p className="text-sm text-muted-foreground">Sou organizador e quero criar e gerenciar eventos</p>
-                </div>
-              </div>
-            </button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setShowUserTypeChoice(false);
-                setUserType(null);
-              }}
-              className="w-full"
-            >
-              Voltar
-            </Button>
-          </div>
-        )}
-
         {/* Auth Form */}
-        {(isLogin || !showUserTypeChoice) && (
+        <div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && <div className="space-y-2">
               <Label htmlFor="name">Nome completo</Label>
@@ -273,18 +199,15 @@ export default function AuthPage({
             {loading ? "Carregando..." : isLogin ? "Entrar" : "Continuar"}
           </Button>
         </form>
-        )}
+        </div>
 
         {/* Toggle Auth Mode */}
-        {!showUserTypeChoice && (
-        <div className="text-center">
-          <button 
-            type="button" 
+        <div className="text-center space-y-3">
+          <button
+            type="button"
             onClick={() => {
               setIsLogin(!isLogin);
-              setShowUserTypeChoice(false);
-              setUserType(null);
-            }} 
+            }}
             className="text-sm text-muted-foreground hover:text-primary transition-smooth"
           >
             {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
@@ -292,8 +215,19 @@ export default function AuthPage({
               {isLogin ? "Cadastre-se" : "Entre"}
             </span>
           </button>
+
+          {isLogin && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleOrganizerSignup}
+                className="text-sm text-muted-foreground hover:text-primary transition-smooth"
+              >
+                Quer criar eventos? <span className="text-primary font-medium">Registrar como organizador</span>
+              </button>
+            </div>
+          )}
         </div>
-        )}
 
         {/* Demo Login */}
         
