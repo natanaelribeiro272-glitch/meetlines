@@ -12,6 +12,7 @@ import { CitySelect } from '@/components/CitySelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CATEGORIES } from '@/constants/categories';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 interface NavState {
   email?: string;
@@ -60,6 +61,8 @@ export default function UserOnboarding() {
   const [usernameError, setUsernameError] = useState('');
   const [isExistingUser, setIsExistingUser] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>('');
 
   const steps = ['Dados Básicos', 'Localização', 'Foto de Perfil', 'Redes Sociais', 'Interesses', 'Sugestões'];
   const progress = ((currentStep + 1) / steps.length) * 100;
@@ -146,13 +149,33 @@ export default function UserOnboarding() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatarFile(file);
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor, selecione apenas arquivos de imagem');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('A imagem deve ter no máximo 5MB');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+        setSelectedImage(reader.result as string);
+        setCropDialogOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedImage: File) => {
+    setAvatarFile(croppedImage);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(croppedImage);
+    setCropDialogOpen(false);
   };
 
   // Toggle interest selection
@@ -800,6 +823,14 @@ export default function UserOnboarding() {
           )}
         </CardContent>
       </Card>
+
+      <ImageCropDialog
+        open={cropDialogOpen}
+        onOpenChange={setCropDialogOpen}
+        imageSrc={selectedImage}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+      />
     </div>
   );
 }

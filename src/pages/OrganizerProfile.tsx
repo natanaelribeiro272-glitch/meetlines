@@ -17,6 +17,7 @@ import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 // Componente auxiliar para fotos de evento
 function EventPhotoGrid({
@@ -208,6 +209,8 @@ export default function OrganizerProfile({
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalAction, setAuthModalAction] = useState("");
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { organizersWithStories, toggleLike, markAsViewed, deleteStory } = useOrganizerStories();
@@ -264,36 +267,47 @@ export default function OrganizerProfile({
   const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
+
+    // Verificar se é um formato de imagem suportado
+    const fileType = file.type.toLowerCase();
+    const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!supportedFormats.includes(fileType)) {
+      toast.error('Formato não suportado', {
+        description: 'Por favor, use imagens JPG, PNG ou WEBP. Se você está no iPhone, abra a foto no app Fotos e compartilhe > Salvar imagem para converter automaticamente para JPG.'
+      });
+      return;
+    }
+
+    // Validar tamanho do arquivo (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Arquivo muito grande', {
+        description: 'A imagem deve ter no máximo 5MB'
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropDialogOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedImage: File) => {
+    if (!user) return;
+
     try {
       setUploadingCover(true);
-
-      // Verificar se é um formato de imagem suportado
-      const fileType = file.type.toLowerCase();
-      const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-      if (!supportedFormats.includes(fileType)) {
-        toast.error('Formato não suportado', {
-          description: 'Por favor, use imagens JPG, PNG ou WEBP. Se você está no iPhone, abra a foto no app Fotos e compartilhe > Salvar imagem para converter automaticamente para JPG.'
-        });
-        setUploadingCover(false);
-        return;
-      }
-
-      // Validar tamanho do arquivo (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Arquivo muito grande', {
-          description: 'A imagem deve ter no máximo 5MB'
-        });
-        setUploadingCover(false);
-        return;
-      }
+      setCropDialogOpen(false);
 
       // Upload para o Supabase Storage
-      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const fileExt = croppedImage.name.split('.').pop()?.toLowerCase();
       const timestamp = Date.now();
       const fileName = `${user.id}/cover-${timestamp}.${fileExt}`;
       const {
         error: uploadError
-      } = await supabase.storage.from('user-uploads').upload(fileName, file, {
+      } = await supabase.storage.from('user-uploads').upload(fileName, croppedImage, {
         upsert: true
       });
       if (uploadError) throw uploadError;
@@ -717,5 +731,14 @@ export default function OrganizerProfile({
 
       {/* Auth Modal */}
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
+
+      {/* Image Crop Dialog */}
+      <ImageCropDialog
+        open={cropDialogOpen}
+        onOpenChange={setCropDialogOpen}
+        imageSrc={selectedImage}
+        onCropComplete={handleCropComplete}
+        aspectRatio={16 / 9}
+      />
     </div>;
 }
