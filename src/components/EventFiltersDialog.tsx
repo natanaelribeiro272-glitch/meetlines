@@ -15,8 +15,7 @@ import {
   SheetTrigger,
   SheetFooter,
 } from "@/components/ui/sheet";
-import { Filter, MapPin, Grid3x3, Calendar, X } from "lucide-react";
-import { CATEGORIES } from "@/constants/categories";
+import { Filter, MapPin, Calendar, X } from "lucide-react";
 
 interface City {
   id: string;
@@ -80,17 +79,6 @@ export function EventFiltersDialog({ filters, onChange, userCityId }: EventFilte
     });
   };
 
-  const toggleCategory = (categoryValue: string) => {
-    const newCategories = tempFilters.categories.includes(categoryValue)
-      ? tempFilters.categories.filter(cat => cat !== categoryValue)
-      : [...tempFilters.categories, categoryValue];
-
-    setTempFilters({
-      ...tempFilters,
-      categories: newCategories
-    });
-  };
-
   const handleShowAllCities = () => {
     setTempFilters({
       ...tempFilters,
@@ -129,7 +117,6 @@ export function EventFiltersDialog({ filters, onChange, userCityId }: EventFilte
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.cities.length > 0 || filters.showAllCities) count++;
-    if (filters.categories.length > 0) count++;
     if (filters.dateRange !== 'all') count++;
     return count;
   };
@@ -226,31 +213,6 @@ export function EventFiltersDialog({ filters, onChange, userCityId }: EventFilte
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Filtro de Categoria */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <Grid3x3 className="h-4 w-4" />
-                Categorias
-              </Label>
-              <div className="space-y-2">
-                {CATEGORIES.map((category) => (
-                  <div key={category.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`cat-${category.value}`}
-                      checked={tempFilters.categories.includes(category.value)}
-                      onCheckedChange={() => toggleCategory(category.value)}
-                    />
-                    <label
-                      htmlFor={`cat-${category.value}`}
-                      className="text-sm cursor-pointer flex-1"
-                    >
-                      {category.label}
-                    </label>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Filtro de Data */}
