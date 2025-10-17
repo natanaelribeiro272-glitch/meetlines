@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Upload, User, Link as LinkIcon, CheckCircle, MessageCircle, Instagram, Music, MapPin, Globe, Mail, Lock, Palette, ArrowLeft } from "lucide-react";
+import { CitySelect } from "@/components/CitySelect";
 
 interface NavState {
   email?: string;
@@ -47,6 +48,8 @@ export default function OrganizerOnboarding() {
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [locationUrl, setLocationUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [cityId, setCityId] = useState<string | null>(null);
+  const [cityName, setCityName] = useState<string>("");
   
   // Step 4: Preferência de tema
   const [preferredTheme, setPreferredTheme] = useState<"dark" | "light">("dark");
@@ -121,6 +124,10 @@ export default function OrganizerOnboarding() {
   const handleStep2Next = () => {
     if (!bio) {
       toast.error("Escreva uma bio para seu perfil");
+      return;
+    }
+    if (!cityId) {
+      toast.error("Selecione sua cidade");
       return;
     }
     setCurrentStep(3);
@@ -218,7 +225,8 @@ export default function OrganizerOnboarding() {
           show_playlist: !!playlistUrl,
           show_location: !!locationUrl,
           show_website: !!websiteUrl,
-          preferred_theme: preferredTheme
+          preferred_theme: preferredTheme,
+          city_id: cityId
         })
         .select()
         .maybeSingle();
@@ -386,11 +394,23 @@ export default function OrganizerOnboarding() {
                 <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Conte um pouco sobre você e seus eventos..." rows={4} maxLength={500} />
                 <p className="text-xs text-muted-foreground mt-1">{bio.length}/500 caracteres</p>
               </div>
+
+              <CitySelect
+                value={cityId || undefined}
+                onChange={(id, name) => {
+                  setCityId(id);
+                  setCityName(name);
+                }}
+                label="Localização"
+                placeholder="Em qual cidade você organiza eventos?"
+                required
+                showUseLocation
+              />
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button onClick={handleStep2Next} className="flex-1" disabled={!bio}>
+                <Button onClick={handleStep2Next} className="flex-1" disabled={!bio || !cityId}>
                   Próximo
                 </Button>
               </div>
