@@ -65,13 +65,23 @@ export default function MainLayout() {
     const checkUserOnboarding = async () => {
       if (!user || loading || userRole === null) return;
 
+      // Avoid redirect loop - don't check if already on onboarding pages
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('onboarding')) return;
+
       try {
         // Check if profile has username set
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("username")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
+
+        // If profile doesn't exist, it's a critical error
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          return;
+        }
 
         // Redirect based on role and profile completion
         if (userRole === "organizer") {

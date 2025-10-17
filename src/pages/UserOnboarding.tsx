@@ -55,9 +55,50 @@ export default function UserOnboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [usernameError, setUsernameError] = useState('');
+  const [isExistingUser, setIsExistingUser] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const steps = ['Dados Básicos', 'Foto de Perfil', 'Redes Sociais', 'Interesses', 'Sugestões'];
   const progress = ((currentStep + 1) / steps.length) * 100;
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setIsExistingUser(true);
+        setCurrentUserId(session.user.id);
+        setEmail(session.user.email || '');
+
+        // Get user data from metadata
+        const displayName = session.user.user_metadata?.display_name;
+        if (displayName) setName(displayName);
+
+        // Start from step 1 (username) if already logged in
+        setCurrentStep(1);
+      }
+    };
+    checkExistingSession();
+  }, []);
+
+  // Handle logout/reset
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.info('Sessão encerrada. Você pode criar uma nova conta.');
+      setIsExistingUser(false);
+      setCurrentUserId(null);
+      setCurrentStep(0);
+      setEmail('');
+      setPassword('');
+      setName('');
+      setUsername('');
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Erro ao sair. Tente novamente.');
+    }
+  };
 
   // Validate username
   const validateUsername = async (value: string): Promise<boolean> => {
@@ -219,53 +260,78 @@ export default function UserOnboarding() {
     setLoading(true);
 
     try {
-      // 1. Try to sign up the user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            display_name: name,
-            role: 'user'
+      let userId: string;
+
+      // If user is already logged in, use existing session
+      if (isExistingUser && currentUserId) {
+        userId = currentUserId;
+      } else {
+        // 1. Try to sign up the user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              display_name: name,
+              role: 'user'
+            }
           }
+        });
+
+        // Handle "user already exists" error - try to login instead
+        if (signUpError) {
+          if (signUpError.message?.includes('already registered') || signUpError.message?.includes('User already registered')) {
+            // Try to sign in with the provided credentials
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+
+            if (signInError) {
+              toast.error('Email já cadastrado. Verifique sua senha e tente novamente.');
+              setCurrentStep(0); // Go back to login step
+              return;
+            }
+
+            if (!signInData.user) {
+              throw new Error('Falha ao fazer login');
+            }
+
+            userId = signInData.user.id;
+            toast.info('Login realizado! Complete seu perfil.');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } else {
+            throw signUpError;
+          }
+        } else {
+          if (!authData.user) throw new Error('Falha ao criar usuário');
+
+          // 2. Try to sign in (in case email confirmation is disabled)
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          // If sign in fails, it's likely due to email confirmation
+          if (signInError) {
+            toast.success('Conta criada! Verifique seu email para confirmar.');
+            navigate('/auth');
+            return;
+          }
+
+          userId = authData.user.id;
+          // Wait a bit for the session to be established
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
-      });
-
-      // Handle "user already exists" error
-      if (signUpError) {
-        if (signUpError.message?.includes('already registered') || signUpError.message?.includes('User already registered')) {
-          toast.error('Esta conta já existe. Faça login para continuar.');
-          navigate('/auth');
-          return;
-        }
-        throw signUpError;
       }
-
-      if (!authData.user) throw new Error('Falha ao criar usuário');
-
-      // 2. Try to sign in (in case email confirmation is disabled)
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      // If sign in fails, it's likely due to email confirmation
-      if (signInError) {
-        toast.success('Conta criada! Verifique seu email para confirmar.');
-        navigate('/auth');
-        return;
-      }
-
-      // Wait a bit for the session to be established
-      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // 3. Upload avatar if provided
       let avatarUrl = '';
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${authData.user.id}/avatar.${fileExt}`;
-        
+        const fileName = `${userId}/avatar.${fileExt}`;
+
         const { error: uploadError } = await supabase.storage
           .from('user-uploads')
           .upload(fileName, avatarFile, { upsert: true });
@@ -292,7 +358,7 @@ export default function UserOnboarding() {
           interests: selectedInterests,
           notes: `Interesses: ${selectedInterests.join(', ')}`,
         })
-        .eq('user_id', authData.user.id);
+        .eq('user_id', userId);
 
       if (profileError) {
         console.error('Profile update error:', profileError);
@@ -305,7 +371,7 @@ export default function UserOnboarding() {
           supabase
             .from('followers')
             .insert({
-              user_id: authData.user.id,
+              user_id: userId,
               organizer_id: organizerId
             })
         );
@@ -343,6 +409,28 @@ export default function UserOnboarding() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Complete seu Perfil</h1>
             <p className="text-muted-foreground text-sm">{steps[currentStep]}</p>
+            {!isExistingUser && currentStep === 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Já tem conta?{' '}
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Fazer login
+                </button>
+              </p>
+            )}
+            {isExistingUser && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Conectado como {email}.{' '}
+                <button
+                  onClick={handleLogout}
+                  className="text-destructive hover:underline font-medium"
+                >
+                  Sair
+                </button>
+              </p>
+            )}
           </div>
 
           {/* Progress */}
@@ -357,38 +445,42 @@ export default function UserOnboarding() {
           {/* Step 0: Basic Info */}
           {currentStep === 0 && (
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                />
-              </div>
-              <Button onClick={handleStep0Next} className="w-full">
-                Próximo <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              {!isExistingUser && (
+                <>
+                  <div>
+                    <Label htmlFor="name">Nome Completo</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Seu nome"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="password">Senha</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                  </div>
+                  <Button onClick={handleStep0Next} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
           )}
 
