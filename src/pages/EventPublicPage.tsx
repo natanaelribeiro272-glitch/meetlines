@@ -82,34 +82,44 @@ export default function EventPublicPage() {
 
         // Se a URL é /e/:eventId, usar o ID diretamente (fallback)
         if (params.eventId) {
-          console.log('Usando ID direto do evento:', params.eventId);
-          setEventId(params.eventId);
+          console.log('Buscando evento pelo ID:', params.eventId);
+          const { data: event, error: eventError } = await supabase
+            .from('events')
+            .select('id, organizer_id')
+            .eq('id', params.eventId)
+            .maybeSingle();
+
+          if (eventError) {
+            console.error('Erro ao buscar evento:', eventError);
+            setLoading(false);
+            return;
+          }
+
+          if (!event) {
+            console.log('Evento não encontrado com ID:', params.eventId);
+            setLoading(false);
+            return;
+          }
+
+          setEventId(event.id);
 
           // Check if logged user is the organizer
           if (user) {
-            const { data: event } = await supabase
-              .from('events')
-              .select('organizer_id')
-              .eq('id', params.eventId)
+            const { data: organizer } = await supabase
+              .from('organizers')
+              .select('user_id, preferred_theme')
+              .eq('id', event.organizer_id)
               .maybeSingle();
 
-            if (event) {
-              const { data: organizer } = await supabase
-                .from('organizers')
-                .select('user_id, preferred_theme')
-                .eq('id', event.organizer_id)
-                .maybeSingle();
-
-              if (organizer) {
-                if (organizer.user_id === user.id) {
-                  setIsUserOrganizer(true);
-                }
-
-                // Aplicar tema do organizador
-                const root = document.documentElement;
-                root.classList.remove('dark', 'light');
-                root.classList.add(organizer.preferred_theme || 'dark');
+            if (organizer) {
+              if (organizer.user_id === user.id) {
+                setIsUserOrganizer(true);
               }
+
+              // Aplicar tema do organizador
+              const root = document.documentElement;
+              root.classList.remove('dark', 'light');
+              root.classList.add(organizer.preferred_theme || 'dark');
             }
           }
 
