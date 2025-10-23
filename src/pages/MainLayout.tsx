@@ -121,7 +121,7 @@ export default function MainLayout() {
   const handleLogin = (type: "user" | "organizer") => {
     // This is handled by the auth provider now
   };
-  const handleEventClick = (eventId: string) => {
+  const handleEventClick = async (eventId: string) => {
     if (eventId === "live-events") {
       setCurrentView("liveEvents");
     } else if (eventId === "register") {
@@ -129,8 +129,17 @@ export default function MainLayout() {
     } else if (eventId === "registrations") {
       setCurrentView("eventRegistrations");
     } else {
-      setCurrentEventId(eventId);
-      setCurrentView("eventDetails");
+      const { data: event } = await supabase
+        .from('events')
+        .select('slug')
+        .eq('id', eventId)
+        .maybeSingle();
+
+      if (event?.slug) {
+        navigate(`/evento/${event.slug}`);
+      } else {
+        navigate(`/e/${eventId}`);
+      }
     }
   };
 
