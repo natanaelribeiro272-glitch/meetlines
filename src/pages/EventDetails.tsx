@@ -20,6 +20,7 @@ import { AuthModal } from "@/components/AuthModal";
 import { TicketPurchaseDialog } from "@/components/TicketPurchaseDialog";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useAuth } from "@/hooks/useAuth";
+import { useEventPixels } from "@/hooks/useEventPixels";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ export default function EventDetails({
 }: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
   const { user, userRole } = useAuth();
+  const { trackEvent } = useEventPixels(eventId);
   const navigate = useNavigate();
   const location = useLocation();
   const [newComment, setNewComment] = useState("");
@@ -256,6 +258,13 @@ export default function EventDetails({
 
         setHasConfirmedAttendance(true);
         toast.success("Presença confirmada com sucesso!");
+
+        trackEvent("CompleteRegistration", {
+          event_name: event?.title,
+          event_id: eventId,
+          value: 0,
+          currency: "BRL"
+        });
       } catch (error) {
         console.error("Error:", error);
         toast.error("Erro ao confirmar presença");
@@ -748,6 +757,12 @@ export default function EventDetails({
               onClick={() => {
                 requireAuth(() => {
                   setTicketDialogOpen(true);
+                  trackEvent("InitiateCheckout", {
+                    event_name: event?.title,
+                    event_id: eventId,
+                    value: Math.min(...event.ticket_types!.map(t => t.price)),
+                    currency: "BRL"
+                  });
                 }, "comprar ingressos");
               }}
             >
