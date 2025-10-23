@@ -335,7 +335,7 @@ export default function OrganizerPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-md mx-auto bg-background">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Perfil
@@ -350,7 +350,8 @@ export default function OrganizerPage() {
             </TabsTrigger>
             <TabsTrigger value="financial" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
-              Financeiro
+              <span className="hidden sm:inline">Financeiro</span>
+              <span className="sm:hidden">$</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -758,8 +759,36 @@ export default function OrganizerPage() {
           </TabsContent>
 
           <TabsContent value="events" className="space-y-6">
-            <OrganizerEventsList 
-              onCreateEvent={() => setShowCreateEvent(true)} 
+            <div className="p-4 space-y-4">
+              <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                      <h3 className="font-semibold text-foreground">Gestão Financeira</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Configure seus dados bancários e acompanhe vendas de ingressos
+                    </p>
+                  </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        window.open(window.location.origin + '/organizer-financial', '_blank');
+                      } else {
+                        setActiveTab('financial');
+                      }
+                    }}
+                  >
+                    Acessar
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <OrganizerEventsList
+              onCreateEvent={() => setShowCreateEvent(true)}
               onManageRegistrations={(eventId) => {
                 setSelectedEventIdForRegistrations(eventId);
                 setShowRegistrations(true);

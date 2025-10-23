@@ -28,6 +28,7 @@ import EventTicketSales from "./pages/EventTicketSales";
 import AdminOrganizerPayments from "./pages/AdminOrganizerPayments";
 import AdminOrganizerPaymentDetails from "./pages/AdminOrganizerPaymentDetails";
 import UserEvents from "./pages/UserEvents";
+import OrganizerFinancialPage from "./pages/OrganizerFinancialPage";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/ticket-success" element={<TicketPurchaseSuccess />} />
               <Route path="/event/:eventId/sales" element={<EventTicketSales />} />
               <Route path="/my-events" element={<UserEvents />} />
+              <Route path="/organizer-financial" element={<OrganizerFinancialPage />} />
               {/* Admin routes */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />
