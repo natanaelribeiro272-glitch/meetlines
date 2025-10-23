@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface City {
   id: string;
@@ -36,8 +37,8 @@ export function CitySelect({
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [loading, setLoading] = useState(false);
   const [locationRequested, setLocationRequested] = useState(false);
+  const { getCurrentPosition, loading } = useGeolocation();
 
   useEffect(() => {
     loadCities();
@@ -108,71 +109,58 @@ export function CitySelect({
     setSearchQuery("");
   };
 
-  const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocalização não suportada pelo navegador");
+  const handleUseCurrentLocation = async () => {
+    const position = await getCurrentPosition();
+
+    if (!position) {
+      toast.error("Não foi possível obter sua localização");
       return;
     }
 
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${position.lat}&lon=${position.lon}&format=json`
+      );
+      const data = await response.json();
 
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const data = await response.json();
+      const cityName = data.address.city || data.address.town || data.address.municipality;
 
-          const cityName = data.address.city || data.address.town || data.address.municipality;
+      if (cityName) {
+        let matchingCity = cities.find(
+          (city) => city.name.toLowerCase() === cityName.toLowerCase()
+        );
 
-          if (cityName) {
-            let matchingCity = cities.find(
-              (city) => city.name.toLowerCase() === cityName.toLowerCase()
-            );
+        if (!matchingCity) {
+          const stateName = data.address.state;
+          const stateAbbrev = getStateAbbreviation(stateName);
 
-            if (!matchingCity) {
-              const stateName = data.address.state;
-              const stateAbbrev = getStateAbbreviation(stateName);
+          const { data: newCity, error } = await supabase
+            .from("cities")
+            .insert({ name: cityName, state: stateAbbrev })
+            .select()
+            .single();
 
-              const { data: newCity, error } = await supabase
-                .from("cities")
-                .insert({ name: cityName, state: stateAbbrev })
-                .select()
-                .single();
-
-              if (error) {
-                console.error("Error creating city:", error);
-                toast.error("Erro ao adicionar cidade");
-                setLoading(false);
-                return;
-              }
-
-              matchingCity = newCity;
-              setCities([...cities, newCity]);
-            }
-
-            if (matchingCity) {
-              handleSelectCity(matchingCity);
-              toast.success(`Localização detectada: ${matchingCity.name}`);
-            }
-          } else {
-            toast.error("Não foi possível identificar sua cidade");
+          if (error) {
+            console.error("Error creating city:", error);
+            toast.error("Erro ao adicionar cidade");
+            return;
           }
-        } catch (error) {
-          console.error("Error fetching location:", error);
-          toast.error("Erro ao obter localização");
-        } finally {
-          setLoading(false);
+
+          matchingCity = newCity;
+          setCities([...cities, newCity]);
         }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        toast.error("Erro ao acessar localização");
-        setLoading(false);
+
+        if (matchingCity) {
+          handleSelectCity(matchingCity);
+          toast.success(`Localização detectada: ${matchingCity.name}`);
+        }
+      } else {
+        toast.error("Não foi possível identificar sua cidade");
       }
-    );
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      toast.error("Erro ao obter localização");
+    }
   };
 
   const getStateAbbreviation = (stateName: string): string => {

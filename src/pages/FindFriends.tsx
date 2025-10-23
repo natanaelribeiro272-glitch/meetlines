@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import UserChatDialog from "@/components/UserChatDialog";
@@ -235,45 +236,40 @@ export default function FindFriends({
   const [notesVisible, setNotesVisible] = useState<boolean>(true);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { position: geolocationPosition, error: geolocationError } = useGeolocation({
+    watch: isVisible,
+    enableHighAccuracy: true,
+    timeout: 27000,
+    maximumAge: 30000,
+  });
 
-  // Request geolocation and update user location
+  // Update user location when geolocation changes
   useEffect(() => {
-    if (!user || !isVisible) return;
+    if (!user || !isVisible || !geolocationPosition) return;
 
-    if (!navigator.geolocation) {
-      setLocationError('Geolocalização não suportada pelo navegador');
-      return;
+    const updateLocation = async () => {
+      setUserLocation(geolocationPosition);
+      setLocationError(null);
+
+      await supabase
+        .from('profiles')
+        .update({
+          latitude: geolocationPosition.lat,
+          longitude: geolocationPosition.lon,
+          location_updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+    };
+
+    updateLocation();
+  }, [user, isVisible, geolocationPosition]);
+
+  // Handle geolocation errors
+  useEffect(() => {
+    if (geolocationError) {
+      setLocationError(geolocationError);
     }
-
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lon: longitude });
-        setLocationError(null);
-
-        // Update user location in database
-        await supabase
-          .from('profiles')
-          .update({
-            latitude,
-            longitude,
-            location_updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', user.id);
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setLocationError('Erro ao obter localização. Permita o acesso à localização.');
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 30000,
-        timeout: 27000,
-      }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [user, isVisible]);
+  }, [geolocationError]);
 
   // Load user visibility preference and profile data
   useEffect(() => {
