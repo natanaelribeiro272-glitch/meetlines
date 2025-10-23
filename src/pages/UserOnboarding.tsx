@@ -578,6 +578,7 @@ export default function UserOnboarding() {
                 onChange={setCityId}
                 label="Sua Cidade"
                 placeholder="Selecione sua cidade"
+                autoRequestLocation={true}
               />
 
               <p className="text-xs text-muted-foreground text-center">

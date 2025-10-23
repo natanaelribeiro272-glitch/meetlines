@@ -20,6 +20,7 @@ interface CitySelectProps {
   placeholder?: string;
   required?: boolean;
   showUseLocation?: boolean;
+  autoRequestLocation?: boolean;
 }
 
 export function CitySelect({
@@ -28,17 +29,26 @@ export function CitySelect({
   label = "Cidade",
   placeholder = "Buscar cidade...",
   required = false,
-  showUseLocation = true
+  showUseLocation = true,
+  autoRequestLocation = false
 }: CitySelectProps) {
   const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [loading, setLoading] = useState(false);
+  const [locationRequested, setLocationRequested] = useState(false);
 
   useEffect(() => {
     loadCities();
   }, []);
+
+  useEffect(() => {
+    if (autoRequestLocation && !locationRequested && !value && cities.length > 0) {
+      setLocationRequested(true);
+      handleUseCurrentLocation();
+    }
+  }, [autoRequestLocation, locationRequested, value, cities]);
 
   useEffect(() => {
     if (value) {
