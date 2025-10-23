@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, Heart, Eye, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import RegistrationFormDialog from "@/components/RegistrationFormDialog";
 import TicketConfiguration from "@/components/TicketConfiguration";
+import EventCreatedDialog from "@/components/EventCreatedDialog";
 import { FormField } from "@/components/FormFieldsConfig";
 import { MultiCategorySelect } from "@/components/MultiCategorySelect";
 import { useOrganizer } from "@/hooks/useOrganizer";
@@ -98,6 +100,9 @@ export default function CreateEvent({
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [showCreatedDialog, setShowCreatedDialog] = useState(false);
+  const [createdEventData, setCreatedEventData] = useState<{ id: string; title: string; shareUrl: string } | null>(null);
+  const navigate = useNavigate();
   const [selectedInterest, setSelectedInterest] = useState<string>("");
   const [publicNotes, setPublicNotes] = useState(profile?.notes || "");
   const [notesVisible, setNotesVisible] = useState(true);
@@ -367,8 +372,31 @@ export default function CreateEvent({
           .limit(1)
           .single();
 
-        toast.success('Evento criado com sucesso!');
-        
+        // Generate share URL
+        const slugify = (text: string) =>
+          text
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\w\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .trim();
+
+        const organizerSlug = organizerData?.username ||
+                              (organizerData?.page_title ? slugify(organizerData.page_title) : '') ||
+                              (profile?.display_name ? slugify(profile.display_name) : 'organizador');
+        const eventSlug = slugify(eventData.title);
+        const shareUrl = `${window.location.origin}/${organizerSlug}_${eventSlug}`;
+
+        // Show success dialog
+        setCreatedEventData({
+          id: newEvent.id,
+          title: eventData.title,
+          shareUrl: shareUrl
+        });
+        setShowCreatedDialog(true);
+
         // If platform payment is enabled, save ticket configuration
         if (paymentType === "platform" && newEvent) {
           // Save ticket settings
@@ -417,8 +445,11 @@ export default function CreateEvent({
           if (ticketsError) throw ticketsError;
         }
       }
-      
-      onBack();
+
+      // Don't call onBack() anymore, let the dialog handle navigation
+      if (isEditMode) {
+        onBack();
+      }
     } catch (error) {
       console.error('Error saving event:', error);
       toast.error(isEditMode ? 'Erro ao atualizar evento' : 'Erro ao criar evento');
@@ -847,6 +878,20 @@ export default function CreateEvent({
             fields={formFields}
             onSave={setFormFields}
           />
+
+          {createdEventData && (
+            <EventCreatedDialog
+              open={showCreatedDialog}
+              onOpenChange={setShowCreatedDialog}
+              eventId={createdEventData.id}
+              eventTitle={createdEventData.title}
+              shareUrl={createdEventData.shareUrl}
+              onViewEvent={() => {
+                setShowCreatedDialog(false);
+                navigate(`/e/${createdEventData.id}`);
+              }}
+            />
+          )}
 
           {/* Botões de Ação */}
           <div className="space-y-3">
