@@ -66,55 +66,58 @@ export default function EventPublicPage() {
         let organizerTheme: string = 'dark';
         const deSlug = organizerSlug.replace(/-/g, ' ');
 
-        // 1) Exact match by organizers.username
-        const { data: orgByUsername, error: orgError } = await supabase
+        // 1) Get all organizers with their profiles
+        const { data: organizers, error: orgError } = await supabase
           .from("organizers")
-          .select("id, page_title, user_id, preferred_theme")
-          .eq("username", organizerSlug)
-          .maybeSingle();
-        if (orgError) throw orgError;
-        if (orgByUsername) {
-          organizerId = orgByUsername.id;
-          organizerTheme = orgByUsername.preferred_theme || 'dark';
-        }
+          .select(`
+            id,
+            user_id,
+            page_title,
+            username,
+            preferred_theme,
+            profile:profiles!organizers_user_id_fkey(display_name)
+          `);
 
-        // 2) Match by profiles.display_name (user-friendly name used in share)
-        if (!organizerId) {
-          const { data: profileMatch, error: profileErr } = await supabase
-            .from("profiles")
-            .select("user_id, display_name")
-            .ilike("display_name", `%${deSlug}%`)
-            .maybeSingle();
-          if (profileErr && profileErr.code !== 'PGRST116') throw profileErr; // ignore no rows
-          if (profileMatch) {
-            const { data: orgByUser, error: orgByUserErr } = await supabase
-              .from("organizers")
-              .select("id, user_id, preferred_theme")
-              .eq("user_id", profileMatch.user_id)
-              .maybeSingle();
-            if (orgByUserErr && orgByUserErr.code !== 'PGRST116') throw orgByUserErr;
-            if (orgByUser) {
-              organizerId = orgByUser.id;
-              organizerTheme = orgByUser.preferred_theme || 'dark';
+        if (orgError) throw orgError;
+
+        if (organizers && organizers.length > 0) {
+          // Try to find best match
+          for (const org of organizers) {
+            const profileDisplayName = (org.profile as any)?.display_name || '';
+
+            // Exact match by username
+            if (org.username === organizerSlug) {
+              organizerId = org.id;
+              organizerTheme = org.preferred_theme || 'dark';
+              console.log('Match found by username:', org.username);
+              break;
+            }
+
+            // Match by slugified display_name
+            if (slugify(profileDisplayName) === organizerSlug) {
+              organizerId = org.id;
+              organizerTheme = org.preferred_theme || 'dark';
+              console.log('Match found by display_name:', profileDisplayName);
+              break;
+            }
+
+            // Match by slugified page_title
+            if (org.page_title && slugify(org.page_title) === organizerSlug) {
+              organizerId = org.id;
+              organizerTheme = org.preferred_theme || 'dark';
+              console.log('Match found by page_title:', org.page_title);
+              break;
             }
           }
         }
 
-        // 3) Fallback: match by organizers.page_title (approximate)
         if (!organizerId) {
-          const { data: orgByTitle, error: orgByTitleErr } = await supabase
-            .from("organizers")
-            .select("id, page_title, preferred_theme")
-            .ilike("page_title", `%${deSlug}%`)
-            .maybeSingle();
-          if (orgByTitleErr && orgByTitleErr.code !== 'PGRST116') throw orgByTitleErr;
-          if (orgByTitle) {
-            organizerId = orgByTitle.id;
-            organizerTheme = orgByTitle.preferred_theme || 'dark';
-          }
-        }
-
-        if (!organizerId) {
+          console.error('Nenhum organizador encontrado com slug:', organizerSlug);
+          console.log('Organizadores disponíveis:', organizers?.map(o => ({
+            username: o.username,
+            page_title: o.page_title,
+            display_name: (o.profile as any)?.display_name
+          })));
           setLoading(false);
           toast.error("Organizador não encontrado");
           return;
