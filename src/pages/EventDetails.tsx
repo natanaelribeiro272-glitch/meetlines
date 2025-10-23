@@ -346,115 +346,44 @@ export default function EventDetails({
       return;
     }
 
-    // Para platform events, usar um formato de URL diferente
-    if (event.is_platform_event) {
-      const eventUrl = `${getPublicBaseUrl()}/platform-event/${eventId}`;
+    const shareUrl = `${getPublicBaseUrl()}/e/${eventId}`;
+    const shareTitle = event.title;
+    const shareText = `Confira este evento: ${event.title}`;
 
+    if (navigator.share) {
       try {
-        if (typeof navigator !== "undefined" && (navigator as any).share) {
-          await (navigator as any).share({
-            title: event.title,
-            text: `Confira este evento: ${event.title}`,
-            url: eventUrl,
-          });
-          toast.success("Evento compartilhado!");
-          return;
-        }
-      } catch (error) {
-        // Ignora e tenta fallback
-      }
-
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(eventUrl);
-          toast.success("Link copiado para a área de transferência!");
-          return;
-        }
-      } catch (error) {
-        // Ignora e tenta próximo fallback
-      }
-
-      try {
-        const textarea = document.createElement("textarea");
-        textarea.value = eventUrl;
-        textarea.setAttribute("readonly", "");
-        textarea.style.position = "fixed";
-        textarea.style.opacity = "0";
-        document.body.appendChild(textarea);
-        textarea.select();
-        const successful = document.execCommand("copy");
-        document.body.removeChild(textarea);
-        if (successful) {
-          toast.success("Link copiado!");
-          return;
-        }
-      } catch (error) {
-        // Ignora e tenta último recurso
-      }
-
-      try {
-        window.prompt("Copie o link do evento:", eventUrl);
-        toast.info("Link exibido para copiar.");
-      } catch (error) {
-        toast.error("Não foi possível gerar o link automaticamente.");
-      }
-      return;
-    }
-
-    // Usar formato simples com ID do evento
-    const eventUrl = `${getPublicBaseUrl()}/e/${eventId}`;
-
-    // 1) Tenta compartilhamento nativo
-    try {
-      if (typeof navigator !== "undefined" && (navigator as any).share) {
-        await (navigator as any).share({
-          title: event.title,
-          text: `Confira este evento: ${event.title}`,
-          url: eventUrl,
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
         });
-        toast.success("Evento compartilhado!");
         return;
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          return;
+        }
       }
-    } catch (error) {
-      // Ignora e tenta fallback
     }
 
-    // 2) Tenta copiar via Clipboard API (requer contexto seguro)
     try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(eventUrl);
-        toast.success("Link copiado para a área de transferência!");
-        return;
-      }
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copiado!");
     } catch (error) {
-      // Ignora e tenta próximo fallback
-    }
-
-    // 3) Fallback legado usando document.execCommand('copy')
-    try {
       const textarea = document.createElement("textarea");
-      textarea.value = eventUrl;
-      textarea.setAttribute("readonly", "");
+      textarea.value = shareUrl;
       textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
+      textarea.style.left = "-9999px";
       document.body.appendChild(textarea);
       textarea.select();
-      const successful = document.execCommand("copy");
-      document.body.removeChild(textarea);
-      if (successful) {
-        toast.success("Link copiado!");
-        return;
-      }
-    } catch (error) {
-      // Ignora e tenta último recurso
-    }
 
-    // 4) Último recurso: exibe prompt para o usuário copiar manualmente
-    try {
-      window.prompt("Copie o link do evento:", eventUrl);
-      toast.info("Link exibido para copiar.");
-    } catch (error) {
-      toast.error("Não foi possível gerar o link automaticamente.");
+      try {
+        document.execCommand("copy");
+        toast.success("Link copiado!");
+      } catch (err) {
+        toast.error("Não foi possível copiar o link");
+      }
+
+      document.body.removeChild(textarea);
     }
   };
 
