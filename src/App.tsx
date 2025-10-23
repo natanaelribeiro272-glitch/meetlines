@@ -41,33 +41,39 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* System routes - must come first */}
               <Route path="/" element={<MainLayout />} />
               <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
               <Route path="/organizer-onboarding" element={<OrganizerOnboarding />} />
               <Route path="/user-onboarding" element={<UserOnboarding />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/ticket-success" element={<TicketPurchaseSuccess />} />
-              <Route path="/event/:eventId/sales" element={<EventTicketSales />} />
               <Route path="/my-events" element={<UserEvents />} />
               <Route path="/organizer-financial" element={<OrganizerFinancialPage />} />
-              {/* Admin routes */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />
-            <Route path="/admin/claims" element={<AdminClaimRequests />} />
-            <Route path="/admin/platform-events" element={<AdminPlatformEvents />} />
-            <Route path="/admin/platform-event/:eventId/edit" element={<AdminEditPlatformEvent />} />
-            <Route path="/admin/platform-event/:eventId/registrations" element={<AdminPlatformEventRegistrations />} />
-            <Route path="/admin/support" element={<AdminSupport />} />
-            <Route path="/admin/auto-generate-events" element={<AdminAutoGenerateEvents />} />
-            <Route path="/admin/pending-events" element={<AdminPendingEvents />} />
-            <Route path="/admin/pending-event/:eventId/edit" element={<AdminEditPendingEvent />} />
-            <Route path="/admin/organizer-payments" element={<AdminOrganizerPayments />} />
-            <Route path="/admin/organizer-payments/:organizerId" element={<AdminOrganizerPaymentDetails />} />
-              {/* Public routes - ordem importa: mais específico primeiro */}
+
+              {/* Event routes - specific paths */}
+              <Route path="/event/:eventId/sales" element={<EventTicketSales />} />
               <Route path="/e/:eventId" element={<EventPublicPage />} />
+
+              {/* Admin routes - all start with /admin */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/create-platform-event" element={<AdminCreatePlatformEvent />} />
+              <Route path="/admin/claims" element={<AdminClaimRequests />} />
+              <Route path="/admin/platform-events" element={<AdminPlatformEvents />} />
+              <Route path="/admin/platform-event/:eventId/edit" element={<AdminEditPlatformEvent />} />
+              <Route path="/admin/platform-event/:eventId/registrations" element={<AdminPlatformEventRegistrations />} />
+              <Route path="/admin/support" element={<AdminSupport />} />
+              <Route path="/admin/auto-generate-events" element={<AdminAutoGenerateEvents />} />
+              <Route path="/admin/pending-events" element={<AdminPendingEvents />} />
+              <Route path="/admin/pending-event/:eventId/edit" element={<AdminEditPendingEvent />} />
+              <Route path="/admin/organizer-payments" element={<AdminOrganizerPayments />} />
+              <Route path="/admin/organizer-payments/:organizerId" element={<AdminOrganizerPaymentDetails />} />
+
+              {/* Public dynamic routes - order matters! More specific first */}
               <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
-              <Route path="/:username" element={<PublicOrganizerProfile />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/:slug" element={<PublicOrganizerProfile />} />
+
+              {/* Catch-all - must be last */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
