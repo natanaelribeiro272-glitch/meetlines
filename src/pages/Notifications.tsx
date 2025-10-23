@@ -95,7 +95,7 @@ export default function Notifications() {
     } else if (notification.type === 'user_like') {
       navigate('/find-friends');
     } else if (notification.event_id) {
-      navigate(`/event/${notification.event_id}`);
+      navigate(`/e/${notification.event_id}`);
     }
   };
 

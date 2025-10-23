@@ -136,7 +136,7 @@ export function NotificationDropdown({ onUnauthorizedClick }: NotificationDropdo
     } else if (notification.event_id) {
       // For event notifications, go to the specific event
       setIsOpen(false);
-      navigate(`/event/${notification.event_id}`);
+      navigate(`/e/${notification.event_id}`);
     } else {
       // For other types, just close
       setIsOpen(false);

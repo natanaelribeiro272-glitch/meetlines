@@ -29,6 +29,10 @@ import AdminOrganizerPayments from "./pages/AdminOrganizerPayments";
 import AdminOrganizerPaymentDetails from "./pages/AdminOrganizerPaymentDetails";
 import UserEvents from "./pages/UserEvents";
 import OrganizerFinancialPage from "./pages/OrganizerFinancialPage";
+import EventRegistration from "./pages/EventRegistration";
+import EventRegistrations from "./pages/EventRegistrations";
+import EventAttendances from "./pages/EventAttendances";
+import FindFriends from "./pages/FindFriends";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +57,10 @@ const App = () => (
 
               {/* Event routes - specific paths */}
               <Route path="/event/:eventId/sales" element={<EventTicketSales />} />
+              <Route path="/event/:eventId/register" element={<EventRegistration />} />
+              <Route path="/event/:eventId/registrations" element={<EventRegistrations />} />
+              <Route path="/event/:eventId/attendances" element={<EventAttendances />} />
+              <Route path="/event/:eventId/find-friends" element={<FindFriends />} />
               <Route path="/e/:eventId" element={<EventPublicPage />} />
 
               {/* Admin routes - all start with /admin */}
