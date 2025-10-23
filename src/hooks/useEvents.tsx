@@ -72,9 +72,10 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
               avatar_url
             )
           `)
+          .eq('status', 'upcoming')
           .contains('category', [categoryFilter])
           .order('event_date', { ascending: true });
-
+        
         eventsData = response.data;
         error = response.error;
 
@@ -82,9 +83,10 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
         const platformResponse = await supabase
           .from('platform_events')
           .select('*')
+          .eq('status', 'upcoming')
           .contains('category', [categoryFilter])
           .order('event_date', { ascending: true });
-
+        
         platformEventsData = platformResponse.data;
         platformError = platformResponse.error;
       } else {
@@ -101,8 +103,9 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
               avatar_url
             )
           `)
+          .eq('status', 'upcoming')
           .order('event_date', { ascending: true });
-
+        
         eventsData = response.data;
         error = response.error;
 
@@ -110,6 +113,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
         const platformResponse = await supabase
           .from('platform_events')
           .select('*')
+          .eq('status', 'upcoming')
           .order('event_date', { ascending: true });
         
         platformEventsData = platformResponse.data;
