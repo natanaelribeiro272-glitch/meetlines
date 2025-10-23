@@ -31,43 +31,6 @@ export default function EventPublicPage() {
       try {
         setLoading(true);
 
-        // Se a URL é /e/:eventId, usar o ID diretamente
-        if (params.eventId) {
-          console.log('Usando ID direto do evento:', params.eventId);
-          setEventId(params.eventId);
-
-          // Check if logged user is the organizer
-          if (user) {
-            const { data: event } = await supabase
-              .from('events')
-              .select('organizer_id')
-              .eq('id', params.eventId)
-              .single();
-
-            if (event) {
-              const { data: organizer } = await supabase
-                .from('organizers')
-                .select('user_id, preferred_theme')
-                .eq('id', event.organizer_id)
-                .single();
-
-              if (organizer) {
-                if (organizer.user_id === user.id) {
-                  setIsUserOrganizer(true);
-                }
-
-                // Aplicar tema do organizador
-                const root = document.documentElement;
-                root.classList.remove('dark', 'light');
-                root.classList.add(organizer.preferred_theme || 'dark');
-              }
-            }
-          }
-
-          setLoading(false);
-          return;
-        }
-
         // Detectar formato da URL: organizador_evento ou organizador/evento
         let organizerSlug: string | undefined;
         let eventSlug: string | undefined;
