@@ -65,46 +65,7 @@ export default function TicketConfiguration({
   const [editingTicket, setEditingTicket] = useState<TicketType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-  const [hasFinancialData, setHasFinancialData] = useState<boolean | null>(null);
-  const [stripeConnected, setStripeConnected] = useState<boolean | null>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    checkFinancialData();
-    checkStripeConnection();
-  }, [organizerId]);
-
-  const checkFinancialData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('organizer_financial_data')
-        .select('id, is_verified')
-        .eq('organizer_id', organizerId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setHasFinancialData(!!data);
-    } catch (error) {
-      console.error('Error checking financial data:', error);
-      setHasFinancialData(false);
-    }
-  };
-
-  const checkStripeConnection = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('organizers')
-        .select('stripe_account_id, stripe_charges_enabled')
-        .eq('id', organizerId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setStripeConnected(!!(data?.stripe_account_id && data?.stripe_charges_enabled));
-    } catch (error) {
-      console.error('Error checking Stripe connection:', error);
-      setStripeConnected(false);
-    }
-  };
 
   const handleAddTicket = () => {
     const newTicket: TicketType = {
@@ -169,44 +130,6 @@ export default function TicketConfiguration({
 
   return (
     <div className="space-y-6">
-      {stripeConnected === false && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>
-              Você precisa conectar sua conta Stripe antes de vender ingressos pela plataforma.
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/organizer-profile')}
-              className="ml-4"
-            >
-              Conectar Stripe
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {hasFinancialData === false && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>
-              Você precisa cadastrar seus dados financeiros antes de vender ingressos.
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/organizer-profile')}
-              className="ml-4"
-            >
-              Cadastrar Agora
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Configurações de Taxa */}
       <Card>
         <CardHeader>
@@ -679,26 +602,19 @@ export default function TicketConfiguration({
             </section>
 
             <section>
-              <h3 className="font-semibold mb-2">5. Integração com Stripe</h3>
+              <h3 className="font-semibold mb-2">5. Processamento de Pagamentos</h3>
               <p className="text-muted-foreground">
-                Os pagamentos são processados através do Stripe. Ao aceitar estes termos, você também 
-                concorda com os{" "}
-                <a 
-                  href="https://stripe.com/br/legal/connect-account" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Termos de Serviço do Stripe Connect
-                </a>.
+                Os pagamentos são processados centralmente pela plataforma através do Stripe.
+                Você não precisa ter uma conta Stripe - a plataforma gerencia todos os pagamentos
+                e repassa os valores para você.
               </p>
             </section>
 
             <section>
-              <h3 className="font-semibold mb-2">6. Compliance e Documentação</h3>
+              <h3 className="font-semibold mb-2">6. Dados para Recebimento</h3>
               <p className="text-muted-foreground">
-                O organizador é responsável por fornecer todos os documentos necessários para 
-                validação da conta, incluindo CPF/CNPJ, dados bancários e comprovante de endereço.
+                Para receber os pagamentos, você precisa fornecer seus dados bancários e fiscais
+                (CPF/CNPJ) através da plataforma. Os valores serão transferidos diretamente para sua conta.
               </p>
             </section>
           </div>
