@@ -67,7 +67,8 @@ export default function CreateEvent({
   eventId
 }: CreateEventProps) {
   const {
-    createEvent
+    createEvent,
+    organizerData
   } = useOrganizer();
   const {
     profile,
@@ -800,6 +801,7 @@ export default function CreateEvent({
                   onTicketSettingsChange={setTicketSettings}
                   termsAccepted={termsAccepted}
                   onTermsAccepted={setTermsAccepted}
+                  organizerId={organizerData?.id || ''}
                 />
               </CardContent>
             </Card>

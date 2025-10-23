@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, Upload, UserPlus, UserCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, Upload, UserPlus, UserCheck, X, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
+import OrganizerFinancial from "@/components/OrganizerFinancial";
+import TicketSalesOverview from "@/components/TicketSalesOverview";
 import { useOrganizerStories } from "@/hooks/useOrganizerStories";
 import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { Button } from "@/components/ui/button";
@@ -395,6 +397,8 @@ export default function OrganizerProfile({
         </div>
       </div>;
   }
+  const isOwnProfile = user && organizer.user_id === user.id;
+
   const tabs = [{
     id: "eventos",
     label: "Eventos",
@@ -407,7 +411,11 @@ export default function OrganizerProfile({
     id: "fotos",
     label: "Fotos",
     icon: Camera
-  }];
+  }, ...(isOwnProfile ? [{
+    id: "financeiro",
+    label: "Financeiro",
+    icon: DollarSign
+  }] : [])];
   return <div className="min-h-screen bg-background pb-20">
       {/* Header com capa de fundo */}
       <div className="relative h-[200px] overflow-hidden" style={{
@@ -707,6 +715,33 @@ export default function OrganizerProfile({
                   <EventPhotoGrid eventId={event.id} organizerId={organizer.id} />
                 </div>)}
           </div>}
+
+        {/* Financeiro Tab */}
+        {activeTab === "financeiro" && isOwnProfile && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold">Dados Financeiros</h2>
+                <p className="text-sm text-muted-foreground">
+                  Gerencie suas informações bancárias e fiscais para receber repasses
+                </p>
+              </div>
+              <OrganizerFinancial organizerId={organizer.id} />
+            </div>
+
+            <Separator className="my-8" />
+
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold">Vendas de Ingressos</h2>
+                <p className="text-sm text-muted-foreground">
+                  Acompanhe suas vendas e repasses
+                </p>
+              </div>
+              <TicketSalesOverview organizerId={organizer.id} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Story Viewer */}

@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Plus, Trash2, Edit2, Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, Edit2, Info, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +47,7 @@ interface TicketConfigurationProps {
   onTicketSettingsChange: (settings: TicketSettings) => void;
   onTermsAccepted: (accepted: boolean) => void;
   termsAccepted: boolean;
+  organizerId: string;
 }
 
 export default function TicketConfiguration({
@@ -53,11 +56,34 @@ export default function TicketConfiguration({
   onTicketTypesChange,
   onTicketSettingsChange,
   termsAccepted,
-  onTermsAccepted
+  onTermsAccepted,
+  organizerId
 }: TicketConfigurationProps) {
   const [editingTicket, setEditingTicket] = useState<TicketType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [hasFinancialData, setHasFinancialData] = useState<boolean | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkFinancialData();
+  }, [organizerId]);
+
+  const checkFinancialData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizer_financial_data')
+        .select('id, is_verified')
+        .eq('organizer_id', organizerId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setHasFinancialData(!!data);
+    } catch (error) {
+      console.error('Error checking financial data:', error);
+      setHasFinancialData(false);
+    }
+  };
 
   const handleAddTicket = () => {
     const newTicket: TicketType = {
@@ -122,6 +148,25 @@ export default function TicketConfiguration({
 
   return (
     <div className="space-y-6">
+      {hasFinancialData === false && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              Você precisa cadastrar seus dados financeiros antes de vender ingressos.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/organizer-profile')}
+              className="ml-4"
+            >
+              Cadastrar Agora
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Configurações de Taxa */}
       <Card>
         <CardHeader>
