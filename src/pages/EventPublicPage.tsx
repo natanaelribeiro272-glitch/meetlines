@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useEventPixels } from "@/hooks/useEventPixels";
 
 // Helper to create URL-friendly slugs (same rules used in share)
 const slugify = (text: string) =>
@@ -25,6 +26,7 @@ export default function EventPublicPage() {
   const [eventId, setEventId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUserOrganizer, setIsUserOrganizer] = useState(false);
+  const { trackEvent } = useEventPixels(eventId);
 
   useEffect(() => {
     const resolveEvent = async () => {
