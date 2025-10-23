@@ -64,9 +64,8 @@ const App = () => (
             <Route path="/admin/organizer-payments" element={<AdminOrganizerPayments />} />
             <Route path="/admin/organizer-payments/:organizerId" element={<AdminOrganizerPaymentDetails />} />
               {/* Public routes - ordem importa: mais específico primeiro */}
+              <Route path="/evento/:slug" element={<EventPublicPage />} />
               <Route path="/e/:eventId" element={<EventPublicPage />} />
-              <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
-              <Route path="/:combinedSlug" element={<EventPublicPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

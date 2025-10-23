@@ -75,7 +75,13 @@ export default function EventDetails({
       event.location_link.includes("streamyard") ||
       event.location_link.includes("jitsi"));
 
-  // Verificar se o usuário é organizador
+  useEffect(() => {
+    if (event?.slug && !location.pathname.includes('/evento/')) {
+      const newUrl = `/evento/${event.slug}`;
+      window.history.replaceState(null, '', newUrl);
+    }
+  }, [event?.slug, location.pathname]);
+
   useEffect(() => {
     const checkIfOrganizer = async () => {
       if (!user) {
@@ -346,7 +352,9 @@ export default function EventDetails({
       return;
     }
 
-    const shareUrl = `${window.location.origin}/e/${eventId}`;
+    const shareUrl = event.slug
+      ? `${window.location.origin}/evento/${event.slug}`
+      : `${window.location.origin}/e/${eventId}`;
     const shareTitle = event.title;
     const shareText = `Confira este evento: ${event.title}`;
 
