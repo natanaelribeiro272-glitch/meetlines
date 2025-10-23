@@ -71,6 +71,22 @@ serve(async (req) => {
     }
     logStep("Ticket type found", { ticketType });
 
+    // Check if user is the organizer of the event
+    const { data: organizer, error: organizerError } = await supabaseClient
+      .from("organizers")
+      .select("user_id")
+      .eq("id", ticketType.event.organizer_id)
+      .single();
+
+    if (organizerError) {
+      logStep("Error checking organizer", { error: organizerError });
+    }
+
+    if (organizer && organizer.user_id === user.id) {
+      throw new Error("Organizadores não podem comprar ingressos dos próprios eventos");
+    }
+    logStep("User is not the organizer, proceeding with purchase");
+
     // Get event ticket settings (for fee configuration)
     const { data: ticketSettings, error: settingsError } = await supabaseClient
       .from("event_ticket_settings")
