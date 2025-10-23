@@ -33,93 +33,36 @@ export default function EventPublicPage() {
       try {
         setLoading(true);
 
-        // Se a URL é /evento/:slug, buscar pelo slug
-        if (params.slug) {
-          console.log('Buscando evento pelo slug:', params.slug);
-          const { data: event, error } = await supabase
-            .from('events')
-            .select('id, organizer_id')
-            .eq('slug', params.slug)
-            .maybeSingle();
-
-          if (error) {
-            console.error('Erro ao buscar evento:', error);
-            setLoading(false);
-            return;
-          }
-
-          if (!event) {
-            console.log('Evento não encontrado com slug:', params.slug);
-            setLoading(false);
-            return;
-          }
-
-          setEventId(event.id);
-
-          // Check if logged user is the organizer
-          if (user) {
-            const { data: organizer } = await supabase
-              .from('organizers')
-              .select('user_id, preferred_theme')
-              .eq('id', event.organizer_id)
-              .maybeSingle();
-
-            if (organizer) {
-              if (organizer.user_id === user.id) {
-                setIsUserOrganizer(true);
-              }
-
-              // Aplicar tema do organizador
-              const root = document.documentElement;
-              root.classList.remove('dark', 'light');
-              root.classList.add(organizer.preferred_theme || 'dark');
-            }
-          }
-
-          setLoading(false);
-          return;
-        }
-
-        // Se a URL é /e/:eventId, usar o ID diretamente (fallback)
+        // Se a URL é /e/:eventId, usar o ID diretamente
         if (params.eventId) {
-          console.log('Buscando evento pelo ID:', params.eventId);
-          const { data: event, error: eventError } = await supabase
-            .from('events')
-            .select('id, organizer_id')
-            .eq('id', params.eventId)
-            .maybeSingle();
-
-          if (eventError) {
-            console.error('Erro ao buscar evento:', eventError);
-            setLoading(false);
-            return;
-          }
-
-          if (!event) {
-            console.log('Evento não encontrado com ID:', params.eventId);
-            setLoading(false);
-            return;
-          }
-
-          setEventId(event.id);
+          console.log('Usando ID direto do evento:', params.eventId);
+          setEventId(params.eventId);
 
           // Check if logged user is the organizer
           if (user) {
-            const { data: organizer } = await supabase
-              .from('organizers')
-              .select('user_id, preferred_theme')
-              .eq('id', event.organizer_id)
-              .maybeSingle();
+            const { data: event } = await supabase
+              .from('events')
+              .select('organizer_id')
+              .eq('id', params.eventId)
+              .single();
 
-            if (organizer) {
-              if (organizer.user_id === user.id) {
-                setIsUserOrganizer(true);
+            if (event) {
+              const { data: organizer } = await supabase
+                .from('organizers')
+                .select('user_id, preferred_theme')
+                .eq('id', event.organizer_id)
+                .single();
+
+              if (organizer) {
+                if (organizer.user_id === user.id) {
+                  setIsUserOrganizer(true);
+                }
+
+                // Aplicar tema do organizador
+                const root = document.documentElement;
+                root.classList.remove('dark', 'light');
+                root.classList.add(organizer.preferred_theme || 'dark');
               }
-
-              // Aplicar tema do organizador
-              const root = document.documentElement;
-              root.classList.remove('dark', 'light');
-              root.classList.add(organizer.preferred_theme || 'dark');
             }
           }
 
@@ -127,9 +70,132 @@ export default function EventPublicPage() {
           return;
         }
 
-        console.log('Formato de URL não reconhecido');
-        setLoading(false);
-        return;
+        // Detectar formato da URL: organizador_evento ou organizador/evento
+        let organizerSlug: string | undefined;
+        let eventSlug: string | undefined;
+
+        if (params.combinedSlug && params.combinedSlug.includes('_')) {
+          // Formato: organizador_evento
+          const parts = params.combinedSlug.split('_');
+          organizerSlug = parts[0];
+          eventSlug = parts.slice(1).join('_'); // Caso o nome do evento tenha underline
+        } else if (params.organizerSlug && params.eventSlug) {
+          // Formato: organizador/evento
+          organizerSlug = params.organizerSlug;
+          eventSlug = params.eventSlug;
+        } else if (params.combinedSlug) {
+          // Tentativa de dividir por último hífen se não tiver underline
+          const lastHyphen = params.combinedSlug.lastIndexOf('-');
+          if (lastHyphen > 0) {
+            organizerSlug = params.combinedSlug.substring(0, lastHyphen);
+            eventSlug = params.combinedSlug.substring(lastHyphen + 1);
+          }
+        }
+
+        if (!organizerSlug || !eventSlug) {
+          console.log('Não foi possível extrair organizador e evento da URL');
+          setLoading(false);
+          return;
+        }
+
+        console.log('Procurando evento:', { organizerSlug, eventSlug });
+
+        // Try multiple strategies to resolve organizer
+        let organizerId: string | null = null;
+        let organizerTheme: string = 'dark';
+        const deSlug = organizerSlug.replace(/-/g, ' ');
+
+        // 1) Get all organizers with their profiles
+        const { data: organizers, error: orgError } = await supabase
+          .from("organizers")
+          .select(`
+            id,
+            user_id,
+            page_title,
+            username,
+            preferred_theme,
+            profile:profiles!organizers_user_id_fkey(display_name)
+          `);
+
+        if (orgError) throw orgError;
+
+        if (organizers && organizers.length > 0) {
+          // Try to find best match
+          for (const org of organizers) {
+            const profileDisplayName = (org.profile as any)?.display_name || '';
+
+            // Exact match by username
+            if (org.username === organizerSlug) {
+              organizerId = org.id;
+              organizerTheme = org.preferred_theme || 'dark';
+              console.log('Match found by username:', org.username);
+              break;
+            }
+
+            // Match by slugified display_name
+            if (slugify(profileDisplayName) === organizerSlug) {
+              organizerId = org.id;
+              organizerTheme = org.preferred_theme || 'dark';
+              console.log('Match found by display_name:', profileDisplayName);
+              break;
+            }
+
+            // Match by slugified page_title
+            if (org.page_title && slugify(org.page_title) === organizerSlug) {
+              organizerId = org.id;
+              organizerTheme = org.preferred_theme || 'dark';
+              console.log('Match found by page_title:', org.page_title);
+              break;
+            }
+          }
+        }
+
+        if (!organizerId) {
+          console.error('Nenhum organizador encontrado com slug:', organizerSlug);
+          console.log('Organizadores disponíveis:', organizers?.map(o => ({
+            username: o.username,
+            page_title: o.page_title,
+            display_name: (o.profile as any)?.display_name
+          })));
+          setLoading(false);
+          toast.error("Organizador não encontrado");
+          return;
+        }
+
+        // Aplicar tema do organizador
+        const root = document.documentElement;
+        root.classList.remove('dark', 'light');
+        root.classList.add(organizerTheme);
+
+        // Fetch this organizer's events and find by slugified title on the client (case-insensitive)
+        const { data: events, error: eventsError } = await supabase
+          .from("events")
+          .select("id, title, organizer_id")
+          .eq("organizer_id", organizerId);
+        if (eventsError) throw eventsError;
+
+        const targetSlug = eventSlug.toLowerCase();
+        const match = (events || []).find((ev) => slugify(ev.title) === targetSlug);
+        if (!match) {
+          setLoading(false);
+          toast.error("Evento não encontrado");
+          return;
+        }
+
+        setEventId(match.id);
+
+        // Check if logged user is the organizer
+        if (user) {
+          const { data: organizer } = await supabase
+            .from('organizers')
+            .select('user_id')
+            .eq('id', match.organizer_id)
+            .single();
+          
+          if (organizer && organizer.user_id === user.id) {
+            setIsUserOrganizer(true);
+          }
+        }
       } catch (e) {
         console.error("Error resolving event by slug:", e);
         toast.error("Erro ao carregar evento");
@@ -147,7 +213,7 @@ export default function EventPublicPage() {
       root.classList.remove('dark', 'light');
       root.classList.add(savedTheme);
     };
-  }, [params.slug, params.eventId, user]);
+  }, [params.organizerSlug, params.eventSlug, params.combinedSlug, user]);
 
   if (loading) {
     return (

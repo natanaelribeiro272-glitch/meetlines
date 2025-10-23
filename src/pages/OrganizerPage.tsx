@@ -205,49 +205,10 @@ export default function OrganizerPage() {
     }
   };
 
-  const handleShareLink = async () => {
-    if (!organizerData?.username) {
-      toast.error('Configuração de username necessária');
-      return;
-    }
-
-    const url = `${window.location.origin}/${organizerData.username}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: organizerData.page_title || 'Meu perfil',
-          text: 'Confira meu perfil de organizador',
-          url: url,
-        });
-        return;
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
-          return;
-        }
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Link copiado!');
-    } catch (error) {
-      const textarea = document.createElement("textarea");
-      textarea.value = url;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-
-      try {
-        document.execCommand("copy");
-        toast.success('Link copiado!');
-      } catch (err) {
-        toast.error('Não foi possível copiar o link');
-      }
-
-      document.body.removeChild(textarea);
-    }
+  const handleShareLink = () => {
+    const url = `${window.location.origin}/${organizerData?.username}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link copiado para a área de transferência!');
   };
 
   const handlePhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

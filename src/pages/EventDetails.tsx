@@ -75,7 +75,7 @@ export default function EventDetails({
       event.location_link.includes("streamyard") ||
       event.location_link.includes("jitsi"));
 
-
+  // Verificar se o usuário é organizador
   useEffect(() => {
     const checkIfOrganizer = async () => {
       if (!user) {
@@ -346,26 +346,22 @@ export default function EventDetails({
       return;
     }
 
-    const shareUrl = event.slug
-      ? `${window.location.origin}/evento/${event.slug}`
-      : `${window.location.origin}/e/${eventId}`;
-
-    console.log('Compartilhando evento:', { slug: event.slug, url: shareUrl });
+    const shareUrl = `${getPublicBaseUrl()}/e/${eventId}`;
+    const shareTitle = event.title;
+    const shareText = `Confira este evento: ${event.title}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: event.title,
-          text: `Confira este evento: ${event.title}`,
+          title: shareTitle,
+          text: shareText,
           url: shareUrl,
         });
-        toast.success("Compartilhado!");
         return;
       } catch (error: any) {
         if (error.name === 'AbortError') {
           return;
         }
-        console.log('Erro ao compartilhar nativamente, tentando copiar:', error);
       }
     }
 
@@ -373,7 +369,6 @@ export default function EventDetails({
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Link copiado!");
     } catch (error) {
-      console.log('Erro ao copiar com clipboard API, tentando fallback:', error);
       const textarea = document.createElement("textarea");
       textarea.value = shareUrl;
       textarea.style.position = "fixed";
@@ -382,18 +377,13 @@ export default function EventDetails({
       textarea.select();
 
       try {
-        const success = document.execCommand("copy");
-        document.body.removeChild(textarea);
-        if (success) {
-          toast.success("Link copiado!");
-        } else {
-          toast.error("Não foi possível copiar o link");
-        }
+        document.execCommand("copy");
+        toast.success("Link copiado!");
       } catch (err) {
-        document.body.removeChild(textarea);
         toast.error("Não foi possível copiar o link");
-        console.error('Erro no fallback:', err);
       }
+
+      document.body.removeChild(textarea);
     }
   };
 
