@@ -767,7 +767,7 @@ export default function OrganizerPage() {
                       <h3 className="text-lg md:text-xl font-bold text-foreground">Gestão Financeira</h3>
                     </div>
                     <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                      Acompanhe suas vendas de ingressos e gerencie seus repasses
+                      Visão consolidada de todos os seus eventos, vendas de ingressos e repasses
                     </p>
                   </div>
                   <Button
