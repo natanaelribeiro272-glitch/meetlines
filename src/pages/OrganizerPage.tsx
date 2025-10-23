@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Edit3, Share2, MapPin, Upload, User, Settings, List, Camera, Instagram, Phone, Music, Globe, Image, Trash2, ExternalLink } from "lucide-react";
+import { Edit3, Share2, MapPin, Upload, User, Settings, List, Camera, Instagram, Phone, Music, Globe, Image, Trash2, ExternalLink, DollarSign } from "lucide-react";
+import OrganizerFinancial from "@/components/OrganizerFinancial";
+import TicketSalesOverview from "@/components/TicketSalesOverview";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
@@ -345,6 +347,10 @@ export default function OrganizerPage() {
             <TabsTrigger value="photos" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Fotos
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Financeiro
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -845,6 +851,28 @@ export default function OrganizerPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="financial" className="space-y-6">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold">Dados Financeiros</h2>
+                <p className="text-muted-foreground">
+                  Gerencie suas informações bancárias e fiscais para receber repasses
+                </p>
+              </div>
+              {organizerData?.id && <OrganizerFinancial organizerId={organizerData.id} />}
+
+              <div className="border-t pt-6">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold">Vendas de Ingressos</h2>
+                  <p className="text-muted-foreground">
+                    Acompanhe suas vendas e repasses
+                  </p>
+                </div>
+                {organizerData?.id && <TicketSalesOverview organizerId={organizerData.id} />}
+              </div>
             </div>
           </TabsContent>
 
