@@ -346,7 +346,7 @@ export default function EventDetails({
       return;
     }
 
-    const shareUrl = `${getPublicBaseUrl()}/e/${eventId}`;
+    const shareUrl = `${window.location.origin}/e/${eventId}`;
     const shareTitle = event.title;
     const shareText = `Confira este evento: ${event.title}`;
 
