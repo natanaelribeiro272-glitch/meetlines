@@ -122,29 +122,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Clear all sessions globally
       await supabase.auth.signOut({ scope: 'global' });
-      
+
       // Force clear local state
       setSession(null);
       setUser(null);
       setUserRole(null);
-      
+
       toast.success('Logout realizado com sucesso!');
-      
-      // Force redirect to auth after a brief delay to ensure state is cleared
+
+      // Redirect to home page instead of /auth to avoid routing issues
       setTimeout(() => {
-        window.location.href = '/auth';
+        window.location.href = '/';
       }, 100);
     } catch (error: any) {
       // Force clear local state even on error
       setSession(null);
       setUser(null);
       setUserRole(null);
-      
+
       console.error('Logout error:', error);
-      
-      // Still redirect to auth
+
+      // Still redirect to home
       setTimeout(() => {
-        window.location.href = '/auth';
+        window.location.href = '/';
       }, 100);
     }
   };
