@@ -90,8 +90,21 @@ export default function AdminClaimRequests() {
       if (fetchError) throw fetchError;
       if (!platformEvent) throw new Error('Evento não encontrado');
 
-      // Create event for organizer
-      const { error: createError } = await supabase
+      // Check if event already exists for this organizer
+      const { data: existingEvent } = await supabase
+        .from('events')
+        .select('id')
+        .eq('organizer_id', organizerId)
+        .eq('title', platformEvent.title)
+        .maybeSingle();
+
+      if (existingEvent) {
+        toast.error('Este evento já foi criado para este organizador');
+        return;
+      }
+
+      // Create event for organizer with all details
+      const { data: newEvent, error: createError } = await supabase
         .from('events')
         .insert({
           organizer_id: organizerId,
@@ -106,15 +119,22 @@ export default function AdminClaimRequests() {
           max_attendees: platformEvent.max_attendees,
           ticket_price: platformEvent.ticket_price,
           ticket_link: platformEvent.ticket_link,
-          status: platformEvent.status
-        });
+          status: platformEvent.status || 'upcoming',
+          current_attendees: 0,
+          is_live: false
+        })
+        .select()
+        .single();
 
       if (createError) throw createError;
 
       // Update platform event as claimed
       const { error: eventError } = await supabase
         .from('platform_events')
-        .update({ claimed_by_organizer_id: organizerId })
+        .update({
+          claimed_by_organizer_id: organizerId,
+          approval_status: 'approved'
+        })
         .eq('id', platformEventId);
 
       if (eventError) throw eventError;
@@ -131,7 +151,7 @@ export default function AdminClaimRequests() {
 
       if (updateError) throw updateError;
 
-      toast.success('Solicitação aprovada! Evento criado para o organizador.');
+      toast.success('Solicitação aprovada! Evento criado para o organizador e já está disponível no perfil dele.');
       fetchRequests();
     } catch (error: any) {
       console.error('Error approving request:', error);

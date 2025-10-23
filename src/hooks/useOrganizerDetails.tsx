@@ -116,13 +116,12 @@ export function useOrganizerDetails(organizerId: string | null) {
 
       setOrganizer(organizerWithDetails);
 
-      // Buscar eventos públicos do organizador
+      // Buscar eventos públicos do organizador (todos os status)
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('*')
         .eq('organizer_id', organizerId)
-        .eq('status', 'upcoming')
-        .order('event_date', { ascending: true });
+        .order('event_date', { ascending: false });
 
       if (eventsError) throw eventsError;
 
