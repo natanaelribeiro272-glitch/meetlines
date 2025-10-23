@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Edit3, Share2, MapPin, Upload, User, Settings, List, Camera, Instagram, Phone, Music, Globe, Image, Trash2, ExternalLink, DollarSign } from "lucide-react";
 import OrganizerFinancial from "@/components/OrganizerFinancial";
 import TicketSalesOverview from "@/components/TicketSalesOverview";
@@ -24,6 +25,7 @@ import EventAttendances from "@/pages/EventAttendances";
 import { getPublicBaseUrl } from "@/config/site";
 
 export default function OrganizerPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showRegistrations, setShowRegistrations] = useState(false);
@@ -776,7 +778,7 @@ export default function OrganizerPage() {
                       if (window.innerWidth < 768) {
                         window.open(window.location.origin + '/organizer-financial', '_blank');
                       } else {
-                        window.location.href = '/organizer-financial';
+                        navigate('/organizer-financial');
                       }
                     }}
                   >
