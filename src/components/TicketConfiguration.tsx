@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import EventPixelsIntegration from "@/components/EventPixelsIntegration";
 
 export interface TicketType {
   id: string;
@@ -49,7 +48,6 @@ interface TicketConfigurationProps {
   onTermsAccepted: (accepted: boolean) => void;
   termsAccepted: boolean;
   organizerId: string;
-  eventId?: string;
 }
 
 export default function TicketConfiguration({
@@ -59,8 +57,7 @@ export default function TicketConfiguration({
   onTicketSettingsChange,
   termsAccepted,
   onTermsAccepted,
-  organizerId,
-  eventId
+  organizerId
 }: TicketConfigurationProps) {
   const [editingTicket, setEditingTicket] = useState<TicketType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -386,11 +383,6 @@ export default function TicketConfiguration({
           )}
         </CardContent>
       </Card>
-
-      {/* Integrações de Pixels */}
-      {eventId && ticketTypes.length > 0 && (
-        <EventPixelsIntegration eventId={eventId} />
-      )}
 
       {/* Termos e Condições */}
       <Card>

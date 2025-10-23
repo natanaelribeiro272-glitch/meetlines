@@ -20,7 +20,6 @@ import { AuthModal } from "@/components/AuthModal";
 import { TicketPurchaseDialog } from "@/components/TicketPurchaseDialog";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useAuth } from "@/hooks/useAuth";
-import { useEventPixels } from "@/hooks/useEventPixels";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -47,7 +46,6 @@ export default function EventDetails({
 }: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
   const { user, userRole } = useAuth();
-  const { trackEvent } = useEventPixels(eventId);
   const navigate = useNavigate();
   const location = useLocation();
   const [newComment, setNewComment] = useState("");
@@ -75,7 +73,7 @@ export default function EventDetails({
       event.location_link.includes("streamyard") ||
       event.location_link.includes("jitsi"));
 
-
+  // Verificar se o usuário é organizador
   useEffect(() => {
     const checkIfOrganizer = async () => {
       if (!user) {
@@ -258,13 +256,6 @@ export default function EventDetails({
 
         setHasConfirmedAttendance(true);
         toast.success("Presença confirmada com sucesso!");
-
-        trackEvent("CompleteRegistration", {
-          event_name: event?.title,
-          event_id: eventId,
-          value: 0,
-          currency: "BRL"
-        });
       } catch (error) {
         console.error("Error:", error);
         toast.error("Erro ao confirmar presença");
@@ -346,54 +337,115 @@ export default function EventDetails({
       return;
     }
 
-    const shareUrl = event.slug
-      ? `${window.location.origin}/evento/${event.slug}`
-      : `${window.location.origin}/e/${eventId}`;
+    // Para platform events, usar um formato de URL diferente
+    if (event.is_platform_event) {
+      const eventUrl = `${getPublicBaseUrl()}/platform-event/${eventId}`;
 
-    console.log('Compartilhando evento:', { slug: event.slug, url: shareUrl });
-
-    if (navigator.share) {
       try {
-        await navigator.share({
-          title: event.title,
-          text: `Confira este evento: ${event.title}`,
-          url: shareUrl,
-        });
-        toast.success("Compartilhado!");
-        return;
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
+        if (typeof navigator !== "undefined" && (navigator as any).share) {
+          await (navigator as any).share({
+            title: event.title,
+            text: `Confira este evento: ${event.title}`,
+            url: eventUrl,
+          });
+          toast.success("Evento compartilhado!");
           return;
         }
-        console.log('Erro ao compartilhar nativamente, tentando copiar:', error);
+      } catch (error) {
+        // Ignora e tenta fallback
       }
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Link copiado!");
-    } catch (error) {
-      console.log('Erro ao copiar com clipboard API, tentando fallback:', error);
-      const textarea = document.createElement("textarea");
-      textarea.value = shareUrl;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
 
       try {
-        const success = document.execCommand("copy");
-        document.body.removeChild(textarea);
-        if (success) {
-          toast.success("Link copiado!");
-        } else {
-          toast.error("Não foi possível copiar o link");
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(eventUrl);
+          toast.success("Link copiado para a área de transferência!");
+          return;
         }
-      } catch (err) {
-        document.body.removeChild(textarea);
-        toast.error("Não foi possível copiar o link");
-        console.error('Erro no fallback:', err);
+      } catch (error) {
+        // Ignora e tenta próximo fallback
       }
+
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = eventUrl;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        if (successful) {
+          toast.success("Link copiado!");
+          return;
+        }
+      } catch (error) {
+        // Ignora e tenta último recurso
+      }
+
+      try {
+        window.prompt("Copie o link do evento:", eventUrl);
+        toast.info("Link exibido para copiar.");
+      } catch (error) {
+        toast.error("Não foi possível gerar o link automaticamente.");
+      }
+      return;
+    }
+
+    // Usar formato simples com ID do evento
+    const eventUrl = `${getPublicBaseUrl()}/e/${eventId}`;
+
+    // 1) Tenta compartilhamento nativo
+    try {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share({
+          title: event.title,
+          text: `Confira este evento: ${event.title}`,
+          url: eventUrl,
+        });
+        toast.success("Evento compartilhado!");
+        return;
+      }
+    } catch (error) {
+      // Ignora e tenta fallback
+    }
+
+    // 2) Tenta copiar via Clipboard API (requer contexto seguro)
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(eventUrl);
+        toast.success("Link copiado para a área de transferência!");
+        return;
+      }
+    } catch (error) {
+      // Ignora e tenta próximo fallback
+    }
+
+    // 3) Fallback legado usando document.execCommand('copy')
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = eventUrl;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (successful) {
+        toast.success("Link copiado!");
+        return;
+      }
+    } catch (error) {
+      // Ignora e tenta último recurso
+    }
+
+    // 4) Último recurso: exibe prompt para o usuário copiar manualmente
+    try {
+      window.prompt("Copie o link do evento:", eventUrl);
+      toast.info("Link exibido para copiar.");
+    } catch (error) {
+      toast.error("Não foi possível gerar o link automaticamente.");
     }
   };
 
@@ -676,7 +728,7 @@ export default function EventDetails({
         {/* Action Buttons */}
         <div className="space-y-3 mb-6">
           {/* Botão de Comprar Ingresso - Link externo */}
-          {!isOrganizer && event.ticket_link && (
+          {event.ticket_link && (
             <Button
               variant="default"
               className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -688,7 +740,7 @@ export default function EventDetails({
           )}
 
           {/* Botão de Comprar Ingresso - Venda na Plataforma (Stripe) */}
-          {!isOrganizer && event.has_platform_tickets && event.ticket_types && event.ticket_types.length > 0 && (
+          {event.has_platform_tickets && event.ticket_types && event.ticket_types.length > 0 && (
             <Button
               variant="default"
               className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -696,12 +748,6 @@ export default function EventDetails({
               onClick={() => {
                 requireAuth(() => {
                   setTicketDialogOpen(true);
-                  trackEvent("InitiateCheckout", {
-                    event_name: event?.title,
-                    event_id: eventId,
-                    value: Math.min(...event.ticket_types!.map(t => t.price)),
-                    currency: "BRL"
-                  });
                 }, "comprar ingressos");
               }}
             >

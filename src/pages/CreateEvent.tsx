@@ -802,7 +802,6 @@ export default function CreateEvent({
                   termsAccepted={termsAccepted}
                   onTermsAccepted={setTermsAccepted}
                   organizerId={organizerData?.id || ''}
-                  eventId={eventId}
                 />
               </CardContent>
             </Card>
