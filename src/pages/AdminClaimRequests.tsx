@@ -327,7 +327,7 @@ export default function AdminClaimRequests() {
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/@${request.organizers.username}`)}
+                    onClick={() => navigate(`/${request.organizers.username}`)}
                     className="flex-1 min-w-[200px]"
                   >
                     <ExternalLink className="mr-2 h-4 w-4" />

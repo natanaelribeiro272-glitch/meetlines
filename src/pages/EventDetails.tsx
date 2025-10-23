@@ -649,7 +649,14 @@ export default function EventDetails({
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-2">{event.title}</h1>
 
-          <div className="flex items-center gap-3 mb-4">
+          <div
+            className={`flex items-center gap-3 mb-4 ${!event.is_platform_event ? 'cursor-pointer hover:bg-accent/50 -mx-2 px-2 py-2 rounded-lg transition-colors' : ''}`}
+            onClick={() => {
+              if (!event.is_platform_event && event.organizer?.username) {
+                navigate(`/${event.organizer.username}`);
+              }
+            }}
+          >
             <Avatar className="h-10 w-10">
               {event.organizer?.profile?.avatar_url ? (
                 <AvatarImage src={event.organizer.profile.avatar_url} />
@@ -659,7 +666,7 @@ export default function EventDetails({
                 </AvatarFallback>
               )}
             </Avatar>
-            <div>
+            <div className="flex-1">
               <p className="font-medium text-foreground">
                 {event.organizer?.profile?.display_name || event.organizer?.page_title || "Organizador"}
               </p>
