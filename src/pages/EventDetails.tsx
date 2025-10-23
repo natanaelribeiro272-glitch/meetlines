@@ -75,12 +75,6 @@ export default function EventDetails({
       event.location_link.includes("streamyard") ||
       event.location_link.includes("jitsi"));
 
-  useEffect(() => {
-    if (event?.slug && !location.pathname.includes('/evento/')) {
-      const newUrl = `/evento/${event.slug}`;
-      window.history.replaceState(null, '', newUrl);
-    }
-  }, [event?.slug, location.pathname]);
 
   useEffect(() => {
     const checkIfOrganizer = async () => {
