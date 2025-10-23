@@ -728,7 +728,7 @@ export default function EventDetails({
         {/* Action Buttons */}
         <div className="space-y-3 mb-6">
           {/* Botão de Comprar Ingresso - Link externo */}
-          {event.ticket_link && (
+          {!isOrganizer && event.ticket_link && (
             <Button
               variant="default"
               className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -740,7 +740,7 @@ export default function EventDetails({
           )}
 
           {/* Botão de Comprar Ingresso - Venda na Plataforma (Stripe) */}
-          {event.has_platform_tickets && event.ticket_types && event.ticket_types.length > 0 && (
+          {!isOrganizer && event.has_platform_tickets && event.ticket_types && event.ticket_types.length > 0 && (
             <Button
               variant="default"
               className="w-full bg-green-600 hover:bg-green-700 text-white"
