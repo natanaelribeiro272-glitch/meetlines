@@ -241,20 +241,6 @@ export default function CreateEvent({
         return;
       }
 
-      // Verificar se o Stripe Connect está configurado
-      if (organizerData?.id) {
-        const { data: orgData } = await supabase
-          .from('organizers')
-          .select('stripe_account_id, stripe_charges_enabled')
-          .eq('id', organizerData.id)
-          .maybeSingle();
-
-        if (!orgData?.stripe_account_id || !orgData?.stripe_charges_enabled) {
-          toast.error('Conecte sua conta Stripe antes de vender ingressos pela plataforma');
-          return;
-        }
-      }
-
       if (ticketTypes.length === 0) {
         toast.error('Configure pelo menos um tipo de ingresso');
         return;
