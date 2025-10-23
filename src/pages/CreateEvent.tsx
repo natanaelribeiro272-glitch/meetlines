@@ -240,6 +240,21 @@ export default function CreateEvent({
         setShowPlatformAlert(true);
         return;
       }
+
+      // Verificar se o Stripe Connect está configurado
+      if (organizerData?.id) {
+        const { data: orgData } = await supabase
+          .from('organizers')
+          .select('stripe_account_id, stripe_charges_enabled')
+          .eq('id', organizerData.id)
+          .maybeSingle();
+
+        if (!orgData?.stripe_account_id || !orgData?.stripe_charges_enabled) {
+          toast.error('Conecte sua conta Stripe antes de vender ingressos pela plataforma');
+          return;
+        }
+      }
+
       if (ticketTypes.length === 0) {
         toast.error('Configure pelo menos um tipo de ingresso');
         return;
@@ -337,6 +352,7 @@ export default function CreateEvent({
           form_fields: requiresRegistration ? formFields : [],
           ticket_price: paymentType === "external" && eventData.ticketPrice ? parseFloat(eventData.ticketPrice) : 0,
           ticket_link: paymentType === "external" ? eventData.ticketLink || null : null,
+          has_platform_tickets: paymentType === "platform",
           ...(paymentType === "platform" && {
             pix_key: pixKey || null,
             bank_name: bankName || null,

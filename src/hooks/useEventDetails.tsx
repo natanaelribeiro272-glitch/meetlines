@@ -255,13 +255,14 @@ export function useEventDetails(eventId: string | null) {
       // Buscar tipos de ingresso se o evento tem venda na plataforma
       let ticketTypes: any[] = [];
       let hasPlatformTickets = false;
-      if (!isPlatformEvent) {
+      if (!isPlatformEvent && eventData?.has_platform_tickets) {
         const { data: ticketsData } = await supabase
           .from('ticket_types')
           .select('*')
           .eq('event_id', eventId)
-          .order('price', { ascending: true });
-        
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
         if (ticketsData && ticketsData.length > 0) {
           ticketTypes = ticketsData;
           hasPlatformTickets = true;

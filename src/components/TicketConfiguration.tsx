@@ -66,10 +66,12 @@ export default function TicketConfiguration({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [hasFinancialData, setHasFinancialData] = useState<boolean | null>(null);
+  const [stripeConnected, setStripeConnected] = useState<boolean | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     checkFinancialData();
+    checkStripeConnection();
   }, [organizerId]);
 
   const checkFinancialData = async () => {
@@ -85,6 +87,22 @@ export default function TicketConfiguration({
     } catch (error) {
       console.error('Error checking financial data:', error);
       setHasFinancialData(false);
+    }
+  };
+
+  const checkStripeConnection = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizers')
+        .select('stripe_account_id, stripe_charges_enabled')
+        .eq('id', organizerId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setStripeConnected(!!(data?.stripe_account_id && data?.stripe_charges_enabled));
+    } catch (error) {
+      console.error('Error checking Stripe connection:', error);
+      setStripeConnected(false);
     }
   };
 
@@ -151,6 +169,25 @@ export default function TicketConfiguration({
 
   return (
     <div className="space-y-6">
+      {stripeConnected === false && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              Você precisa conectar sua conta Stripe antes de vender ingressos pela plataforma.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/organizer-profile')}
+              className="ml-4"
+            >
+              Conectar Stripe
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {hasFinancialData === false && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
