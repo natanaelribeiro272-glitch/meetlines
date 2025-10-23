@@ -232,7 +232,7 @@ export function CitySelect({
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
-        {searchQuery && (
+        {(!selectedCity || searchQuery) && (
           <ScrollArea className="h-[200px] w-full border rounded-md">
             <div className="p-2 space-y-1">
               {Object.entries(groupedCities).length === 0 ? (
