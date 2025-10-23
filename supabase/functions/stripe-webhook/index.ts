@@ -67,6 +67,29 @@ Deno.serve(async (req: Request) => {
     );
 
     switch (event.type) {
+      case "account.updated": {
+        const account = event.data.object as Stripe.Account;
+        logStep("Processing account.updated", { accountId: account.id });
+
+        const { error: updateError } = await supabaseService
+          .from("organizers")
+          .update({
+            stripe_account_status: account.charges_enabled && account.payouts_enabled ? "active" : "pending",
+            stripe_onboarding_completed: account.details_submitted || false,
+            stripe_charges_enabled: account.charges_enabled || false,
+            stripe_payouts_enabled: account.payouts_enabled || false,
+            stripe_details_submitted: account.details_submitted || false,
+          })
+          .eq("stripe_account_id", account.id);
+
+        if (updateError) {
+          logStep("Error updating organizer from account.updated", { error: updateError });
+        } else {
+          logStep("Organizer account status updated", { accountId: account.id });
+        }
+        break;
+      }
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         logStep("Processing checkout.session.completed", { sessionId: session.id });

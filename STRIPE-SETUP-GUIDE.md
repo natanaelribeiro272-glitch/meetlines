@@ -1,6 +1,20 @@
 # Guia de Configuração do Stripe - Venda de Ingressos
 
-Este guia detalha como configurar a integração do Stripe para venda de ingressos no seu projeto.
+⚠️ **IMPORTANTE**: Este projeto utiliza **Stripe Connect**. Consulte o arquivo `STRIPE-CONNECT-SETUP.md` para instruções completas e detalhadas.
+
+Este guia contém informações básicas. Para configuração completa do Stripe Connect (recomendado), veja: **STRIPE-CONNECT-SETUP.md**
+
+---
+
+## Arquitetura do Sistema
+
+Este projeto usa **Stripe Connect** onde:
+- Cada organizador tem sua própria conta Stripe
+- Pagamentos vão diretamente para o organizador
+- Plataforma cobra taxa automaticamente
+- Organizadores fazem onboarding individualmente
+
+---
 
 ## Pré-requisitos
 
@@ -47,6 +61,7 @@ O webhook permite que o Stripe notifique automaticamente seu sistema quando um p
    - **Endpoint URL**: `https://[SEU-PROJECT-ID].supabase.co/functions/v1/stripe-webhook`
    - Substitua `[SEU-PROJECT-ID]` pelo ID do seu projeto Supabase
 4. Em **Events to send**, selecione:
+   - `account.updated` - Para Stripe Connect
    - `checkout.session.completed`
    - `checkout.session.expired`
    - `payment_intent.succeeded`

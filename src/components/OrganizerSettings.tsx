@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
+import { StripeConnectOnboarding } from "@/components/StripeConnectOnboarding";
 export default function OrganizerSettings() {
   const navigate = useNavigate();
   const {
@@ -162,6 +163,9 @@ export default function OrganizerSettings() {
         <Shield className="h-5 w-5 text-primary" />
         <h2 className="text-xl font-bold text-foreground">Configurações</h2>
       </div>
+
+      {/* Stripe Connect */}
+      <StripeConnectOnboarding />
 
       {/* Account Settings */}
       <Card>

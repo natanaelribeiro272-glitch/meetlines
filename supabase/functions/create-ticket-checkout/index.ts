@@ -74,21 +74,28 @@ Deno.serve(async (req: Request) => {
     }
     logStep("Ticket type found", { ticketType });
 
-    // Check if user is the organizer of the event
+    // Check if user is the organizer of the event and get Stripe Connect account
     const { data: organizer, error: organizerError } = await supabaseClient
       .from("organizers")
-      .select("user_id")
+      .select("user_id, stripe_account_id, stripe_charges_enabled")
       .eq("id", ticketType.event.organizer_id)
       .single();
 
-    if (organizerError) {
-      logStep("Error checking organizer", { error: organizerError });
+    if (organizerError || !organizer) {
+      throw new Error("Organizer not found");
     }
 
-    if (organizer && organizer.user_id === user.id) {
+    if (organizer.user_id === user.id) {
       throw new Error("Organizadores não podem comprar ingressos dos próprios eventos");
     }
-    logStep("User is not the organizer, proceeding with purchase");
+
+    if (!organizer.stripe_account_id || !organizer.stripe_charges_enabled) {
+      throw new Error("Este organizador ainda não configurou pagamentos. Entre em contato com o organizador.");
+    }
+
+    logStep("User is not the organizer, proceeding with purchase", {
+      stripeAccountId: organizer.stripe_account_id
+    });
 
     // Get event ticket settings (for fee configuration)
     const { data: ticketSettings, error: settingsError } = await supabaseClient
@@ -105,11 +112,25 @@ Deno.serve(async (req: Request) => {
     // Calculate fees
     const subtotal = ticketType.price * quantity;
     const platformFee = subtotal * (ticketSettings.platform_fee_percentage / 100);
-    const processingFee = subtotal * (ticketSettings.payment_processing_fee_percentage / 100) + 
+    const processingFee = subtotal * (ticketSettings.payment_processing_fee_percentage / 100) +
                           (ticketSettings.payment_processing_fee_fixed * quantity);
-    const totalAmount = subtotal + platformFee + processingFee;
 
-    logStep("Fees calculated", { subtotal, platformFee, processingFee, totalAmount });
+    // Calculate application fee (platform keeps this)
+    const applicationFeeAmount = Math.round((platformFee + processingFee) * 100);
+
+    // Total amount buyer pays
+    const totalAmount = ticketSettings.fee_payer === 'buyer'
+      ? subtotal + platformFee + processingFee
+      : subtotal;
+
+    logStep("Fees calculated", {
+      subtotal,
+      platformFee,
+      processingFee,
+      totalAmount,
+      applicationFeeAmount,
+      feePayer: ticketSettings.fee_payer
+    });
 
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -167,8 +188,8 @@ Deno.serve(async (req: Request) => {
     }
     logStep("Sale record created", { saleId: saleData.id });
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Create Stripe checkout session with Connect (destination charge)
+    const sessionParams: any = {
       customer: customerId,
       line_items: [
         {
@@ -178,7 +199,7 @@ Deno.serve(async (req: Request) => {
               name: `${ticketType.name} - ${ticketType.event.title}`,
               description: ticketType.description || undefined,
             },
-            unit_amount: Math.round(totalAmount * 100), // Convert to cents
+            unit_amount: Math.round(totalAmount * 100),
           },
           quantity: 1,
         },
@@ -186,12 +207,21 @@ Deno.serve(async (req: Request) => {
       mode: "payment",
       success_url: `${req.headers.get("origin")}/ticket-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/event/${eventId}?payment=cancelled`,
+      payment_intent_data: {
+        application_fee_amount: applicationFeeAmount,
+        transfer_data: {
+          destination: organizer.stripe_account_id,
+        },
+      },
       metadata: {
         ticket_sale_id: saleData.id,
         event_id: eventId,
         user_id: user.id,
+        organizer_id: ticketType.event.organizer_id,
       },
-    });
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     // Update sale record with Stripe session ID
       const { error: updateError } = await supabaseService
