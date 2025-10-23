@@ -387,7 +387,7 @@ export default function CreateEvent({
                               (organizerData?.page_title ? slugify(organizerData.page_title) : '') ||
                               (profile?.display_name ? slugify(profile.display_name) : 'organizador');
         const eventSlug = slugify(eventData.title);
-        const shareUrl = `${window.location.origin}/${organizerSlug}_${eventSlug}`;
+        const shareUrl = `${window.location.origin}/${organizerSlug}/${eventSlug}`;
 
         // Show success dialog
         setCreatedEventData({
