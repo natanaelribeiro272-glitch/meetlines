@@ -30,8 +30,8 @@ export default function OrganizerFinancialPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="mb-6">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
+        <div className="mb-6 md:mb-8">
           <Button
             variant="ghost"
             onClick={() => {
@@ -41,37 +41,41 @@ export default function OrganizerFinancialPage() {
                 navigate(-1);
               }
             }}
-            className="mb-4"
+            className="mb-4 hover:bg-accent"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
 
-          <div>
-            <h1 className="text-3xl font-bold">Gestão Financeira</h1>
-            <p className="text-muted-foreground mt-1">
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">Gestão Financeira</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
               Gerencie seus dados bancários e acompanhe suas vendas
             </p>
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Dados Financeiros</h2>
-              <p className="text-muted-foreground mb-4">
-                Configure suas informações bancárias e fiscais
-              </p>
+        <div className="grid gap-6 md:gap-8 lg:grid-cols-2 xl:gap-10">
+          <div className="space-y-4 md:space-y-6">
+            <div className="bg-card rounded-xl border p-4 md:p-6">
+              <div className="mb-4 md:mb-6">
+                <h2 className="text-xl md:text-2xl font-bold mb-1">Dados Financeiros</h2>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Configure suas informações bancárias e fiscais
+                </p>
+              </div>
               <OrganizerFinancial organizerId={organizerData.id} />
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Vendas de Ingressos</h2>
-              <p className="text-muted-foreground mb-4">
-                Acompanhe suas vendas e repasses
-              </p>
+          <div className="space-y-4 md:space-y-6">
+            <div className="bg-card rounded-xl border p-4 md:p-6">
+              <div className="mb-4 md:mb-6">
+                <h2 className="text-xl md:text-2xl font-bold mb-1">Vendas de Ingressos</h2>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Acompanhe suas vendas e repasses
+                </p>
+              </div>
               <TicketSalesOverview organizerId={organizerData.id} />
             </div>
           </div>

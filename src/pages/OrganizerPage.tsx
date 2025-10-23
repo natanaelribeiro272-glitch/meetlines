@@ -335,7 +335,7 @@ export default function OrganizerPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-md mx-auto bg-background">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Perfil
@@ -347,11 +347,6 @@ export default function OrganizerPage() {
             <TabsTrigger value="photos" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Fotos
-            </TabsTrigger>
-            <TabsTrigger value="financial" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline">Financeiro</span>
-              <span className="sm:hidden">$</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -759,29 +754,33 @@ export default function OrganizerPage() {
           </TabsContent>
 
           <TabsContent value="events" className="space-y-6">
-            <div className="p-4 space-y-4">
-              <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="h-5 w-5 text-green-600" />
-                      <h3 className="font-semibold text-foreground">Gestão Financeira</h3>
+            <div className="p-4 md:p-6 space-y-6">
+              <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-blue-500/10 border border-green-500/20 rounded-xl p-5 md:p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 bg-green-500/10 rounded-lg">
+                        <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold text-foreground">Gestão Financeira</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Configure seus dados bancários e acompanhe vendas de ingressos
+                    <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                      Configure seus dados bancários e fiscais, acompanhe suas vendas de ingressos e gerencie seus repasses
                     </p>
                   </div>
                   <Button
                     variant="default"
-                    size="sm"
+                    size="default"
+                    className="w-full md:w-auto md:min-w-[120px] bg-green-600 hover:bg-green-700"
                     onClick={() => {
                       if (window.innerWidth < 768) {
                         window.open(window.location.origin + '/organizer-financial', '_blank');
                       } else {
-                        setActiveTab('financial');
+                        window.location.href = '/organizer-financial';
                       }
                     }}
                   >
+                    <DollarSign className="h-4 w-4 mr-2" />
                     Acessar
                   </Button>
                 </div>
@@ -880,28 +879,6 @@ export default function OrganizerPage() {
                   </div>
                 </div>
               )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="financial" className="space-y-6">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold">Dados Financeiros</h2>
-                <p className="text-muted-foreground">
-                  Gerencie suas informações bancárias e fiscais para receber repasses
-                </p>
-              </div>
-              {organizerData?.id && <OrganizerFinancial organizerId={organizerData.id} />}
-
-              <div className="border-t pt-6">
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold">Vendas de Ingressos</h2>
-                  <p className="text-muted-foreground">
-                    Acompanhe suas vendas e repasses
-                  </p>
-                </div>
-                {organizerData?.id && <TicketSalesOverview organizerId={organizerData.id} />}
-              </div>
             </div>
           </TabsContent>
 
