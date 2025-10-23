@@ -288,24 +288,41 @@ export default function UserProfile({
             const Icon = platform.icon;
             const currentUrl = profile?.[platform.field] || "";
             const isEditing = editingField === platform.field;
-            return <div key={platform.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <Icon className={`h-5 w-5 ${platform.color}`} />
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{platform.label}</p>
-                    {isEditing ? <div className="flex gap-2 mt-2">
-                        <Input defaultValue={currentUrl} placeholder={platform.placeholder} className="text-xs" onBlur={e => handleSaveSocialLink(platform.id, e.target.value)} onKeyDown={e => {
+            return <div key={platform.id} className="flex items-start gap-3 p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+                  <Icon className={`h-5 w-5 ${platform.color} mt-0.5 flex-shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm mb-1">{platform.label}</p>
+                    {isEditing ? <div className="flex gap-2">
+                        <Input defaultValue={currentUrl} placeholder={platform.placeholder} className="text-sm h-9" onBlur={e => handleSaveSocialLink(platform.id, e.target.value)} onKeyDown={e => {
                     if (e.key === 'Enter') {
                       handleSaveSocialLink(platform.id, e.currentTarget.value);
                       setEditingField(null);
                     }
                   }} autoFocus />
-                      </div> : <p className="text-xs text-muted-foreground truncate">
+                      </div> : <p className="text-sm text-muted-foreground break-all">
                         {currentUrl || 'Não configurado'}
                       </p>}
                   </div>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingField(isEditing ? null : platform.field)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1 flex-shrink-0">
+                    {currentUrl && !isEditing && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        onClick={() => window.open(currentUrl, '_blank')}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setEditingField(isEditing ? null : platform.field)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>;
           })}
           </div>
