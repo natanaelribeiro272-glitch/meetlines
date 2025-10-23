@@ -355,21 +355,23 @@ export default function EventDetails({
     const shareUrl = event.slug
       ? `${window.location.origin}/evento/${event.slug}`
       : `${window.location.origin}/e/${eventId}`;
-    const shareTitle = event.title;
-    const shareText = `Confira este evento: ${event.title}`;
+
+    console.log('Compartilhando evento:', { slug: event.slug, url: shareUrl });
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: shareTitle,
-          text: shareText,
+          title: event.title,
+          text: `Confira este evento: ${event.title}`,
           url: shareUrl,
         });
+        toast.success("Compartilhado!");
         return;
       } catch (error: any) {
         if (error.name === 'AbortError') {
           return;
         }
+        console.log('Erro ao compartilhar nativamente, tentando copiar:', error);
       }
     }
 
@@ -377,6 +379,7 @@ export default function EventDetails({
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Link copiado!");
     } catch (error) {
+      console.log('Erro ao copiar com clipboard API, tentando fallback:', error);
       const textarea = document.createElement("textarea");
       textarea.value = shareUrl;
       textarea.style.position = "fixed";
@@ -385,13 +388,18 @@ export default function EventDetails({
       textarea.select();
 
       try {
-        document.execCommand("copy");
-        toast.success("Link copiado!");
+        const success = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        if (success) {
+          toast.success("Link copiado!");
+        } else {
+          toast.error("Não foi possível copiar o link");
+        }
       } catch (err) {
+        document.body.removeChild(textarea);
         toast.error("Não foi possível copiar o link");
+        console.error('Erro no fallback:', err);
       }
-
-      document.body.removeChild(textarea);
     }
   };
 
