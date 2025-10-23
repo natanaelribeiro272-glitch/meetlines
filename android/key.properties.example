@@ -1,0 +1,46 @@
+# Android Signing Configuration
+#
+# IMPORTANTE: Este é apenas um arquivo de exemplo!
+#
+# Para gerar um APK assinado, você precisa:
+# 1. Criar um keystore (veja instruções abaixo)
+# 2. Copiar este arquivo para "key.properties" (sem .example)
+# 3. Preencher com suas informações reais
+# 4. NUNCA commitar key.properties no Git!
+
+# Caminho para o arquivo keystore
+# Windows: C:/Users/SeuNome/meetlines-keystore.jks
+# Mac/Linux: /Users/SeuNome/meetlines-keystore.jks
+storeFile=C:/Users/Natan/meetlines-keystore.jks
+
+# Senha do keystore
+storePassword=SUA_SENHA_AQUI
+
+# Alias da chave
+keyAlias=meetlines
+
+# Senha do alias
+keyPassword=SUA_SENHA_ALIAS_AQUI
+
+# ========================================
+# COMO CRIAR O KEYSTORE:
+# ========================================
+#
+# Opção 1 - Via Android Studio (RECOMENDADO):
+# 1. Abra o projeto no Android Studio
+# 2. Build > Generate Signed Bundle / APK
+# 3. Escolha Android App Bundle (AAB)
+# 4. Clique em "Create new..."
+# 5. Preencha os dados e salve em C:/Users/Natan/meetlines-keystore.jks
+# 6. GUARDE AS SENHAS EM LOCAL SEGURO!
+#
+# Opção 2 - Via linha de comando:
+# keytool -genkey -v -keystore meetlines-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias meetlines
+#
+# ========================================
+# IMPORTANTE:
+# ========================================
+# - Guarde o arquivo .jks e as senhas em local MUITO seguro
+# - Se perder, não conseguirá atualizar o app na Play Store
+# - Use senhas fortes e diferentes
+# - NUNCA compartilhe essas informações
