@@ -16,6 +16,7 @@ export interface EventComment {
 export interface EventDetailsData {
   id: string;
   title: string;
+  slug?: string;
   description?: string;
   image_url?: string;
   event_date: string;
