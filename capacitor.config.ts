@@ -4,6 +4,11 @@ const config: CapacitorConfig = {
   appId: 'com.meetlines.app',
   appName: 'Meetlines',
   webDir: 'dist',
+  server: {
+    androidScheme: 'https',
+    cleartext: true,
+    hostname: 'localhost'
+  },
   plugins: {
     BarcodeScanner: {
       cameraPermission: 'always'
@@ -22,7 +27,9 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: true,
-    captureInput: true
+    captureInput: true,
+    webContentsDebuggingEnabled: true,
+    loggingBehavior: 'debug'
   },
   ios: {
     contentInset: 'automatic'
