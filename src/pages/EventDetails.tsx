@@ -392,25 +392,8 @@ export default function EventDetails({
       return;
     }
 
-    // Criar slugs amigáveis para URL (eventos regulares)
-    const createSlug = (text: string) => {
-      return text
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-        .replace(/[^\w\s-]/g, "") // Remove caracteres especiais
-        .replace(/\s+/g, "-") // Substitui espaços por hífens
-        .replace(/-+/g, "-") // Remove hífens duplicados
-        .trim();
-    };
-
-    const organizerName = event.organizer?.profile?.display_name || event.organizer?.page_title || "organizador";
-    const eventName = event.title;
-
-    const organizerSlug = createSlug(organizerName);
-    const eventSlug = createSlug(eventName);
-
-    const eventUrl = `${getPublicBaseUrl()}/${organizerSlug}_${eventSlug}`;
+    // Usar formato simples com ID do evento
+    const eventUrl = `${getPublicBaseUrl()}/e/${eventId}`;
 
     // 1) Tenta compartilhamento nativo
     try {
