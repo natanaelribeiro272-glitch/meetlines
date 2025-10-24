@@ -256,15 +256,11 @@ export default function UserProfile({
 
       {/* Social Links */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ExternalLink className="h-5 w-5" />
             Redes Sociais
           </CardTitle>
-          <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
