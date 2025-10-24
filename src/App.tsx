@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,8 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { Capacitor } from "@capacitor/core";
+import { LocationPermissionRequest } from "@/components/LocationPermissionRequest";
 import MainLayout from "./pages/MainLayout";
 import PublicOrganizerProfile from "./pages/PublicOrganizerProfile";
 import EventPublicPage from "./pages/EventPublicPage";
@@ -40,18 +38,9 @@ import FindFriends from "./pages/FindFriends";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { getCurrentPosition } = useGeolocation();
-
-  useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      getCurrentPosition().catch(err => {
-        console.log('Initial location permission request:', err);
-      });
-    }
-  }, []);
-
   return (
     <BrowserRouter>
+      <LocationPermissionRequest />
       <Routes>
         <Route path="/" element={<MainLayout />} />
         <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
