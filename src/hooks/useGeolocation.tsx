@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 interface GeolocationPosition {
   lat: number;
@@ -37,31 +38,9 @@ export function useGeolocation(
 
   const isNativePlatform = Capacitor.isNativePlatform();
 
-  const getGeolocationPlugin = () => {
-    if (!isNativePlatform) {
-      return null;
-    }
-    try {
-      return (Capacitor as any).Plugins?.Geolocation;
-    } catch {
-      return null;
-    }
-  };
-
   const requestPermission = async (): Promise<boolean> => {
     try {
       if (isNativePlatform) {
-        const Geolocation = getGeolocationPlugin();
-
-        if (!Geolocation) {
-          console.log('Geolocation plugin not available, falling back to web API');
-          if (!navigator.geolocation) {
-            setError('Geolocalização não suportada');
-            return false;
-          }
-          return true;
-        }
-
         const permission = await Geolocation.checkPermissions();
         console.log('Current permission status:', permission);
 
@@ -108,42 +87,38 @@ export function useGeolocation(
       }
 
       if (isNativePlatform) {
-        const Geolocation = getGeolocationPlugin();
+        try {
+          const coords = await Geolocation.getCurrentPosition({
+            enableHighAccuracy,
+            timeout,
+            maximumAge,
+          });
 
-        if (Geolocation) {
-          try {
-            const coords = await Geolocation.getCurrentPosition({
-              enableHighAccuracy,
-              timeout,
-              maximumAge,
-            });
+          const pos = {
+            lat: coords.coords.latitude,
+            lon: coords.coords.longitude,
+          };
 
-            const pos = {
-              lat: coords.coords.latitude,
-              lon: coords.coords.longitude,
-            };
+          setPosition(pos);
+          setLoading(false);
+          return pos;
+        } catch (geoErr: any) {
+          console.error('Geolocation error:', geoErr);
+          let errorMessage = 'Erro ao obter localização';
 
-            setPosition(pos);
-            setLoading(false);
-            return pos;
-          } catch (geoErr: any) {
-            console.error('Geolocation error:', geoErr);
-            let errorMessage = 'Erro ao obter localização';
-
-            if (geoErr.message) {
-              if (geoErr.message.includes('timeout')) {
-                errorMessage = 'Tempo esgotado. Certifique-se de estar em local aberto.';
-              } else if (geoErr.message.includes('denied')) {
-                errorMessage = 'Permissão negada. Ative a localização nas configurações.';
-              } else if (geoErr.message.includes('unavailable')) {
-                errorMessage = 'Localização indisponível. Ative o GPS do dispositivo.';
-              }
+          if (geoErr.message) {
+            if (geoErr.message.includes('timeout')) {
+              errorMessage = 'Tempo esgotado. Certifique-se de estar em local aberto.';
+            } else if (geoErr.message.includes('denied')) {
+              errorMessage = 'Permissão negada. Ative a localização nas configurações.';
+            } else if (geoErr.message.includes('unavailable')) {
+              errorMessage = 'Localização indisponível. Ative o GPS do dispositivo.';
             }
-
-            setError(errorMessage);
-            setLoading(false);
-            return null;
           }
+
+          setError(errorMessage);
+          setLoading(false);
+          return null;
         }
       }
 
@@ -209,32 +184,28 @@ export function useGeolocation(
       if (!hasPermission) return;
 
       if (isNativePlatform) {
-        const Geolocation = getGeolocationPlugin();
-
-        if (Geolocation) {
-          watchId = await Geolocation.watchPosition(
-            {
-              enableHighAccuracy,
-              timeout,
-              maximumAge,
-            },
-            (pos: any, err: any) => {
-              if (err) {
-                console.error('Watch position error:', err);
-                setError('Erro ao monitorar localização');
-                return;
-              }
-
-              if (pos) {
-                setPosition({
-                  lat: pos.coords.latitude,
-                  lon: pos.coords.longitude,
-                });
-                setError(null);
-              }
+        watchId = await Geolocation.watchPosition(
+          {
+            enableHighAccuracy,
+            timeout,
+            maximumAge,
+          },
+          (pos, err) => {
+            if (err) {
+              console.error('Watch position error:', err);
+              setError('Erro ao monitorar localização');
+              return;
             }
-          );
-        }
+
+            if (pos) {
+              setPosition({
+                lat: pos.coords.latitude,
+                lon: pos.coords.longitude,
+              });
+              setError(null);
+            }
+          }
+        );
       } else {
         if (navigator.geolocation) {
           watchId = navigator.geolocation.watchPosition(
@@ -264,10 +235,7 @@ export function useGeolocation(
     return () => {
       if (watchId !== null) {
         if (isNativePlatform) {
-          const Geolocation = getGeolocationPlugin();
-          if (Geolocation) {
-            Geolocation.clearWatch({ id: watchId as string });
-          }
+          Geolocation.clearWatch({ id: watchId as string });
         } else {
           navigator.geolocation.clearWatch(watchId as number);
         }
