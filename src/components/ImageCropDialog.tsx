@@ -71,7 +71,9 @@ export function ImageCropDialog({
 
     const imgWidth = image.width;
     const imgHeight = image.height;
-    const scale = Math.max(canvas.width / imgWidth, canvas.height / imgHeight);
+
+    const cropSize = Math.min(canvas.width, canvas.height) * 0.9;
+    const scale = Math.max(cropSize / imgWidth, cropSize / imgHeight) * 1.2;
 
     const scaledWidth = imgWidth * scale;
     const scaledHeight = imgHeight * scale;
@@ -87,11 +89,11 @@ export function ImageCropDialog({
     ctx.restore();
 
     // Calculate crop area (larger and better positioned)
-    let cropSize = Math.min(canvas.width, canvas.height) * 0.9;
-    let cropX = (canvas.width - cropSize) / 2;
-    let cropY = (canvas.height - cropSize) / 2;
-    let cropWidth = cropSize;
-    let cropHeight = cropSize;
+    const displayCropSize = Math.min(canvas.width, canvas.height) * 0.9;
+    let cropX = (canvas.width - displayCropSize) / 2;
+    let cropY = (canvas.height - displayCropSize) / 2;
+    let cropWidth = displayCropSize;
+    let cropHeight = displayCropSize;
 
     if (aspectRatio !== 1) {
       cropWidth = Math.min(canvas.width * 0.9, canvas.height * 0.9 * aspectRatio);
@@ -174,7 +176,6 @@ export function ImageCropDialog({
     const containerWidth = canvas.width;
     const containerHeight = canvas.height;
 
-    // Calculate crop area (same as display)
     let cropSize = Math.min(containerWidth, containerHeight) * 0.9;
     let cropWidth = cropSize;
     let cropHeight = cropSize;
@@ -184,33 +185,29 @@ export function ImageCropDialog({
       cropHeight = cropWidth / aspectRatio;
     }
 
+    const imgWidth = image.width;
+    const imgHeight = image.height;
+
+    const baseScale = Math.max(cropSize / imgWidth, cropSize / imgHeight) * 1.2;
+
     ctx.save();
     ctx.translate(cropCanvas.width / 2, cropCanvas.height / 2);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(zoom, zoom);
 
-    const imgWidth = image.width;
-    const imgHeight = image.height;
-    const scale = Math.max(containerWidth / imgWidth, containerHeight / imgHeight);
+    const scaledWidth = imgWidth * baseScale;
+    const scaledHeight = imgHeight * baseScale;
 
-    const scaledWidth = imgWidth * scale;
-    const scaledHeight = imgHeight * scale;
-
-    const sourceX = (scaledWidth / 2) - (cropWidth / 2) * (scaledWidth / containerWidth) - (position.x * scaledWidth / containerWidth);
-    const sourceY = (scaledHeight / 2) - (cropHeight / 2) * (scaledHeight / containerHeight) - (position.y * scaledHeight / containerHeight);
-    const sourceWidth = cropWidth * (scaledWidth / containerWidth);
-    const sourceHeight = cropHeight * (scaledHeight / containerHeight);
+    const scaleRatio = outputSize / cropSize;
+    const offsetX = -position.x * scaleRatio;
+    const offsetY = -position.y * scaleRatio;
 
     ctx.drawImage(
       image,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      -cropCanvas.width / 2,
-      -cropCanvas.height / 2,
-      cropCanvas.width,
-      cropCanvas.height
+      (-scaledWidth / 2 + offsetX) * (cropSize / containerWidth),
+      (-scaledHeight / 2 + offsetY) * (cropSize / containerHeight),
+      scaledWidth * scaleRatio,
+      scaledHeight * scaleRatio
     );
 
     ctx.restore();
