@@ -205,9 +205,10 @@ export function CitySelect({
       )}
 
       {selectedCity && (
-        <div className="flex items-center gap-2 p-3 bg-accent rounded-lg">
+        <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-lg">
           <MapPin className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">{selectedCity.name}, {selectedCity.state}</span>
+          <span className="ml-auto text-xs text-primary">✓ Selecionada</span>
         </div>
       )}
 

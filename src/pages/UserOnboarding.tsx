@@ -616,7 +616,9 @@ export default function UserOnboarding() {
               />
 
               <p className="text-xs text-muted-foreground text-center">
-                💡 Você verá eventos da sua cidade automaticamente. Para ver eventos de outras cidades, use a busca.
+                {cityId
+                  ? "✓ Cidade selecionada! Clique em Próximo para continuar."
+                  : "💡 Clique em 'Usar minha localização' para detectar automaticamente, ou digite para buscar."}
               </p>
 
               <div className="flex gap-2">
