@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ZoomIn, RotateCw } from 'lucide-react';
 
 interface ImageCropDialogProps {
   open: boolean;
@@ -34,6 +34,9 @@ export function ImageCropDialog({
       img.src = imageSrc;
       img.onload = () => {
         imageRef.current = img;
+        setZoom(1);
+        setRotation(0);
+        setPosition({ x: 0, y: 0 });
         drawCanvas();
       };
     }
@@ -51,81 +54,62 @@ export function ImageCropDialog({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const containerWidth = containerRef.current?.clientWidth || 400;
-    const containerHeight = containerRef.current?.clientHeight || 400;
-
-    canvas.width = containerWidth;
-    canvas.height = containerHeight;
+    const size = 400;
+    canvas.width = size;
+    canvas.height = size;
 
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, size, size);
 
     ctx.save();
-
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-
-    ctx.translate(centerX + position.x, centerY + position.y);
+    ctx.translate(size / 2, size / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.scale(zoom, zoom);
 
-    const imgWidth = image.width;
-    const imgHeight = image.height;
+    const imgAspect = image.width / image.height;
+    let drawWidth, drawHeight;
 
-    const cropSize = Math.min(canvas.width, canvas.height) * 0.9;
-    const scale = Math.max(cropSize / imgWidth, cropSize / imgHeight) * 1.2;
+    if (imgAspect > 1) {
+      drawHeight = size;
+      drawWidth = size * imgAspect;
+    } else {
+      drawWidth = size;
+      drawHeight = size / imgAspect;
+    }
 
-    const scaledWidth = imgWidth * scale;
-    const scaledHeight = imgHeight * scale;
+    drawWidth *= zoom;
+    drawHeight *= zoom;
 
     ctx.drawImage(
       image,
-      -scaledWidth / 2,
-      -scaledHeight / 2,
-      scaledWidth,
-      scaledHeight
+      position.x - drawWidth / 2,
+      position.y - drawHeight / 2,
+      drawWidth,
+      drawHeight
     );
 
     ctx.restore();
 
-    // Calculate crop area (larger and better positioned)
-    const displayCropSize = Math.min(canvas.width, canvas.height) * 0.9;
-    let cropX = (canvas.width - displayCropSize) / 2;
-    let cropY = (canvas.height - displayCropSize) / 2;
-    let cropWidth = displayCropSize;
-    let cropHeight = displayCropSize;
+    const cropSize = size * 0.85;
+    const cropX = (size - cropSize) / 2;
+    const cropY = (size - cropSize) / 2;
 
-    if (aspectRatio !== 1) {
-      cropWidth = Math.min(canvas.width * 0.9, canvas.height * 0.9 * aspectRatio);
-      cropHeight = cropWidth / aspectRatio;
-      cropX = (canvas.width - cropWidth) / 2;
-      cropY = (canvas.height - cropHeight) / 2;
-    }
-
-    // Draw overlay
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(0, 0, canvas.width, cropY);
-    ctx.fillRect(0, cropY + cropHeight, canvas.width, canvas.height - cropY - cropHeight);
-    ctx.fillRect(0, cropY, cropX, cropHeight);
-    ctx.fillRect(cropX + cropWidth, cropY, canvas.width - cropX - cropWidth, cropHeight);
+    ctx.fillRect(0, 0, size, cropY);
+    ctx.fillRect(0, cropY + cropSize, size, size - cropY - cropSize);
+    ctx.fillRect(0, cropY, cropX, cropSize);
+    ctx.fillRect(cropX + cropSize, cropY, size - cropX - cropSize, cropSize);
 
-    // Draw crop area border
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.strokeStyle = '#fff';
     ctx.lineWidth = 3;
-    ctx.setLineDash([]);
-    ctx.strokeRect(cropX, cropY, cropWidth, cropHeight);
+    ctx.strokeRect(cropX, cropY, cropSize, cropSize);
 
-    // Draw corner handles
-    const handleSize = 20;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(cropX - 2, cropY - 2, handleSize, 4);
-    ctx.fillRect(cropX - 2, cropY - 2, 4, handleSize);
-    ctx.fillRect(cropX + cropWidth - handleSize + 2, cropY - 2, handleSize, 4);
-    ctx.fillRect(cropX + cropWidth - 2, cropY - 2, 4, handleSize);
-    ctx.fillRect(cropX - 2, cropY + cropHeight - 2, handleSize, 4);
-    ctx.fillRect(cropX - 2, cropY + cropHeight - handleSize + 2, 4, handleSize);
-    ctx.fillRect(cropX + cropWidth - handleSize + 2, cropY + cropHeight - 2, handleSize, 4);
-    ctx.fillRect(cropX + cropWidth - 2, cropY + cropHeight - handleSize + 2, 4, handleSize);
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, cropSize / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -165,68 +149,74 @@ export function ImageCropDialog({
     const image = imageRef.current;
     if (!canvas || !image) return null;
 
+    const outputSize = 800;
     const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = outputSize;
+    cropCanvas.height = outputSize;
+
     const ctx = cropCanvas.getContext('2d');
     if (!ctx) return null;
 
-    const outputSize = 800;
-    cropCanvas.width = outputSize;
-    cropCanvas.height = aspectRatio === 1 ? outputSize : outputSize / aspectRatio;
-
-    const containerWidth = canvas.width;
-    const containerHeight = canvas.height;
-
-    let cropSize = Math.min(containerWidth, containerHeight) * 0.9;
-    let cropWidth = cropSize;
-    let cropHeight = cropSize;
-
-    if (aspectRatio !== 1) {
-      cropWidth = Math.min(containerWidth * 0.9, containerHeight * 0.9 * aspectRatio);
-      cropHeight = cropWidth / aspectRatio;
-    }
-
-    const imgWidth = image.width;
-    const imgHeight = image.height;
-
-    const baseScale = Math.max(cropSize / imgWidth, cropSize / imgHeight) * 1.2;
+    const size = 400;
+    const scale = outputSize / size;
 
     ctx.save();
-    ctx.translate(cropCanvas.width / 2, cropCanvas.height / 2);
+    ctx.translate(outputSize / 2, outputSize / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.scale(zoom, zoom);
 
-    const scaledWidth = imgWidth * baseScale;
-    const scaledHeight = imgHeight * baseScale;
+    const imgAspect = image.width / image.height;
+    let drawWidth, drawHeight;
 
-    const scaleRatio = outputSize / cropSize;
-    const offsetX = -position.x * scaleRatio;
-    const offsetY = -position.y * scaleRatio;
+    if (imgAspect > 1) {
+      drawHeight = size;
+      drawWidth = size * imgAspect;
+    } else {
+      drawWidth = size;
+      drawHeight = size / imgAspect;
+    }
+
+    drawWidth *= zoom * scale;
+    drawHeight *= zoom * scale;
 
     ctx.drawImage(
       image,
-      (-scaledWidth / 2 + offsetX) * (cropSize / containerWidth),
-      (-scaledHeight / 2 + offsetY) * (cropSize / containerHeight),
-      scaledWidth * scaleRatio,
-      scaledHeight * scaleRatio
+      (position.x * scale) - drawWidth / 2,
+      (position.y * scale) - drawHeight / 2,
+      drawWidth,
+      drawHeight
     );
 
     ctx.restore();
 
+    const cropSize = size * 0.85 * scale;
+    const cropX = (outputSize - cropSize) / 2;
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = outputSize;
+    finalCanvas.height = outputSize;
+    const finalCtx = finalCanvas.getContext('2d');
+    if (!finalCtx) return null;
+
+    finalCtx.drawImage(
+      cropCanvas,
+      cropX, cropX, cropSize, cropSize,
+      0, 0, outputSize, outputSize
+    );
+
     return new Promise<File>((resolve) => {
-      cropCanvas.toBlob((blob) => {
+      finalCanvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
+          const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
           resolve(file);
         }
       }, 'image/jpeg', 0.95);
     });
-  }, [zoom, rotation, position, aspectRatio]);
+  }, [zoom, rotation, position]);
 
   const handleSave = async () => {
     const croppedImage = await getCroppedImage();
     if (croppedImage) {
       onCropComplete(croppedImage);
-      onOpenChange(false);
     }
   };
 
@@ -236,18 +226,18 @@ export function ImageCropDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 space-y-1">
-          <DialogTitle className="text-xl">Ajustar Foto</DialogTitle>
+      <DialogContent className="max-w-xl p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogTitle>Ajustar Foto de Perfil</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Arraste para posicionar, use o zoom e gire a imagem conforme necessário
+            Arraste para posicionar e use o zoom para ajustar
           </p>
         </DialogHeader>
 
         <div className="px-6 pb-6 space-y-6">
           <div
             ref={containerRef}
-            className="relative w-full h-[500px] bg-black rounded-lg overflow-hidden cursor-move select-none touch-none"
+            className="relative w-full h-[400px] bg-black rounded-lg overflow-hidden cursor-move select-none touch-none"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -256,20 +246,19 @@ export function ImageCropDialog({
             onTouchMove={handleTouchMove}
             onTouchEnd={handleMouseUp}
           >
-            <canvas
-              ref={canvasRef}
-              className="w-full h-full"
-            />
+            <canvas ref={canvasRef} className="w-full h-full" />
           </div>
 
-          <div className="space-y-6 bg-muted/50 p-4 rounded-lg">
-            <div className="space-y-3">
+          <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold flex items-center gap-2">
+                <label className="text-sm font-medium flex items-center gap-2">
                   <ZoomIn className="h-4 w-4" />
                   Zoom
                 </label>
-                <span className="text-sm font-medium tabular-nums">{Math.round(zoom * 100)}%</span>
+                <span className="text-sm font-medium tabular-nums">
+                  {Math.round(zoom * 100)}%
+                </span>
               </div>
               <Slider
                 value={[zoom]}
@@ -281,13 +270,9 @@ export function ImageCropDialog({
               />
             </div>
 
-            <div className="flex items-center justify-center pt-2">
-              <Button
-                variant="outline"
-                onClick={handleRotate}
-                className="gap-2 h-11"
-              >
-                <RotateCw className="h-5 w-5" />
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={handleRotate} className="gap-2">
+                <RotateCw className="h-4 w-4" />
                 Girar 90°
               </Button>
             </div>
