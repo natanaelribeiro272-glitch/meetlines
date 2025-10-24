@@ -10,25 +10,29 @@ export const LocationPermissionRequest = () => {
         return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       try {
-        console.log('=== Starting location permission request ===');
+        console.log('=== Checking location permission status ===');
 
-        const result = await Geolocation.requestPermissions({
-          permissions: ['location', 'coarseLocation']
-        });
+        const currentPermission = await Geolocation.checkPermissions();
+        console.log('Current permission:', JSON.stringify(currentPermission));
 
-        console.log('Permission request completed:', JSON.stringify(result));
+        if (currentPermission.location !== 'granted') {
+          console.log('Requesting location permission...');
+          const result = await Geolocation.requestPermissions();
+          console.log('Permission request result:', JSON.stringify(result));
 
-        if (result.location === 'granted' || result.coarseLocation === 'granted') {
-          console.log('Location permission granted successfully');
+          if (result.location === 'granted' || result.coarseLocation === 'granted') {
+            console.log('✓ Location permission granted successfully');
+          } else {
+            console.log('✗ Location permission was denied');
+          }
         } else {
-          console.log('Location permission was denied');
+          console.log('✓ Location permission already granted');
         }
       } catch (error) {
-        console.error('Error requesting location permission:', error);
-        console.error('Error details:', JSON.stringify(error));
+        console.error('✗ Error requesting location permission:', error);
       }
     };
 
