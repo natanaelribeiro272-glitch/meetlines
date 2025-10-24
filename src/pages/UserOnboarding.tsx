@@ -609,7 +609,7 @@ export default function UserOnboarding() {
 
               <CitySelect
                 value={cityId}
-                onChange={setCityId}
+                onChange={(id) => setCityId(id)}
                 label="Sua Cidade"
                 placeholder="Selecione sua cidade"
                 autoRequestLocation={true}
