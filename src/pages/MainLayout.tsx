@@ -28,9 +28,15 @@ export default function MainLayout() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventAttendances" | "eventRegistrations" | "organizerEvents" | "editEvent">("feed");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
   const { user, userRole, loading } = useAuth();
   const { setTheme } = useTheme();
+
+  const handleHomeRefresh = () => {
+    setCurrentView("feed");
+    setHomeRefreshKey(prev => prev + 1);
+  };
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -217,7 +223,7 @@ export default function MainLayout() {
           case "eventAttendances":
             return <EventAttendances onBack={handleBackToFeed} eventId={currentEventId || undefined} />;
           default:
-          return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} onStoryClick={handleStoryClick} userType={userRole || "user"} />;
+          return <Home onEventClick={handleEventClick} onFindFriends={handleFindFriends} onOrganizerClick={handleOrganizerClick} onShowOrganizers={handleShowOrganizers} onStoryClick={handleStoryClick} userType={userRole || "user"} refreshKey={homeRefreshKey} />;
         }
       case "create":
         // Only organizers can create events
@@ -252,7 +258,7 @@ export default function MainLayout() {
   return (
     <div className="min-h-screen bg-background">
       {renderContent()}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} userType={userRole || "user"} />
+      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} userType={userRole || "user"} onHomeRefresh={handleHomeRefresh} />
     </div>
   );
 }

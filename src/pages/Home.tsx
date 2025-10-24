@@ -18,6 +18,7 @@ interface HomeProps {
   onShowOrganizers?: () => void;
   onStoryClick: (userId: string) => void;
   userType: "user" | "organizer";
+  refreshKey?: number;
 }
 export default function Home({
   onEventClick,
@@ -25,7 +26,8 @@ export default function Home({
   onOrganizerClick,
   onShowOrganizers,
   onStoryClick,
-  userType
+  userType,
+  refreshKey = 0
 }: HomeProps) {
   const {
     profile
@@ -76,6 +78,13 @@ export default function Home({
       }
     }
   }, [profile]);
+
+  // Scroll to top when refreshKey changes
+  useEffect(() => {
+    if (refreshKey > 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [refreshKey]);
   const categories = [{
     id: "todos",
     label: "Todos"
@@ -160,6 +169,7 @@ export default function Home({
           categoryFilter={selectedCategory}
           searchQuery={searchQuery}
           userInterests={selectedCategory === "todos" ? userInterests : undefined}
+          refreshKey={refreshKey}
         />
       </main>
 

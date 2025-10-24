@@ -9,9 +9,10 @@ interface BottomNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   userType: "user" | "organizer";
+  onHomeRefresh?: () => void;
 }
 
-export function BottomNavigation({ activeTab, onTabChange, userType }: BottomNavigationProps) {
+export function BottomNavigation({ activeTab, onTabChange, userType, onHomeRefresh }: BottomNavigationProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,13 +21,19 @@ export function BottomNavigation({ activeTab, onTabChange, userType }: BottomNav
   const handleTabChange = (tab: string) => {
     // Tabs que exigem autenticação
     const protectedTabs = ['friends', 'profile'];
-    
+
     if (protectedTabs.includes(tab) && !user) {
       const currentPath = location.pathname;
       navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
-    
+
+    // Se já está na home e clicou de novo, atualiza o feed
+    if (tab === 'home' && activeTab === 'home' && onHomeRefresh) {
+      onHomeRefresh();
+      return;
+    }
+
     onTabChange(tab);
   };
 

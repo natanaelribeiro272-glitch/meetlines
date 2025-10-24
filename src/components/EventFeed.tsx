@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { EventCard } from "./EventCard";
 import { useEvents } from "@/hooks/useEvents";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,10 +38,17 @@ interface EventFeedProps {
   searchQuery?: string;
   userInterests?: string[];
   filters?: EventFilters;
+  refreshKey?: number;
 }
 
-export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests, filters }: EventFeedProps) {
-  const { events, loading, toggleLike } = useEvents(categoryFilter, searchQuery, userInterests, filters);
+export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests, filters, refreshKey = 0 }: EventFeedProps) {
+  const { events, loading, toggleLike, fetchEvents } = useEvents(categoryFilter, searchQuery, userInterests, filters);
+
+  useEffect(() => {
+    if (refreshKey > 0) {
+      fetchEvents();
+    }
+  }, [refreshKey]);
 
   const handleEventClick = (eventId: string) => {
     onEventClick(eventId);
