@@ -59,7 +59,7 @@ export function CitySelect({
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setFilteredCities(cities);
+      setFilteredCities([]);
     } else {
       const query = searchQuery.toLowerCase().trim();
       const filtered = cities.filter(
@@ -220,7 +220,7 @@ export function CitySelect({
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
-        {(!selectedCity || searchQuery) && (
+        {searchQuery && searchQuery.length >= 2 && (
           <ScrollArea className="h-[200px] w-full border rounded-md">
             <div className="p-2 space-y-1">
               {Object.entries(groupedCities).length === 0 ? (
