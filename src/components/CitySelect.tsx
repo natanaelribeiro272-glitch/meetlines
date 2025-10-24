@@ -38,18 +38,15 @@ export function CitySelect({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [locationRequested, setLocationRequested] = useState(false);
+  const [searching, setSearching] = useState(false);
   const { getCurrentPosition, loading } = useGeolocation();
 
   useEffect(() => {
-    loadCities();
-  }, []);
-
-  useEffect(() => {
-    if (autoRequestLocation && !locationRequested && !value && cities.length > 0) {
+    if (autoRequestLocation && !locationRequested && !value) {
       setLocationRequested(true);
       handleUseCurrentLocation();
     }
-  }, [autoRequestLocation, locationRequested, value, cities]);
+  }, [autoRequestLocation, locationRequested, value]);
 
   useEffect(() => {
     if (value) {
@@ -58,35 +55,46 @@ export function CitySelect({
   }, [value]);
 
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredCities([]);
-    } else {
-      const query = searchQuery.toLowerCase().trim();
-      const filtered = cities.filter(
-        (city) =>
-          city.name.toLowerCase().includes(query) ||
-          city.state.toLowerCase().includes(query)
-      );
-      setFilteredCities(filtered);
-    }
-  }, [searchQuery, cities]);
+    const searchCities = async () => {
+      if (searchQuery.trim() === "" || searchQuery.length < 2) {
+        setFilteredCities([]);
+        return;
+      }
 
-  const loadCities = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("cities")
-        .select("*")
-        .order("state")
-        .order("name");
+      setSearching(true);
+      try {
+        const query = searchQuery.trim();
+        const { data, error } = await supabase
+          .from("cities")
+          .select("*")
+          .or(`name.ilike.%${query}%,state.ilike.%${query}%`)
+          .limit(100);
 
-      if (error) throw error;
-      setCities(data || []);
-      setFilteredCities(data || []);
-    } catch (error) {
-      console.error("Error loading cities:", error);
-      toast.error("Erro ao carregar cidades");
-    }
-  };
+        if (error) throw error;
+
+        // Sort results: prioritize cities that START with the query
+        const sorted = (data || []).sort((a, b) => {
+          const aStartsWith = a.name.toLowerCase().startsWith(query.toLowerCase());
+          const bStartsWith = b.name.toLowerCase().startsWith(query.toLowerCase());
+
+          if (aStartsWith && !bStartsWith) return -1;
+          if (!aStartsWith && bStartsWith) return 1;
+
+          return a.name.localeCompare(b.name);
+        });
+
+        setFilteredCities(sorted.slice(0, 50));
+      } catch (error) {
+        console.error("Error searching cities:", error);
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(searchCities, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
 
   const loadSelectedCity = async (cityId: string) => {
     try {
@@ -126,9 +134,19 @@ export function CitySelect({
       const cityName = data.address.city || data.address.town || data.address.municipality;
 
       if (cityName) {
-        let matchingCity = cities.find(
-          (city) => city.name.toLowerCase() === cityName.toLowerCase()
-        );
+        const { data: matchingCities, error: searchError } = await supabase
+          .from("cities")
+          .select("*")
+          .ilike("name", cityName)
+          .limit(1);
+
+        if (searchError) {
+          console.error("Error searching city:", searchError);
+          toast.error("Erro ao buscar cidade");
+          return;
+        }
+
+        let matchingCity = matchingCities?.[0];
 
         if (!matchingCity) {
           const stateName = data.address.state;
@@ -136,7 +154,7 @@ export function CitySelect({
 
           const { data: newCity, error } = await supabase
             .from("cities")
-            .insert({ name: cityName, state: stateAbbrev })
+            .insert({ name: cityName, state: stateAbbrev, country: "Brasil" })
             .select()
             .single();
 
@@ -147,7 +165,6 @@ export function CitySelect({
           }
 
           matchingCity = newCity;
-          setCities([...cities, newCity]);
         }
 
         if (matchingCity) {
@@ -224,7 +241,9 @@ export function CitySelect({
         {searchQuery && searchQuery.length >= 2 && (
           <ScrollArea className="h-[200px] w-full border rounded-md">
             <div className="p-2 space-y-1">
-              {Object.entries(groupedCities).length === 0 ? (
+              {searching ? (
+                <p className="text-sm text-muted-foreground p-2">Buscando...</p>
+              ) : Object.entries(groupedCities).length === 0 ? (
                 <p className="text-sm text-muted-foreground p-2">Nenhuma cidade encontrada</p>
               ) : (
                 Object.entries(groupedCities).map(([state, stateCities]) => (
