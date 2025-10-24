@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, calculateAge } from "@/hooks/useProfile";
@@ -51,6 +51,12 @@ export default function UserProfile({
     notes_visible: true,
     phone: "",
     website: "",
+    instagram_url: "",
+    twitter_url: "",
+    linkedin_url: "",
+    facebook_url: "",
+    tiktok_url: "",
+    youtube_url: "",
     interest: "curtição" as "namoro" | "network" | "curtição" | "amizade" | "casual",
     relationship_status: "preferencia_nao_informar" as "solteiro" | "namorando" | "casado" | "relacionamento_aberto" | "preferencia_nao_informar"
   });
@@ -115,6 +121,12 @@ export default function UserProfile({
         notes_visible: profile.notes_visible ?? true,
         phone: profile.phone || "",
         website: profile.website || "",
+        instagram_url: profile.instagram_url || "",
+        twitter_url: profile.twitter_url || "",
+        linkedin_url: profile.linkedin_url || "",
+        facebook_url: profile.facebook_url || "",
+        tiktok_url: profile.tiktok_url || "",
+        youtube_url: profile.youtube_url || "",
         interest: profile.interest as any || "curtição",
         relationship_status: (profile.relationship_status as any) || "preferencia_nao_informar"
       });
@@ -143,6 +155,28 @@ export default function UserProfile({
     await updateProfile({
       [socialPlatform.field]: url || null
     });
+  };
+
+  const handleSaveAll = async () => {
+    const updateData: any = {
+      display_name: formData.display_name || null,
+      bio: formData.bio || null,
+      location: formData.location || null,
+      instagram_url: formData.instagram_url || null,
+      phone: formData.phone || null,
+      twitter_url: formData.twitter_url || null,
+      linkedin_url: formData.linkedin_url || null,
+      facebook_url: formData.facebook_url || null,
+      tiktok_url: formData.tiktok_url || null,
+      youtube_url: formData.youtube_url || null,
+      website: formData.website || null,
+    };
+
+    const success = await updateProfile(updateData);
+    if (success) {
+      setIsEditing(false);
+      toast.success('Perfil atualizado com sucesso!');
+    }
   };
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -186,128 +220,56 @@ export default function UserProfile({
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                {editingField === 'display_name' ? <div className="flex gap-2 flex-1">
-                    <Input value={formData.display_name} onChange={e => setFormData(prev => ({
-                  ...prev,
-                  display_name: e.target.value
-                }))} className="text-xl font-semibold" placeholder="Seu nome" />
-                    <Button size="sm" onClick={() => handleSaveField('display_name')} disabled={saving}>
-                      Salvar
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
-                      Cancelar
-                    </Button>
-                  </div> : <>
-                    <h2 className="text-xl font-semibold">{profile?.display_name || 'Seu Nome'}</h2>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingField('display_name')}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </>}
-              </div>
-              
-              <div className="mb-2">
-                {editingField === 'location' ? <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Input value={formData.location} onChange={e => setFormData(prev => ({
-                    ...prev,
-                    location: e.target.value
-                  }))} placeholder="Localização" className="text-sm" />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => {
-                    handleSaveField('location');
-                  }} disabled={saving}>
-                        Salvar
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div> : <div className="flex items-center gap-2">
-                    <p className="text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3 inline mr-1" />
-                      {profile?.location || 'Localização'} • {userAge ? `${userAge} anos` : 'Idade não informada'}
-                    </p>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingField('location')} className="h-6 w-6 p-0">
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                  </div>}
-              </div>
-              
-              {editingField === 'bio' ? <div className="space-y-2">
-                  <Textarea value={formData.bio} onChange={e => setFormData(prev => ({
-                ...prev,
-                bio: e.target.value
-              }))} placeholder="Escreva sobre você..." className="text-sm" />
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleSaveField('bio')} disabled={saving}>
-                      Salvar
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
-                      Cancelar
-                    </Button>
-                  </div>
-                </div> : <div className="flex items-start gap-2">
-                  <p className="text-sm flex-1">{profile?.bio || 'Clique para adicionar uma biografia'}</p>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingField('bio')} className="h-6 w-6 p-0">
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                </div>}
+              <h2 className="text-xl font-semibold mb-1">{profile?.display_name || 'Seu Nome'}</h2>
+              <p className="text-sm text-muted-foreground mb-2">
+                <MapPin className="h-3 w-3 inline mr-1" />
+                {profile?.location || 'Localização'} • {userAge ? `${userAge} anos` : 'Idade não informada'}
+              </p>
+              <p className="text-sm">{profile?.bio || 'Adicione uma biografia'}</p>
             </div>
+            <Button size="sm" variant="outline" onClick={() => setIsEditing(true)} className="self-start">
+              <Edit className="h-4 w-4 mr-2" />
+              Editar Perfil
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Social Links */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <ExternalLink className="h-5 w-5" />
             Redes Sociais
           </CardTitle>
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {socialPlatforms.map(platform => {
             const Icon = platform.icon;
             const currentUrl = profile?.[platform.field] || "";
-            const isEditing = editingField === platform.field;
-            return <div key={platform.id} className="flex items-start gap-3 p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+            return <div key={platform.id} className="flex items-start gap-3 p-4 border rounded-lg bg-card">
                   <Icon className={`h-5 w-5 ${platform.color} mt-0.5 flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm mb-1">{platform.label}</p>
-                    {isEditing ? <div className="flex gap-2">
-                        <Input defaultValue={currentUrl} placeholder={platform.placeholder} className="text-sm h-9" onBlur={e => handleSaveSocialLink(platform.id, e.target.value)} onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      handleSaveSocialLink(platform.id, e.currentTarget.value);
-                      setEditingField(null);
-                    }
-                  }} autoFocus />
-                      </div> : <p className="text-sm text-muted-foreground break-all">
-                        {currentUrl || 'Não configurado'}
-                      </p>}
+                    <p className="text-sm text-muted-foreground break-all">
+                      {currentUrl || 'Não configurado'}
+                    </p>
                   </div>
-                  <div className="flex gap-1 flex-shrink-0">
-                    {currentUrl && !isEditing && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        onClick={() => window.open(currentUrl, '_blank')}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    )}
+                  {currentUrl && (
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setEditingField(isEditing ? null : platform.field)}
+                      className="h-8 w-8 p-0 flex-shrink-0"
+                      onClick={() => window.open(currentUrl, '_blank')}
                     >
-                      <Edit className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
-                  </div>
+                  )}
                 </div>;
           })}
           </div>
@@ -500,6 +462,90 @@ export default function UserProfile({
         {activeTab === "profile" && renderProfileTab()}
         {activeTab === "settings" && renderSettingsTab()}
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Perfil</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-display-name">Nome</Label>
+              <Input
+                id="edit-display-name"
+                value={formData.display_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, display_name: e.target.value }))}
+                placeholder="Seu nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-username">Username</Label>
+              <Input
+                id="edit-username"
+                value={profile?.username || ''}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">Username não pode ser alterado</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-location">Localização</Label>
+              <Input
+                id="edit-location"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                placeholder="Cidade, Estado"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-bio">Biografia</Label>
+              <Textarea
+                id="edit-bio"
+                value={formData.bio}
+                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Conte um pouco sobre você..."
+                rows={4}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="font-semibold">Redes Sociais</h3>
+              {socialPlatforms.map(platform => {
+                const Icon = platform.icon;
+                const fieldValue = formData[platform.field as keyof typeof formData] || '';
+                return (
+                  <div key={platform.id} className="space-y-2">
+                    <Label htmlFor={`edit-${platform.field}`} className="flex items-center gap-2">
+                      <Icon className={`h-4 w-4 ${platform.color}`} />
+                      {platform.label}
+                    </Label>
+                    <Input
+                      id={`edit-${platform.field}`}
+                      value={fieldValue}
+                      onChange={(e) => setFormData(prev => ({ ...prev, [platform.field]: e.target.value }))}
+                      placeholder={platform.placeholder}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveAll} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>;
 }
