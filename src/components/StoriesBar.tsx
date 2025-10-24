@@ -8,6 +8,7 @@ import StoryViewer from "./StoryViewer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { calculateDistance } from "@/lib/geolocation";
 
 interface UserStory {
   user_id: string;
@@ -101,24 +102,16 @@ export default function StoriesBar({ mode }: StoriesBarProps) {
         return;
       }
 
-      // Calculate distances and filter nearby users (100m)
       const nearbyUserIds = nearbyProfiles
         .filter(profile => {
-          if (profile.user_id === user.id) return true; // Always include current user
-          
-          const R = 6371000; // Earth radius in meters
-          const lat1 = myProfile.latitude * Math.PI / 180;
-          const lat2 = profile.latitude! * Math.PI / 180;
-          const deltaLat = (profile.latitude! - myProfile.latitude) * Math.PI / 180;
-          const deltaLon = (profile.longitude! - myProfile.longitude) * Math.PI / 180;
+          if (profile.user_id === user.id) return true;
 
-          const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
-                   Math.cos(lat1) * Math.cos(lat2) *
-                   Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-          const distance = R * c;
+          const distance = calculateDistance(
+            { lat: myProfile.latitude, lon: myProfile.longitude },
+            { lat: profile.latitude!, lon: profile.longitude! }
+          );
 
-          return distance <= 100; // 100m
+          return distance <= 100;
         })
         .map(p => p.user_id);
       

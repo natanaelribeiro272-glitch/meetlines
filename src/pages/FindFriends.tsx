@@ -13,6 +13,7 @@ import UserChatDialog from "@/components/UserChatDialog";
 import { useFriendship } from "@/hooks/useFriendship";
 import StoriesBar from "@/components/StoriesBar";
 import StorySettingsDialog from "@/components/StorySettingsDialog";
+import { calculateDistance, formatDistance } from "@/lib/geolocation";
 
 interface Attendee {
   id: string;
@@ -367,28 +368,15 @@ export default function FindFriends({
         }
 
         const friends = (profilesData || []).map(profile => {
-          // Calcular distância se tiver localização
           let distanceText = "Amigo";
           if (profile.latitude && profile.longitude && userLocation) {
-            const R = 6371000;
-            const lat1 = userLocation.lat * Math.PI / 180;
-            const lat2 = profile.latitude * Math.PI / 180;
-            const deltaLat = (profile.latitude - userLocation.lat) * Math.PI / 180;
-            const deltaLon = (profile.longitude - userLocation.lon) * Math.PI / 180;
-            
-            const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
-                     Math.cos(lat1) * Math.cos(lat2) *
-                     Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            const distance = R * c;
-            
-            if (distance < 1000) {
-              distanceText = `${Math.round(distance)}m`;
-            } else {
-              distanceText = `${(distance / 1000).toFixed(1)}km`;
-            }
+            const distance = calculateDistance(
+              userLocation,
+              { lat: profile.latitude, lon: profile.longitude }
+            );
+            distanceText = formatDistance(distance);
           }
-          
+
           return {
             id: profile.user_id,
             user_id: profile.user_id,
@@ -493,29 +481,20 @@ export default function FindFriends({
           return;
         }
 
-        // Calcular distância e filtrar pessoas próximas (incluindo amigos)
         const nearbyUsers = profilesData
           .map(profile => {
-            const R = 6371000;
-            const lat1 = userLocation.lat * Math.PI / 180;
-            const lat2 = profile.latitude! * Math.PI / 180;
-            const deltaLat = (profile.latitude! - userLocation.lat) * Math.PI / 180;
-            const deltaLon = (profile.longitude! - userLocation.lon) * Math.PI / 180;
-
-            const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
-                     Math.cos(lat1) * Math.cos(lat2) *
-                     Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            const distance = R * c;
+            const distance = calculateDistance(
+              userLocation,
+              { lat: profile.latitude!, lon: profile.longitude! }
+            );
 
             return {
               profile,
               distance
             };
           })
-          .filter(({ distance }) => 
-            distance <= 5000 // 5km de raio
-          )
+          .filter(({ distance }) => distance <= 5000)
+          .sort((a, b) => a.distance - b.distance)
           .map(({ profile, distance }) => ({
             id: profile.user_id,
             user_id: profile.user_id,
@@ -523,18 +502,13 @@ export default function FindFriends({
             avatar: profile.avatar_url || "",
             interest: profile.interest || "curtição",
             note: profile.notes || "Está próximo de você",
-            distance: `${Math.round(distance)}m`,
+            distance: formatDistance(distance),
             instagram: profile.instagram_url || "",
             phone: profile.phone || null,
             event_name: "Próximo",
             relationship_status: profile.relationship_status || "preferencia_nao_informar",
             isFriend: friendIds.includes(profile.user_id)
-          }))
-          .sort((a, b) => {
-            const distA = parseFloat(a.distance);
-            const distB = parseFloat(b.distance);
-            return distA - distB;
-          });
+          }));
 
         setAttendees(nearbyUsers);
 
