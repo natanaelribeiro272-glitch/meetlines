@@ -12,7 +12,6 @@ import { CitySelect } from '@/components/CitySelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CATEGORIES } from '@/constants/categories';
-import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 interface NavState {
   email?: string;
@@ -61,8 +60,6 @@ export default function UserOnboarding() {
   const [usernameError, setUsernameError] = useState('');
   const [isExistingUser, setIsExistingUser] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string>('');
 
   const steps = ['Dados Básicos', 'Localização', 'Foto de Perfil', 'Redes Sociais', 'Interesses', 'Sugestões'];
   const progress = ((currentStep + 1) / steps.length) * 100;
@@ -146,36 +143,73 @@ export default function UserOnboarding() {
   };
 
   // Handle avatar selection
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Por favor, selecione apenas arquivos de imagem');
-        return;
-      }
+    if (!file) return;
 
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('A imagem deve ter no máximo 5MB');
-        return;
-      }
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione apenas arquivos de imagem');
+      return;
+    }
 
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    const croppedFile = await cropImageToSquare(file);
+    if (croppedFile) {
+      setAvatarFile(croppedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-        setCropDialogOpen(true);
+        setAvatarPreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(croppedFile);
     }
   };
 
-  const handleCropComplete = (croppedImage: File) => {
-    setAvatarFile(croppedImage);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(croppedImage);
-    setCropDialogOpen(false);
+  const cropImageToSquare = (file: File): Promise<File | null> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const size = Math.min(img.width, img.height);
+          const outputSize = 800;
+
+          canvas.width = outputSize;
+          canvas.height = outputSize;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+
+          const offsetX = (img.width - size) / 2;
+          const offsetY = (img.height - size) / 2;
+
+          ctx.drawImage(
+            img,
+            offsetX, offsetY, size, size,
+            0, 0, outputSize, outputSize
+          );
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+            } else {
+              resolve(null);
+            }
+          }, 'image/jpeg', 0.95);
+        };
+        img.onerror = () => resolve(null);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
   };
 
   // Toggle interest selection
@@ -825,13 +859,6 @@ export default function UserOnboarding() {
         </CardContent>
       </Card>
 
-      <ImageCropDialog
-        open={cropDialogOpen}
-        onOpenChange={setCropDialogOpen}
-        imageSrc={selectedImage}
-        onCropComplete={handleCropComplete}
-        aspectRatio={1}
-      />
     </div>
   );
 }

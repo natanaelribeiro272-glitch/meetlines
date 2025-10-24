@@ -19,7 +19,6 @@ import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 // Componente auxiliar para fotos de evento
 function EventPhotoGrid({
@@ -211,7 +210,6 @@ export default function OrganizerProfile({
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalAction, setAuthModalAction] = useState("");
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -270,7 +268,6 @@ export default function OrganizerProfile({
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Verificar se é um formato de imagem suportado
     const fileType = file.type.toLowerCase();
     const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (!supportedFormats.includes(fileType)) {
@@ -280,7 +277,6 @@ export default function OrganizerProfile({
       return;
     }
 
-    // Validar tamanho do arquivo (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Arquivo muito grande', {
         description: 'A imagem deve ter no máximo 5MB'
@@ -288,46 +284,31 @@ export default function OrganizerProfile({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImage(reader.result as string);
-      setCropDialogOpen(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCropComplete = async (croppedImage: File) => {
-    if (!user) return;
-
     try {
       setUploadingCover(true);
-      setCropDialogOpen(false);
 
-      // Upload para o Supabase Storage
-      const fileExt = croppedImage.name.split('.').pop()?.toLowerCase();
+      const croppedFile = await cropImageToSquare(file);
+      if (!croppedFile) {
+        toast.error('Erro ao processar imagem');
+        return;
+      }
+
       const timestamp = Date.now();
-      const fileName = `${user.id}/cover-${timestamp}.${fileExt}`;
-      const {
-        error: uploadError
-      } = await supabase.storage.from('user-uploads').upload(fileName, croppedImage, {
-        upsert: true
-      });
+      const fileName = `${user.id}/cover-${timestamp}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('user-uploads')
+        .upload(fileName, croppedFile, { upsert: true });
+
       if (uploadError) throw uploadError;
 
-      // Obter URL pública
-      const {
-        data: {
-          publicUrl
-        }
-      } = supabase.storage.from('user-uploads').getPublicUrl(fileName);
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(fileName);
 
-      // Atualizar perfil do organizador
-      await updateOrganizerProfile({
-        cover_image_url: publicUrl
-      });
+      await updateOrganizerProfile({ cover_image_url: publicUrl });
       toast.success('Capa atualizada com sucesso!');
 
-      // Recarregar dados
       window.location.reload();
     } catch (error) {
       console.error('Error uploading cover:', error);
@@ -335,6 +316,50 @@ export default function OrganizerProfile({
     } finally {
       setUploadingCover(false);
     }
+  };
+
+  const cropImageToSquare = (file: File): Promise<File | null> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const size = Math.min(img.width, img.height);
+          const outputSize = 800;
+
+          canvas.width = outputSize;
+          canvas.height = outputSize;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+
+          const offsetX = (img.width - size) / 2;
+          const offsetY = (img.height - size) / 2;
+
+          ctx.drawImage(
+            img,
+            offsetX, offsetY, size, size,
+            0, 0, outputSize, outputSize
+          );
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(new File([blob], 'cover.jpg', { type: 'image/jpeg' }));
+            } else {
+              resolve(null);
+            }
+          }, 'image/jpeg', 0.95);
+        };
+        img.onerror = () => resolve(null);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
   };
   const handleRemoveCover = async () => {
     if (!user) return;
@@ -768,12 +793,5 @@ export default function OrganizerProfile({
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
 
       {/* Image Crop Dialog */}
-      <ImageCropDialog
-        open={cropDialogOpen}
-        onOpenChange={setCropDialogOpen}
-        imageSrc={selectedImage}
-        onCropComplete={handleCropComplete}
-        aspectRatio={16 / 9}
-      />
     </div>;
 }

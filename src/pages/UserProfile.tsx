@@ -16,7 +16,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile, calculateAge } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ImageCropDialog } from "@/components/ImageCropDialog";
 interface UserProfileProps {
   userType: "user" | "organizer";
 }
@@ -43,8 +42,6 @@ export default function UserProfile({
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [notesEdited, setNotesEdited] = useState(false);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string>("");
   const [formData, setFormData] = useState({
     display_name: "",
     bio: "",
@@ -151,29 +148,17 @@ export default function UserProfile({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Por favor, selecione apenas arquivos de imagem');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('A imagem deve ter no máximo 5MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImage(reader.result as string);
-      setCropDialogOpen(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCropComplete = async (croppedImage: File) => {
-    await uploadAvatar(croppedImage);
-    setCropDialogOpen(false);
+    await uploadAvatar(file);
   };
   if (loading) {
     return <div className="min-h-screen bg-background">
@@ -516,12 +501,5 @@ export default function UserProfile({
         {activeTab === "settings" && renderSettingsTab()}
       </div>
 
-      <ImageCropDialog
-        open={cropDialogOpen}
-        onOpenChange={setCropDialogOpen}
-        imageSrc={selectedImage}
-        onCropComplete={handleCropComplete}
-        aspectRatio={1}
-      />
     </div>;
 }
