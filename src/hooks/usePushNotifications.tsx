@@ -20,10 +20,28 @@ export function usePushNotifications() {
     initializePushNotifications();
   }, [user]);
 
-  const initializePushNotifications = async () => {
+  const getPushNotificationsPlugin = () => {
+    if (!Capacitor.isNativePlatform()) {
+      return null;
+    }
     try {
-      const { PushNotifications } = await import('@capacitor/push-notifications');
+      // Acessa o plugin via Capacitor.Plugins
+      return (Capacitor as any).Plugins?.PushNotifications;
+    } catch {
+      return null;
+    }
+  };
 
+  const initializePushNotifications = async () => {
+    const PushNotifications = getPushNotificationsPlugin();
+
+    if (!PushNotifications) {
+      console.log('PushNotifications plugin not available');
+      setIsSupported(false);
+      return;
+    }
+
+    try {
       let permStatus = await PushNotifications.checkPermissions();
 
       if (permStatus.receive === 'prompt') {
@@ -40,24 +58,24 @@ export function usePushNotifications() {
 
       await PushNotifications.register();
 
-      PushNotifications.addListener('registration', async (token) => {
+      PushNotifications.addListener('registration', async (token: any) => {
         console.log('Push registration success, token:', token.value);
         await savePushToken(token.value);
       });
 
-      PushNotifications.addListener('registrationError', (error) => {
+      PushNotifications.addListener('registrationError', (error: any) => {
         console.error('Push registration error:', error);
         toast.error('Erro ao registrar notificações push');
       });
 
-      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
         console.log('Push notification received:', notification);
         toast.success(notification.title || 'Nova notificação', {
           description: notification.body,
         });
       });
 
-      PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+      PushNotifications.addListener('pushNotificationActionPerformed', (notification: any) => {
         console.log('Push notification action performed:', notification);
       });
 
@@ -122,9 +140,14 @@ export function usePushNotifications() {
       return false;
     }
 
-    try {
-      const { PushNotifications } = await import('@capacitor/push-notifications');
+    const PushNotifications = getPushNotificationsPlugin();
 
+    if (!PushNotifications) {
+      toast.error('Plugin de notificações não disponível');
+      return false;
+    }
+
+    try {
       const permStatus = await PushNotifications.requestPermissions();
 
       if (permStatus.receive === 'granted') {
