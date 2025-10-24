@@ -7,7 +7,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.meetlines.app"
+    namespace "com.meetlines.meetlinesapp"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.meetlines.app"
