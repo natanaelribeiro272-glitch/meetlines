@@ -1,4 +1,4 @@
-import { Bell, Calendar, AlertCircle, X, UserPlus, Check, ArrowLeft } from "lucide-react";
+import { Bell, Calendar, AlertCircle, X, UserPlus, Check, ArrowLeft, Heart, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,12 +17,32 @@ export default function Notifications() {
   const { notifications, loading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const { acceptFriendRequest, declineFriendRequest, loading: requestLoading } = useFriendRequest();
   const [requesterProfiles, setRequesterProfiles] = useState<Record<string, any>>({});
+  const [userProfiles, setUserProfiles] = useState<Record<string, any>>({});
 
-  // Fetch requester profiles for friend requests
+  const todayNotifications = notifications.filter(n => {
+    const date = new Date(n.created_at);
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  });
+
+  const yesterdayNotifications = notifications.filter(n => {
+    const date = new Date(n.created_at);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return date.toDateString() === yesterday.toDateString();
+  });
+
+  const olderNotifications = notifications.filter(n => {
+    const date = new Date(n.created_at);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return date < yesterday && date.toDateString() !== yesterday.toDateString();
+  });
+
   useEffect(() => {
-    const fetchRequesterProfiles = async () => {
+    const fetchProfiles = async () => {
       const friendRequests = notifications.filter(n => n.type === 'friend_request');
-      if (friendRequests.length === 0) return;
+      const userInteractions = notifications.filter(n => ['user_like', 'user_message', 'event_like'].includes(n.type));
 
       for (const notification of friendRequests) {
         const { data: friendships } = await supabase
@@ -39,7 +59,7 @@ export default function Notifications() {
             .from('profiles')
             .select('user_id, display_name, avatar_url, interest, relationship_status')
             .eq('user_id', friendships.user_id)
-            .single();
+            .maybeSingle();
 
           if (profile) {
             setRequesterProfiles(prev => ({
@@ -49,23 +69,80 @@ export default function Notifications() {
           }
         }
       }
+
+      const userIds = userInteractions
+        .map(n => {
+          try {
+            const data = typeof n.data === 'string' ? JSON.parse(n.data) : n.data;
+            return data?.from_user_id || data?.user_id;
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean);
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds);
+
+        if (profiles) {
+          const profileMap: Record<string, any> = {};
+          profiles.forEach(p => {
+            profileMap[p.user_id] = p;
+          });
+          setUserProfiles(profileMap);
+        }
+      }
     };
 
     if (user && notifications.length > 0) {
-      fetchRequesterProfiles();
+      fetchProfiles();
     }
   }, [notifications, user]);
+
+  const getUserAvatar = (notification: any) => {
+    if (notification.type === 'friend_request') {
+      return requesterProfiles[notification.id]?.avatar_url;
+    }
+
+    try {
+      const data = typeof notification.data === 'string' ? JSON.parse(notification.data) : notification.data;
+      const userId = data?.from_user_id || data?.user_id;
+      return userId ? userProfiles[userId]?.avatar_url : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getUserName = (notification: any) => {
+    if (notification.type === 'friend_request') {
+      return requesterProfiles[notification.id]?.display_name || 'Usuário';
+    }
+
+    try {
+      const data = typeof notification.data === 'string' ? JSON.parse(notification.data) : notification.data;
+      const userId = data?.from_user_id || data?.user_id;
+      return userId ? userProfiles[userId]?.display_name || 'Usuário' : 'Usuário';
+    } catch {
+      return 'Usuário';
+    }
+  };
 
   const getIcon = (type: string) => {
     switch (type) {
       case "event_created":
-        return Calendar;
       case "event_updated":
-        return AlertCircle;
       case "event_cancelled":
-        return X;
+        return Calendar;
       case "friend_request":
         return UserPlus;
+      case "user_like":
+      case "event_like":
+        return Heart;
+      case "user_message":
+        return MessageCircle;
       default:
         return Bell;
     }
@@ -137,37 +214,160 @@ export default function Notifications() {
     return null;
   }
 
+  const renderNotificationSection = (sectionNotifications: any[], title: string) => {
+    if (sectionNotifications.length === 0) return null;
+
+    return (
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-foreground px-4 py-3 sticky top-[73px] bg-background z-10">
+          {title}
+        </h2>
+        <div>
+          {sectionNotifications.map((notification) => {
+              const Icon = getIcon(notification.type);
+              const isFriendRequest = notification.type === 'friend_request';
+              const requesterProfile = isFriendRequest ? requesterProfiles[notification.id] : null;
+              const userAvatar = getUserAvatar(notification);
+              const userName = getUserName(notification);
+              const isUserInteraction = ['user_like', 'user_message', 'event_like', 'friend_request'].includes(notification.type);
+
+              return (
+                <div
+                  key={notification.id}
+                  className={`px-4 py-3 ${isFriendRequest ? '' : 'hover:bg-surface/50 cursor-pointer'} transition-colors group ${
+                    !notification.read ? "bg-primary/5" : ""
+                  }`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="relative flex-shrink-0">
+                      {isUserInteraction && userAvatar ? (
+                        <>
+                          <Avatar className="h-12 w-12 border-2 border-background">
+                            <AvatarImage src={userAvatar} alt={userName} />
+                            <AvatarFallback className="bg-surface">
+                              {userName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full flex items-center justify-center ${
+                            notification.type === 'user_like' || notification.type === 'event_like' ? 'bg-red-500' :
+                            notification.type === 'user_message' ? 'bg-blue-500' :
+                            'bg-primary'
+                          }`}>
+                            <Icon className="h-3.5 w-3.5 text-white" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                          !notification.read ? "bg-primary/20" : "bg-surface"
+                        }`}>
+                          <Icon className="h-6 w-6 text-primary" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      {isFriendRequest && requesterProfile ? (
+                        <div>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm">
+                                <span className="font-semibold text-foreground">{userName}</span>
+                                {' '}solicitou seguir você.
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {getInterestLabel(requesterProfile.interest)} • {getRelationshipLabel(requesterProfile.relationship_status)}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatTime(notification.created_at)}
+                              </p>
+                            </div>
+                            {!notification.read && (
+                              <div className="h-2 w-2 rounded-full bg-blue-500 ml-2 flex-shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex gap-3 mt-3">
+                            <Button
+                              size="sm"
+                              className="flex-1 h-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAcceptRequest(notification.id, requesterProfile.friendshipUserId);
+                              }}
+                              disabled={requestLoading}
+                            >
+                              Aceitar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeclineRequest(notification.id, requesterProfile.friendshipUserId);
+                              }}
+                              disabled={requestLoading}
+                            >
+                              Recusar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm">
+                              {isUserInteraction ? (
+                                <>
+                                  <span className="font-semibold text-foreground">{userName}</span>
+                                  {' '}{notification.message || notification.title}
+                                </>
+                              ) : (
+                                <span className="text-foreground">{notification.title || notification.message}</span>
+                              )}
+                            </p>
+                            {notification.message && !isUserInteraction && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {notification.message}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatTime(notification.created_at)}
+                            </p>
+                          </div>
+                          {!notification.read && (
+                            <div className="h-2 w-2 rounded-full bg-blue-500 ml-2 flex-shrink-0" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="text-2xl font-bold text-foreground">Notificações</h1>
-            </div>
-            {notifications.some(n => !n.read) && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={markAllAsRead}
-              >
-                Marcar todas como lidas
-              </Button>
-            )}
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="flex-shrink-0"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+            <h1 className="text-xl font-bold text-foreground">Notificações</h1>
           </div>
         </div>
       </div>
 
-      {/* Notifications List */}
-      <div className="max-w-2xl mx-auto">
+      <div className="pb-20">
         {loading ? (
           <div className="p-12 text-center text-muted-foreground">
             <Bell className="h-12 w-12 mx-auto mb-4 opacity-50 animate-pulse" />
@@ -180,130 +380,11 @@ export default function Notifications() {
             <p className="text-sm">Você está em dia!</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
-            {notifications.map((notification) => {
-              const Icon = getIcon(notification.type);
-              const isFriendRequest = notification.type === 'friend_request';
-              const requesterProfile = isFriendRequest ? requesterProfiles[notification.id] : null;
-              
-              return (
-                <div
-                  key={notification.id}
-                  className={`p-4 ${isFriendRequest ? '' : 'hover:bg-surface cursor-pointer'} transition-colors group ${
-                    !notification.read ? "bg-primary/5 border-l-4 border-l-primary" : ""
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  {isFriendRequest && requesterProfile ? (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="h-14 w-14">
-                          <AvatarImage src={requesterProfile.avatar_url} />
-                          <AvatarFallback>
-                            {requesterProfile.display_name?.[0]?.toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="text-base font-semibold text-foreground">
-                                {requesterProfile.display_name}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {getInterestLabel(requesterProfile.interest)}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {getRelationshipLabel(requesterProfile.relationship_status)}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {formatTime(notification.created_at)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {!notification.read && (
-                                <Badge variant="destructive" className="h-2 w-2 p-0 rounded-full" />
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-destructive/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteNotification(notification.id);
-                                }}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 ml-[72px]">
-                        <Button
-                          size="default"
-                          className="flex-1"
-                          onClick={() => handleAcceptRequest(notification.id, requesterProfile.friendshipUserId)}
-                          disabled={requestLoading}
-                        >
-                          <Check className="h-4 w-4 mr-2" />
-                          Aceitar
-                        </Button>
-                        <Button
-                          size="default"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => handleDeclineRequest(notification.id, requesterProfile.friendshipUserId)}
-                          disabled={requestLoading}
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Recusar
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-4">
-                      <div className={`p-2 rounded-full ${
-                        !notification.read ? "bg-primary/20" : "bg-surface"
-                      }`}>
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <p className="text-base font-medium text-foreground mb-1">
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-muted-foreground mb-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatTime(notification.created_at)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {!notification.read && (
-                              <Badge variant="destructive" className="h-2 w-2 p-0 rounded-full" />
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-destructive/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNotification(notification.id);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <>
+            {renderNotificationSection(todayNotifications, 'Hoje')}
+            {renderNotificationSection(yesterdayNotifications, 'Ontem')}
+            {renderNotificationSection(olderNotifications, 'Últimos 7 dias')}
+          </>
         )}
       </div>
     </div>
