@@ -209,25 +209,44 @@ export default function UserProfile({
       {/* Profile Header */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                {profile?.avatar_url ? <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" /> : <User className="h-8 w-8 text-primary" />}
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="relative mb-4">
+              <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden ring-4 ring-background shadow-lg">
+                {profile?.avatar_url ? <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" /> : <User className="h-10 w-10 text-primary" />}
               </div>
-              <Button size="icon" variant="outline" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full" onClick={() => fileInputRef.current?.click()} disabled={saving}>
-                <Camera className="h-3 w-3" />
+              <Button
+                size="icon"
+                variant="secondary"
+                className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={saving}
+              >
+                <Camera className="h-4 w-4" />
               </Button>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold mb-1">{profile?.display_name || 'Seu Nome'}</h2>
-              <p className="text-sm text-muted-foreground mb-2">
-                <MapPin className="h-3 w-3 inline mr-1" />
-                {profile?.location || 'Localização'} • {userAge ? `${userAge} anos` : 'Idade não informada'}
-              </p>
-              <p className="text-sm">{profile?.bio || 'Adicione uma biografia'}</p>
+
+            <h2 className="text-2xl font-bold mb-1">{profile?.display_name || 'Seu Nome'}</h2>
+            <p className="text-sm text-muted-foreground mb-2">@{profile?.username || 'username'}</p>
+
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                <span>{profile?.location || 'Localização'}</span>
+              </div>
+              <span>•</span>
+              <span>{userAge ? `${userAge} anos` : 'Idade não informada'}</span>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setIsEditing(true)} className="self-start">
+
+            {profile?.bio && (
+              <p className="text-sm text-muted-foreground max-w-md mb-4">{profile.bio}</p>
+            )}
+
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(true)}
+              size="sm"
+            >
               <Edit className="h-4 w-4 mr-2" />
               Editar Perfil
             </Button>
