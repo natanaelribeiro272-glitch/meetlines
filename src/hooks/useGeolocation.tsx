@@ -83,20 +83,39 @@ export function useGeolocation(
       }
 
       if (isNativePlatform) {
-        const coords = await Geolocation.getCurrentPosition({
-          enableHighAccuracy,
-          timeout,
-          maximumAge,
-        });
+        try {
+          const coords = await Geolocation.getCurrentPosition({
+            enableHighAccuracy,
+            timeout,
+            maximumAge,
+          });
 
-        const pos = {
-          lat: coords.coords.latitude,
-          lon: coords.coords.longitude,
-        };
+          const pos = {
+            lat: coords.coords.latitude,
+            lon: coords.coords.longitude,
+          };
 
-        setPosition(pos);
-        setLoading(false);
-        return pos;
+          setPosition(pos);
+          setLoading(false);
+          return pos;
+        } catch (geoErr: any) {
+          console.error('Geolocation error:', geoErr);
+          let errorMessage = 'Erro ao obter localização';
+
+          if (geoErr.message) {
+            if (geoErr.message.includes('timeout')) {
+              errorMessage = 'Tempo esgotado. Certifique-se de estar em local aberto.';
+            } else if (geoErr.message.includes('denied')) {
+              errorMessage = 'Permissão negada. Ative a localização nas configurações.';
+            } else if (geoErr.message.includes('unavailable')) {
+              errorMessage = 'Localização indisponível. Ative o GPS do dispositivo.';
+            }
+          }
+
+          setError(errorMessage);
+          setLoading(false);
+          return null;
+        }
       } else {
         return new Promise((resolve) => {
           navigator.geolocation.getCurrentPosition(
@@ -111,7 +130,21 @@ export function useGeolocation(
             },
             (err) => {
               console.error('Geolocation error:', err);
-              setError('Erro ao obter localização. Permita o acesso à localização.');
+              let errorMessage = 'Erro ao obter localização';
+
+              switch (err.code) {
+                case err.PERMISSION_DENIED:
+                  errorMessage = 'Permissão de localização negada';
+                  break;
+                case err.POSITION_UNAVAILABLE:
+                  errorMessage = 'Localização indisponível. Ative o GPS.';
+                  break;
+                case err.TIMEOUT:
+                  errorMessage = 'Tempo esgotado ao obter localização';
+                  break;
+              }
+
+              setError(errorMessage);
               setLoading(false);
               resolve(null);
             },
