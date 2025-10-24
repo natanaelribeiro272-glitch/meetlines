@@ -744,6 +744,7 @@ export default function OrganizerPage() {
                         <SelectItem value="bares">🍻 Bares</SelectItem>
                         <SelectItem value="boates">🪩 Boates</SelectItem>
                         <SelectItem value="esportes">⚽ Esportes</SelectItem>
+                        <SelectItem value="encontros">👥 Encontros</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">

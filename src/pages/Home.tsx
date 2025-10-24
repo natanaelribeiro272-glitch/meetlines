@@ -112,6 +112,9 @@ export default function Home({
   }, {
     id: "esportes",
     label: "⚽ Esportes"
+  }, {
+    id: "encontros",
+    label: "👥 Encontros"
   }];
   return <div className="min-h-screen bg-background pb-20">
       <Header title="Eventos" userType={userType} showNotifications={true} showLocation={true} />

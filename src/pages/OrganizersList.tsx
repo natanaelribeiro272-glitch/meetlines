@@ -33,6 +33,7 @@ export default function OrganizersList({
     { id: "bares", label: "🍻 Bares" },
     { id: "boates", label: "🪩 Boates" },
     { id: "esportes", label: "⚽ Esportes" },
+    { id: "encontros", label: "👥 Encontros" },
   ];
   const filteredOrganizers = organizers.filter(organizer => {
     const matchesSearch = organizer.page_title.toLowerCase().includes(searchQuery.toLowerCase()) || (organizer.profile?.bio || '').toLowerCase().includes(searchQuery.toLowerCase());

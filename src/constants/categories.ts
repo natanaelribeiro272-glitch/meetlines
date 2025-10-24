@@ -9,7 +9,8 @@ export type CategoryValue =
   | 'cursos'
   | 'bares'
   | 'boates'
-  | 'esportes';
+  | 'esportes'
+  | 'encontros';
 
 export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: 'festas', label: '🎉 Festas' },
@@ -20,6 +21,7 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: 'bares', label: '🍻 Bares' },
   { value: 'boates', label: '🪩 Boates' },
   { value: 'esportes', label: '⚽ Esportes' },
+  { value: 'encontros', label: '👥 Encontros' },
 ];
 
 // Optional normalization for legacy category values used elsewhere
@@ -46,4 +48,5 @@ export const NORMALIZE_CATEGORY_MAP: Record<string, CategoryValue> = {
   musica: 'shows',
   eventos: 'festas',
   esportes: 'esportes',
+  encontros: 'encontros',
 };
