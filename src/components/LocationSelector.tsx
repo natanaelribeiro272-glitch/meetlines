@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MapPin, Navigation, ChevronDown, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ interface City {
 
 export function LocationSelector() {
   const { profile, refetch } = useProfile();
+  const { getCurrentPosition } = useGeolocation();
   const [open, setOpen] = useState(false);
   const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
@@ -137,50 +139,50 @@ export function LocationSelector() {
   };
 
   const handleUseCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocalização não suportada pelo navegador");
-      return;
-    }
-
     setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
 
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const data = await response.json();
+    try {
+      const position = await getCurrentPosition();
 
-          const cityName = data.address.city || data.address.town || data.address.municipality;
-
-          if (cityName) {
-            const matchingCity = cities.find(
-              (city) => city.name.toLowerCase() === cityName.toLowerCase()
-            );
-
-            if (matchingCity) {
-              await handleSelectCity(matchingCity);
-            } else {
-              toast.error("Cidade não encontrada no sistema");
-            }
-          } else {
-            toast.error("Não foi possível identificar sua cidade");
-          }
-        } catch (error) {
-          console.error("Error fetching location:", error);
-          toast.error("Erro ao obter localização");
-        } finally {
-          setLoading(false);
-        }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        toast.error("Erro ao acessar localização");
+      if (!position) {
+        toast.error("Não foi possível obter sua localização");
         setLoading(false);
+        return;
       }
-    );
+
+      const { lat, lon } = position;
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+        );
+        const data = await response.json();
+
+        const cityName = data.address.city || data.address.town || data.address.municipality;
+
+        if (cityName) {
+          const matchingCity = cities.find(
+            (city) => city.name.toLowerCase() === cityName.toLowerCase()
+          );
+
+          if (matchingCity) {
+            await handleSelectCity(matchingCity);
+          } else {
+            toast.error("Cidade não encontrada no sistema");
+          }
+        } else {
+          toast.error("Não foi possível identificar sua cidade");
+        }
+      } catch (error) {
+        console.error("Error fetching location:", error);
+        toast.error("Erro ao obter localização");
+      }
+    } catch (error) {
+      console.error("Geolocation error:", error);
+      toast.error("Erro ao acessar localização. Verifique as permissões do app.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClearLocation = async () => {
