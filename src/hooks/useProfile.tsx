@@ -110,20 +110,24 @@ export function useProfile() {
     }
   };
 
-  // Upload avatar
+  // Upload avatar with automatic 1:1 crop
   const uploadAvatar = async (file: File) => {
     if (!user) return null;
 
     try {
       setSaving(true);
-      
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
-      
+
+      const croppedFile = await cropImageToSquare(file);
+      if (!croppedFile) {
+        toast.error('Erro ao processar a imagem');
+        return null;
+      }
+
+      const fileName = `${user.id}/avatar.jpg`;
+
       const { error: uploadError } = await supabase.storage
         .from('user-uploads')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, croppedFile, { upsert: true });
 
       if (uploadError) {
         console.error('Error uploading file:', uploadError);
@@ -131,19 +135,17 @@ export function useProfile() {
         return null;
       }
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('user-uploads')
         .getPublicUrl(fileName);
 
-      // Update profile with new avatar URL
       const success = await updateProfile({ avatar_url: publicUrl });
-      
+
       if (success) {
         toast.success('Foto de perfil atualizada!');
         return publicUrl;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error:', error);
@@ -152,6 +154,51 @@ export function useProfile() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Helper function to crop image to 1:1 ratio
+  const cropImageToSquare = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const size = Math.min(img.width, img.height);
+          const outputSize = 800;
+
+          canvas.width = outputSize;
+          canvas.height = outputSize;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+
+          const offsetX = (img.width - size) / 2;
+          const offsetY = (img.height - size) / 2;
+
+          ctx.drawImage(
+            img,
+            offsetX, offsetY, size, size,
+            0, 0, outputSize, outputSize
+          );
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+            } else {
+              reject(new Error('Failed to create blob'));
+            }
+          }, 'image/jpeg', 0.95);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   };
 
   useEffect(() => {
