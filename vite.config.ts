@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => ({
     minify: "esbuild",
     sourcemap: mode === "development",
     rollupOptions: {
+      external: ['@capacitor/push-notifications'],
       output: {
         manualChunks: undefined,
       },
