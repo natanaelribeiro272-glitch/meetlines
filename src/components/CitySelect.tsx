@@ -61,7 +61,7 @@ export function CitySelect({
     if (searchQuery.trim() === "") {
       setFilteredCities(cities);
     } else {
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase().trim();
       const filtered = cities.filter(
         (city) =>
           city.name.toLowerCase().includes(query) ||
