@@ -42,15 +42,19 @@ export function useGeolocation(
     try {
       if (isNativePlatform) {
         const permission = await Geolocation.checkPermissions();
+        console.log('Current permission status:', permission);
 
         if (permission.location === 'denied') {
           setError('Permissão de localização negada. Ative nas configurações do app.');
           return false;
         }
 
-        if (permission.location === 'prompt' || permission.location === 'prompt-with-rationale') {
+        if (permission.location !== 'granted') {
+          console.log('Requesting location permission...');
           const requested = await Geolocation.requestPermissions();
-          if (requested.location === 'denied') {
+          console.log('Permission request result:', requested);
+
+          if (requested.location !== 'granted') {
             setError('Permissão de localização negada.');
             return false;
           }
