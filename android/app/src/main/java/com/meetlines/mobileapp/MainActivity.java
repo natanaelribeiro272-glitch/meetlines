@@ -1,4 +1,4 @@
-package com.meetlines.app;
+package com.meetlines.mobileapp;
 
 import android.os.Bundle;
 import android.webkit.WebSettings;

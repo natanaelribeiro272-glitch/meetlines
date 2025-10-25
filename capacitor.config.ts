@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.meetlines.meetlinesapp',
+  appId: 'com.meetlines.mobileapp',
   appName: 'Meetlines',
   webDir: 'dist',
   server: {
