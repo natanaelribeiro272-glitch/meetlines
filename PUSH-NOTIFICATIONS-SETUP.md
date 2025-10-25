@@ -1,6 +1,6 @@
 # Configuração de Notificações Push
 
-Este guia explica como configurar as notificações push no aplicativo usando Firebase Cloud Messaging (FCM).
+Este guia explica como configurar as notificações push no aplicativo usando Firebase Cloud Messaging (FCM) API V1 com OAuth 2.0.
 
 ## Visão Geral
 
@@ -82,29 +82,66 @@ dependencies {
 3. No Firebase Console, vá em Project Settings > Cloud Messaging
 4. Faça upload do APNs Key
 
-## Passo 4: Obter Server Key do Firebase
+## Passo 4: Obter Service Account JSON do Firebase
 
-1. No Firebase Console, vá em Project Settings
-2. Vá na aba "Cloud Messaging"
-3. Copie o "Server key" (também chamado de Legacy server key)
+1. No Firebase Console, vá em **Project Settings** (ícone de engrenagem ao lado de "Project Overview")
+2. Vá na aba **"Service accounts"**
+3. Clique em **"Generate new private key"**
+4. Confirme clicando em **"Generate key"**
+5. Um arquivo JSON será baixado automaticamente
+6. **IMPORTANTE:** Guarde este arquivo com segurança - ele contém credenciais sensíveis!
+
+O arquivo JSON terá esta estrutura:
+
+```json
+{
+  "type": "service_account",
+  "project_id": "seu-projeto-id",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-xxxxx@seu-projeto-id.iam.gserviceaccount.com",
+  "client_id": "...",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "..."
+}
+```
 
 ## Passo 5: Configurar no Supabase
 
 1. Acesse o [Supabase Dashboard](https://supabase.com/dashboard)
 2. Vá em seu projeto
-3. Navegue até "Settings" > "Edge Functions" > "Secrets"
-4. Adicione uma nova secret:
-   - Nome: `FCM_SERVER_KEY`
-   - Valor: Cole o Server Key copiado do Firebase
+3. Navegue até **"Settings"** > **"Edge Functions"** > **"Secrets"**
+4. Clique em **"Add new secret"**
+5. Adicione a seguinte secret:
+   - **Nome:** `FCM_SERVICE_ACCOUNT`
+   - **Valor:** Cole **TODO O CONTEÚDO** do arquivo JSON baixado (incluindo as chaves `{}`)
 
-## Passo 6: Instalar Dependências
+## Passo 6: Fazer Deploy da Edge Function
+
+### Opção A: Via Supabase CLI (Recomendado)
+
+```bash
+supabase functions deploy send-push-notification
+```
+
+### Opção B: Via Dashboard do Supabase
+
+1. Acesse o Supabase Dashboard
+2. Vá em **Edge Functions**
+3. Clique na função **send-push-notification** (ou crie uma nova)
+4. Cole o código do arquivo `supabase/functions/send-push-notification/index.ts`
+5. Clique em **Deploy**
+
+## Passo 7: Instalar Dependências
 
 ```bash
 npm install
 npx cap sync
 ```
 
-## Passo 7: Testar
+## Passo 8: Testar
 
 ### No Android
 
@@ -154,21 +191,45 @@ Os seguintes eventos disparam notificações automaticamente:
 
 ### Notificações não estão sendo enviadas
 
-1. Verifique se a `FCM_SERVER_KEY` está configurada no Supabase
+1. Verifique se a `FCM_SERVICE_ACCOUNT` está configurada no Supabase
+   - Dashboard > Settings > Edge Functions > Secrets
+   - Confirme que o valor é um JSON válido
 2. Verifique os logs da Edge Function no Supabase Dashboard
+   - Dashboard > Edge Functions > send-push-notification > Logs
 3. Confirme que o app está registrando o token corretamente
+   - Verifique a tabela `push_tokens` no banco de dados
+
+### Erro: "OAuth error" ou "Failed to get access token"
+
+1. Confirme que o JSON da Service Account está completo e válido
+2. Verifique se a `private_key` no JSON contém `\n` para quebras de linha
+3. Certifique-se de que a Service Account tem permissões corretas no Firebase
+4. Teste se o `project_id` no JSON corresponde ao seu projeto Firebase
 
 ### Token não está sendo salvo
 
 1. Verifique as permissões de notificação do dispositivo
 2. Confira os logs do console para erros
 3. Certifique-se de que o Firebase está configurado corretamente
+4. No Android: verifique se `google-services.json` está no lugar correto
+5. No iOS: verifique se `GoogleService-Info.plist` foi adicionado ao projeto
 
 ### Notificações não aparecem no iOS
 
-1. Certifique-se de estar testando em dispositivo físico
+1. Certifique-se de estar testando em dispositivo físico (não funciona em simulador)
 2. Verifique se os certificados APNs estão válidos
-3. Confirme que as capabilities estão habilitadas no Xcode
+3. Confirme que as capabilities estão habilitadas no Xcode:
+   - Push Notifications
+   - Background Modes > Remote notifications
+4. Verifique se o APNs Key foi configurado no Firebase Console
+
+### Erro: "UNAUTHENTICATED" ou "403 Forbidden"
+
+1. A API antiga (Legacy) foi descontinuada
+2. Certifique-se de usar a API V1 com OAuth 2.0
+3. Verifique se o Service Account tem as permissões corretas:
+   - Firebase Console > Project Settings > Service Accounts
+   - Deve ter role "Firebase Cloud Messaging Admin"
 
 ## Monitoramento
 
@@ -185,6 +246,22 @@ Você pode monitorar as notificações enviadas:
 - Usuários só podem gerenciar seus próprios tokens
 - A Edge Function valida todos os dados antes de enviar
 
+## Diferenças entre FCM Legacy API e FCM API V1
+
+A implementação atual usa **FCM API V1 com OAuth 2.0**, que é a versão recomendada pelo Google:
+
+### FCM Legacy API (Antiga - Descontinuada)
+- ❌ Usa `FCM_SERVER_KEY` (chave de servidor)
+- ❌ Endpoint: `https://fcm.googleapis.com/fcm/send`
+- ❌ Será descontinuada em junho de 2024
+- ❌ Menos segura
+
+### FCM API V1 (Atual - Implementada)
+- ✅ Usa `FCM_SERVICE_ACCOUNT` (JSON com OAuth 2.0)
+- ✅ Endpoint: `https://fcm.googleapis.com/v1/projects/{project-id}/messages:send`
+- ✅ Mais segura e moderna
+- ✅ Suporte a longo prazo garantido pelo Google
+
 ## Próximos Passos
 
 Para produção, considere:
@@ -194,3 +271,10 @@ Para produção, considere:
 3. Criar categorias de notificações (permitir usuário escolher quais receber)
 4. Implementar notificações ricas (com imagens, ações, etc.)
 5. Adicionar analytics para rastreamento de engagement
+
+## Links Úteis
+
+- [Firebase Console](https://console.firebase.google.com/)
+- [Documentação FCM API V1](https://firebase.google.com/docs/cloud-messaging/migrate-v1)
+- [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
+- [OAuth 2.0 Service Account](https://developers.google.com/identity/protocols/oauth2/service-account)

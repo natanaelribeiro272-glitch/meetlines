@@ -13,6 +13,109 @@ interface NotificationPayload {
   data?: Record<string, any>;
 }
 
+interface ServiceAccount {
+  type: string;
+  project_id: string;
+  private_key_id: string;
+  private_key: string;
+  client_email: string;
+  client_id: string;
+  auth_uri: string;
+  token_uri: string;
+  auth_provider_x509_cert_url: string;
+  client_x509_cert_url: string;
+}
+
+async function createJWT(serviceAccount: ServiceAccount): Promise<string> {
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT',
+  };
+
+  const now = Math.floor(Date.now() / 1000);
+  const expiry = now + 3600;
+
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: expiry,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+  };
+
+  const encodedHeader = btoa(JSON.stringify(header))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  const encodedPayload = btoa(JSON.stringify(payload))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+  const privateKey = serviceAccount.private_key.replace(/\\n/g, '\n');
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(unsignedToken);
+
+  const pemHeader = '-----BEGIN PRIVATE KEY-----';
+  const pemFooter = '-----END PRIVATE KEY-----';
+  const pemContents = privateKey.substring(
+    pemHeader.length,
+    privateKey.length - pemFooter.length
+  ).replace(/\s/g, '');
+
+  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryDer,
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, data);
+
+  const signatureArray = new Uint8Array(signature);
+  const encodedSignature = btoa(String.fromCharCode(...signatureArray))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  return `${unsignedToken}.${encodedSignature}`;
+}
+
+async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
+  const jwt = await createJWT(serviceAccount);
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Failed to get access token:', errorText);
+    throw new Error(`OAuth error: ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -39,7 +142,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Buscar tokens de push do usuário
     const { data: tokens, error: tokensError } = await supabase
       .from('push_tokens')
       .select('token, platform')
@@ -66,21 +168,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // NOTA: Esta função está preparada para FCM (Firebase Cloud Messaging)
-    // Para ativar notificações push, você precisará:
-    // 1. Criar um projeto no Firebase Console
-    // 2. Obter a chave de servidor (Server Key)
-    // 3. Adicionar FCM_SERVER_KEY nas variáveis de ambiente do Supabase
-    // 4. Configurar o Firebase no app mobile (Android/iOS)
+    const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT');
 
-    const fcmServerKey = Deno.env.get('FCM_SERVER_KEY');
-    
-    if (!fcmServerKey) {
-      console.log('FCM_SERVER_KEY not configured. Push notifications disabled.');
+    if (!fcmServiceAccountJson) {
+      console.log('FCM_SERVICE_ACCOUNT not configured. Push notifications disabled.');
       return new Response(
-        JSON.stringify({ 
-          message: 'Push notifications not configured. Add FCM_SERVER_KEY to enable.',
-          sent: 0 
+        JSON.stringify({
+          message: 'Push notifications not configured. Add FCM_SERVICE_ACCOUNT to enable.',
+          sent: 0
         }),
         {
           status: 200,
@@ -89,29 +184,49 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Enviar notificações para cada token
+    const serviceAccount: ServiceAccount = JSON.parse(fcmServiceAccountJson);
+    const accessToken = await getAccessToken(serviceAccount);
+    const projectId = serviceAccount.project_id;
+
     const results = await Promise.allSettled(
       tokens.map(async ({ token, platform }) => {
         const fcmPayload = {
-          to: token,
-          notification: {
-            title,
-            body,
-            sound: 'default',
-            badge: '1',
+          message: {
+            token,
+            notification: {
+              title,
+              body,
+            },
+            data: data || {},
+            android: {
+              priority: 'high',
+              notification: {
+                sound: 'default',
+                channel_id: 'default',
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: 'default',
+                  badge: 1,
+                },
+              },
+            },
           },
-          data: data || {},
-          priority: 'high',
         };
 
-        const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `key=${fcmServerKey}`,
-          },
-          body: JSON.stringify(fcmPayload),
-        });
+        const response = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify(fcmPayload),
+          }
+        );
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -127,7 +242,7 @@ Deno.serve(async (req: Request) => {
     const failureCount = results.filter(r => r.status === 'rejected').length;
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         message: 'Push notifications sent',
         sent: successCount,
         failed: failureCount,
