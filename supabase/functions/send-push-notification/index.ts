@@ -202,7 +202,12 @@ Deno.serve(async (req: Request) => {
               priority: 'high',
               notification: {
                 sound: 'default',
-                channel_id: 'default',
+                channel_id: 'meetlines_notifications',
+                default_sound: true,
+                default_vibrate_timings: true,
+                default_light_settings: true,
+                notification_priority: 'PRIORITY_HIGH',
+                visibility: 'PUBLIC',
               },
             },
             apns: {

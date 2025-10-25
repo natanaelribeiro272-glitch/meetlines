@@ -43,6 +43,21 @@ export function usePushNotifications() {
     }
 
     try {
+      if (Capacitor.getPlatform() === 'android') {
+        await PushNotifications.createChannel({
+          id: 'meetlines_notifications',
+          name: 'Notificações Meetlines',
+          description: 'Notificações de eventos, seguidores e mensagens',
+          importance: 5,
+          visibility: 1,
+          sound: 'default',
+          vibration: true,
+          lights: true,
+          lightColor: '#FF0000',
+        });
+        console.log('Notification channel created successfully');
+      }
+
       let permStatus = await PushNotifications.checkPermissions();
 
       if (permStatus.receive === 'prompt') {
