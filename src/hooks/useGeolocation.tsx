@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
+import { requestLocationPermission } from '@/lib/permissions';
 
 interface GeolocationPosition {
   lat: number;
@@ -41,23 +42,11 @@ export function useGeolocation(
   const requestPermission = async (): Promise<boolean> => {
     try {
       if (isNativePlatform) {
-        const permission = await Geolocation.checkPermissions();
-        console.log('Current permission status:', permission);
+        const granted = await requestLocationPermission();
 
-        if (permission.location === 'denied') {
+        if (!granted) {
           setError('Permissão de localização negada. Ative nas configurações do app.');
           return false;
-        }
-
-        if (permission.location !== 'granted') {
-          console.log('Requesting location permission...');
-          const requested = await Geolocation.requestPermissions();
-          console.log('Permission request result:', requested);
-
-          if (requested.location !== 'granted') {
-            setError('Permissão de localização negada.');
-            return false;
-          }
         }
 
         return true;

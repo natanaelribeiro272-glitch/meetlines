@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { requestNotificationPermission, checkNotificationPermission } from '@/lib/permissions';
 
 export function usePushNotifications() {
   const { user } = useAuth();
@@ -140,19 +141,11 @@ export function usePushNotifications() {
       return false;
     }
 
-    const PushNotifications = getPushNotificationsPlugin();
-
-    if (!PushNotifications) {
-      toast.error('Plugin de notificações não disponível');
-      return false;
-    }
-
     try {
-      const permStatus = await PushNotifications.requestPermissions();
+      const granted = await requestNotificationPermission();
 
-      if (permStatus.receive === 'granted') {
+      if (granted) {
         setPermissionStatus('granted');
-        await PushNotifications.register();
         toast.success('Notificações ativadas!');
         return true;
       } else {

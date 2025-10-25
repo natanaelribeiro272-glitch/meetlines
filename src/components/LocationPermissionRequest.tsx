@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
+import { requestLocationPermission } from '@/lib/permissions';
 
 export const LocationPermissionRequest = () => {
   useEffect(() => {
@@ -13,23 +13,13 @@ export const LocationPermissionRequest = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       try {
-        console.log('=== Checking location permission status ===');
+        console.log('=== Requesting location permission ===');
+        const granted = await requestLocationPermission();
 
-        const currentPermission = await Geolocation.checkPermissions();
-        console.log('Current permission:', JSON.stringify(currentPermission));
-
-        if (currentPermission.location !== 'granted') {
-          console.log('Requesting location permission...');
-          const result = await Geolocation.requestPermissions();
-          console.log('Permission request result:', JSON.stringify(result));
-
-          if (result.location === 'granted' || result.coarseLocation === 'granted') {
-            console.log('✓ Location permission granted successfully');
-          } else {
-            console.log('✗ Location permission was denied');
-          }
+        if (granted) {
+          console.log('✓ Location permission granted successfully');
         } else {
-          console.log('✓ Location permission already granted');
+          console.log('✗ Location permission was denied');
         }
       } catch (error) {
         console.error('✗ Error requesting location permission:', error);
