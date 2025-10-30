@@ -93,11 +93,11 @@ export default function EventTicketSales() {
         // Calculate stats
         const completedSales = salesData?.filter((s) => s.payment_status === "completed") || [];
         const grossRevenue = completedSales.reduce((acc, s) => acc + Number(s.total_amount), 0);
-        
+
         // Calculate net revenue after platform and Stripe fees
-        // Platform fee: 5%
+        // Platform fee: 3%
         // Stripe fee: 3.99% + R$0.39 per transaction
-        const platformFee = grossRevenue * 0.05;
+        const platformFee = grossRevenue * 0.03;
         const stripeFee = (grossRevenue * 0.0399) + (completedSales.length * 0.39);
         const netRevenue = grossRevenue - platformFee - stripeFee;
         
@@ -226,7 +226,7 @@ export default function EventTicketSales() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">R$ {stats.netRevenue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">após taxas (5% + Stripe)</p>
+              <p className="text-xs text-muted-foreground">após taxas (3% + Stripe)</p>
             </CardContent>
           </Card>
 

@@ -98,7 +98,7 @@ export default function AdminOrganizerPayments() {
           .eq("event_id", event.id)
           .maybeSingle();
 
-        const platformFee = payout?.platform_fee || (grossAmount > 0 ? grossAmount * 0.05 : 0);
+        const platformFee = payout?.platform_fee || (grossAmount > 0 ? grossAmount * 0.03 : 0);
         const processingFee = payout?.processing_fee || (grossAmount > 0 ? grossAmount * 0.0399 + 0.39 : 0);
         const netAmount = grossAmount - platformFee - processingFee;
 
