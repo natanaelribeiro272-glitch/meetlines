@@ -1,0 +1,35 @@
+{
+	"appId": "com.meetlines.app",
+	"appName": "Meetlines",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https",
+		"cleartext": true,
+		"hostname": "localhost"
+	},
+	"plugins": {
+		"BarcodeScanner": {
+			"cameraPermission": "always"
+		},
+		"Camera": {
+			"permissions": {
+				"photos": "always",
+				"camera": "always"
+			}
+		},
+		"SplashScreen": {
+			"launchShowDuration": 2000,
+			"backgroundColor": "#000000",
+			"showSpinner": false
+		}
+	},
+	"android": {
+		"allowMixedContent": true,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": true,
+		"loggingBehavior": "debug"
+	},
+	"ios": {
+		"contentInset": "automatic"
+	}
+}

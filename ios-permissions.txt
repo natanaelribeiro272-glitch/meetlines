@@ -1,0 +1,20 @@
+Este arquivo contém as permissões necessárias para iOS
+Adicione estas linhas ao arquivo ios/App/App/Info.plist
+depois de gerar o projeto iOS com: npx cap add ios
+
+Insira dentro da tag <dict>:
+
+<key>NSCameraUsageDescription</key>
+<string>O Meetlines precisa acessar sua câmera para escanear QR codes de ingressos e fazer upload de fotos de eventos</string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>O Meetlines precisa acessar suas fotos para você fazer upload de imagens de eventos</string>
+
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>O Meetlines precisa salvar fotos na sua galeria</string>
+
+<key>NSMicrophoneUsageDescription</key>
+<string>O Meetlines pode precisar de acesso ao microfone para recursos de vídeo</string>
+
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>O Meetlines usa sua localização para mostrar eventos próximos a você</string>
