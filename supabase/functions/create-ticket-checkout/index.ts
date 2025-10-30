@@ -24,37 +24,33 @@ Deno.serve(async (req: Request) => {
   try {
     logStep("Function started");
 
-    // Create Supabase client
-      const supabaseClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-        {
-          global: {
-            headers: { Authorization: req.headers.get("Authorization") ?? "" },
-          },
-        }
-      );
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization") ?? "" },
+        },
+      }
+    );
 
-      // Privileged client for server-side updates (bypasses RLS)
-      const supabaseService = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-        { auth: { persistSession: false } }
-      );
+    const supabaseService = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
-    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    
+
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get request body
     const { ticketTypeId, quantity, eventId } = await req.json();
     logStep("Request received", { ticketTypeId, quantity, eventId });
 
@@ -62,7 +58,6 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing required parameters: ticketTypeId, quantity, eventId");
     }
 
-    // Get ticket type details
     const { data: ticketType, error: ticketError } = await supabaseClient
       .from("ticket_types")
       .select("*, event:events(id, title, organizer_id)")
@@ -74,7 +69,6 @@ Deno.serve(async (req: Request) => {
     }
     logStep("Ticket type found", { ticketType });
 
-    // Check if user is the organizer of the event and get Stripe Connect account
     const { data: organizer, error: organizerError } = await supabaseClient
       .from("organizers")
       .select("user_id, stripe_account_id, stripe_charges_enabled")
@@ -97,47 +91,26 @@ Deno.serve(async (req: Request) => {
       stripeAccountId: organizer.stripe_account_id
     });
 
-    // Get event ticket settings (for fee configuration)
-    const { data: ticketSettings, error: settingsError } = await supabaseClient
-      .from("event_ticket_settings")
-      .select("*")
-      .eq("event_id", eventId)
-      .single();
-
-    if (settingsError || !ticketSettings) {
-      throw new Error("Ticket settings not found for this event");
-    }
-    logStep("Ticket settings found", { ticketSettings });
-
-    // Calculate fees
-    const subtotal = ticketType.price * quantity;
-    const platformFee = subtotal * (ticketSettings.platform_fee_percentage / 100);
-    const processingFee = subtotal * (ticketSettings.payment_processing_fee_percentage / 100) +
-                          (ticketSettings.payment_processing_fee_fixed * quantity);
-
-    // Calculate application fee (platform keeps this)
-    const applicationFeeAmount = Math.round((platformFee + processingFee) * 100);
-
-    // Total amount buyer pays
-    const totalAmount = ticketSettings.fee_payer === 'buyer'
-      ? subtotal + platformFee + processingFee
-      : subtotal;
-
-    logStep("Fees calculated", {
-      subtotal,
-      platformFee,
-      processingFee,
-      totalAmount,
-      applicationFeeAmount,
-      feePayer: ticketSettings.fee_payer
-    });
-
-    // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // Check if customer exists
+    const PLATFORM_FEE_PERCENTAGE = 3;
+
+    const subtotal = ticketType.price * quantity;
+    const platformFee = subtotal * (PLATFORM_FEE_PERCENTAGE / 100);
+    const totalAmount = subtotal + platformFee;
+
+    const applicationFeeAmount = Math.round(platformFee * 100);
+
+    logStep("Fees calculated", {
+      subtotal,
+      platformFee,
+      platformFeePercentage: PLATFORM_FEE_PERCENTAGE,
+      totalAmount,
+      applicationFeeAmount
+    });
+
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
@@ -154,14 +127,12 @@ Deno.serve(async (req: Request) => {
       logStep("New customer created", { customerId });
     }
 
-    // Get user profile for additional info
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("display_name, phone")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    // Create pending sale record
     const { data: saleData, error: saleError } = await supabaseClient
       .from("ticket_sales")
       .insert({
@@ -172,7 +143,7 @@ Deno.serve(async (req: Request) => {
         unit_price: ticketType.price,
         subtotal,
         platform_fee: platformFee,
-        payment_processing_fee: processingFee,
+        payment_processing_fee: 0,
         total_amount: totalAmount,
         buyer_name: profile?.display_name || user.email,
         buyer_email: user.email,
@@ -188,17 +159,34 @@ Deno.serve(async (req: Request) => {
     }
     logStep("Sale record created", { saleId: saleData.id });
 
-    // Create Stripe checkout session with Connect (destination charge)
+    const products = await stripe.products.search({
+      query: 'active:\'true\' AND name:\'ingressos meetlines\'',
+      limit: 1
+    });
+
+    let productId: string;
+    if (products.data.length > 0) {
+      productId = products.data[0].id;
+      logStep("Found existing product 'ingressos meetlines'", { productId });
+    } else {
+      const newProduct = await stripe.products.create({
+        name: "ingressos meetlines",
+        description: "Ingressos para eventos na plataforma Meetlines",
+        metadata: {
+          platform: "meetlines"
+        }
+      });
+      productId = newProduct.id;
+      logStep("Created new product 'ingressos meetlines'", { productId });
+    }
+
     const sessionParams: any = {
       customer: customerId,
       line_items: [
         {
           price_data: {
             currency: "brl",
-            product_data: {
-              name: `${ticketType.name} - ${ticketType.event.title}`,
-              description: ticketType.description || undefined,
-            },
+            product: productId,
             unit_amount: Math.round(totalAmount * 100),
           },
           quantity: 1,
@@ -212,19 +200,29 @@ Deno.serve(async (req: Request) => {
         transfer_data: {
           destination: organizer.stripe_account_id,
         },
+        description: `${quantity}x ${ticketType.name} - ${ticketType.event.title}`,
+        metadata: {
+          ticket_type: ticketType.name,
+          event_name: ticketType.event.title,
+          quantity: quantity.toString(),
+        }
       },
       metadata: {
         ticket_sale_id: saleData.id,
         event_id: eventId,
         user_id: user.id,
         organizer_id: ticketType.event.organizer_id,
+        ticket_type_id: ticketTypeId,
+        quantity: quantity.toString(),
+        product_name: "ingressos meetlines",
+        platform_fee: platformFee.toFixed(2),
+        platform_fee_percentage: PLATFORM_FEE_PERCENTAGE.toString(),
       },
     };
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
-    // Update sale record with Stripe session ID
-      const { error: updateError } = await supabaseService
+    const { error: updateError } = await supabaseService
       .from("ticket_sales")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", saleData.id);
@@ -238,7 +236,13 @@ Deno.serve(async (req: Request) => {
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
     return new Response(
-      JSON.stringify({ url: session.url, sessionId: session.id }),
+      JSON.stringify({
+        url: session.url,
+        sessionId: session.id,
+        totalAmount: totalAmount,
+        platformFee: platformFee,
+        subtotal: subtotal
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

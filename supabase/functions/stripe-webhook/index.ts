@@ -92,9 +92,22 @@ Deno.serve(async (req: Request) => {
 
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        logStep("Processing checkout.session.completed", { sessionId: session.id });
+        logStep("Processing checkout.session.completed", {
+          sessionId: session.id,
+          metadata: session.metadata
+        });
 
         const ticketSaleId = session.metadata?.ticket_sale_id;
+        const productName = session.metadata?.product_name;
+
+        if (productName === "ingressos meetlines") {
+          logStep("Confirmed: Payment for 'ingressos meetlines' product", {
+            ticketSaleId,
+            platformFee: session.metadata?.platform_fee,
+            platformFeePercentage: session.metadata?.platform_fee_percentage
+          });
+        }
+
         if (!ticketSaleId) {
           logStep("No ticket_sale_id in metadata");
           break;
@@ -133,7 +146,10 @@ Deno.serve(async (req: Request) => {
           if (updateError) {
             logStep("Error updating sale", { error: updateError });
           } else {
-            logStep("Sale marked as completed", { ticketSaleId });
+            logStep("Sale marked as completed", {
+              ticketSaleId,
+              productName: productName || "unknown"
+            });
 
             const { error: quantityError } = await supabaseService
               .rpc("increment_ticket_sold", {
@@ -143,6 +159,11 @@ Deno.serve(async (req: Request) => {
 
             if (quantityError) {
               logStep("Error updating ticket quantity_sold", { error: quantityError });
+            } else {
+              logStep("Ticket quantity_sold updated successfully", {
+                ticket_type_id: sale.ticket_type_id,
+                quantity: sale.quantity
+              });
             }
           }
         }
@@ -179,8 +200,18 @@ Deno.serve(async (req: Request) => {
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         logStep("Processing payment_intent.succeeded", {
-          paymentIntentId: paymentIntent.id
+          paymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          applicationFeeAmount: paymentIntent.application_fee_amount,
+          description: paymentIntent.description
         });
+
+        if (paymentIntent.application_fee_amount) {
+          logStep("Platform fee collected", {
+            platformFee: (paymentIntent.application_fee_amount / 100).toFixed(2),
+            totalAmount: (paymentIntent.amount / 100).toFixed(2)
+          });
+        }
         break;
       }
 
@@ -220,6 +251,16 @@ Deno.serve(async (req: Request) => {
         } else {
           logStep("Sale marked as refunded");
         }
+        break;
+      }
+
+      case "application_fee.created": {
+        const fee = event.data.object as Stripe.ApplicationFee;
+        logStep("Processing application_fee.created", {
+          feeId: fee.id,
+          amount: (fee.amount / 100).toFixed(2),
+          currency: fee.currency
+        });
         break;
       }
 
