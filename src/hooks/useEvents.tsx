@@ -265,14 +265,26 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
         });
       }
       
-      // Ordenar: primeiro eventos pagos pela plataforma, depois por data
+      // Ordenar: primeiro por data, depois eventos pagos dentro da mesma data
       allEvents.sort((a, b) => {
-        // Priorizar eventos com tickets pagos
+        const dateA = new Date(a.event_date);
+        const dateB = new Date(b.event_date);
+
+        // Comparar apenas a data (sem hora)
+        const dayA = new Date(dateA.getFullYear(), dateA.getMonth(), dateA.getDate());
+        const dayB = new Date(dateB.getFullYear(), dateB.getMonth(), dateB.getDate());
+
+        // Se são datas diferentes, ordenar pela data mais próxima
+        if (dayA.getTime() !== dayB.getTime()) {
+          return dayA.getTime() - dayB.getTime();
+        }
+
+        // Se são do mesmo dia, priorizar eventos pagos
         if (a.has_paid_tickets && !b.has_paid_tickets) return -1;
         if (!a.has_paid_tickets && b.has_paid_tickets) return 1;
-        
-        // Se ambos têm ou não têm tickets pagos, ordenar por data
-        return new Date(a.event_date).getTime() - new Date(b.event_date).getTime();
+
+        // Se ambos têm ou não têm tickets pagos, ordenar pela hora do evento
+        return dateA.getTime() - dateB.getTime();
       });
 
       // Aplicar filtro de pesquisa no lado do cliente
