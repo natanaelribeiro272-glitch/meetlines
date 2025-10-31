@@ -13,20 +13,20 @@ import { toast } from 'sonner';
 import { Loader2, Upload, Sparkles } from 'lucide-react';
 
 const EVENT_CATEGORIES = [
-  { value: "cristao", label: "🙏 Cristão" },
-  { value: "vendas", label: "💰 Vendas" },
-  { value: "streemer", label: "🎮 Streemer" },
-  { value: "festas", label: "🎉 Festas" },
-  { value: "eventos", label: "📅 Eventos" },
-  { value: "eletronica", label: "🎵 Eletrônica" },
-  { value: "rock", label: "🎸 Rock" },
-  { value: "pop", label: "🎤 Pop" },
-  { value: "forro", label: "🪗 Forró" },
-  { value: "sertanejo", label: "🤠 Sertanejo" },
-  { value: "funk", label: "🕺 Funk" },
-  { value: "samba", label: "🥁 Samba" },
-  { value: "jazz", label: "🎺 Jazz" },
-  { value: "outros", label: "🎭 Outros" }
+  { value: "cristao", label: "Cristão" },
+  { value: "vendas", label: "Vendas" },
+  { value: "streemer", label: "Streemer" },
+  { value: "festas", label: "Festas" },
+  { value: "eventos", label: "Eventos" },
+  { value: "eletronica", label: "Eletrônica" },
+  { value: "rock", label: "Rock" },
+  { value: "pop", label: "Pop" },
+  { value: "forro", label: "Forró" },
+  { value: "sertanejo", label: "Sertanejo" },
+  { value: "funk", label: "Funk" },
+  { value: "samba", label: "Samba" },
+  { value: "jazz", label: "Jazz" },
+  { value: "outros", label: "Outros" }
 ];
 
 export default function AdminEditPlatformEvent() {

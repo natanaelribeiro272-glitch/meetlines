@@ -25,15 +25,15 @@ export default function OrganizersList({
   } = useOrganizersList();
   const categories = [
     { id: "todos", label: "Todos" },
-    { id: "festas", label: "🎉 Festas" },
-    { id: "shows", label: "🎤 Shows" },
-    { id: "fitness", label: "💪 Fitness" },
-    { id: "igreja", label: "🙏 Igreja" },
-    { id: "cursos", label: "📚 Cursos" },
-    { id: "bares", label: "🍻 Bares" },
-    { id: "boates", label: "🪩 Boates" },
-    { id: "esportes", label: "⚽ Esportes" },
-    { id: "encontros", label: "👥 Encontros" },
+    { id: "festas", label: "Festas" },
+    { id: "shows", label: "Shows" },
+    { id: "fitness", label: "Fitness" },
+    { id: "igreja", label: "Igreja" },
+    { id: "cursos", label: "Cursos" },
+    { id: "bares", label: "Bares" },
+    { id: "boates", label: "Boates" },
+    { id: "esportes", label: "Esportes" },
+    { id: "encontros", label: "Encontros" },
   ];
   const filteredOrganizers = organizers.filter(organizer => {
     const matchesSearch = organizer.page_title.toLowerCase().includes(searchQuery.toLowerCase()) || (organizer.profile?.bio || '').toLowerCase().includes(searchQuery.toLowerCase());

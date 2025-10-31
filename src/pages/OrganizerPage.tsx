@@ -736,15 +736,15 @@ export default function OrganizerPage() {
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="festas">🎉 Festas</SelectItem>
-                        <SelectItem value="shows">🎤 Shows</SelectItem>
-                        <SelectItem value="fitness">💪 Fitness</SelectItem>
-                        <SelectItem value="igreja">🙏 Igreja</SelectItem>
-                        <SelectItem value="cursos">📚 Cursos</SelectItem>
-                        <SelectItem value="bares">🍻 Bares</SelectItem>
-                        <SelectItem value="boates">🪩 Boates</SelectItem>
-                        <SelectItem value="esportes">⚽ Esportes</SelectItem>
-                        <SelectItem value="encontros">👥 Encontros</SelectItem>
+                        <SelectItem value="festas">Festas</SelectItem>
+                        <SelectItem value="shows">Shows</SelectItem>
+                        <SelectItem value="fitness">Fitness</SelectItem>
+                        <SelectItem value="igreja">Igreja</SelectItem>
+                        <SelectItem value="cursos">Cursos</SelectItem>
+                        <SelectItem value="bares">Bares</SelectItem>
+                        <SelectItem value="boates">Boates</SelectItem>
+                        <SelectItem value="esportes">Esportes</SelectItem>
+                        <SelectItem value="encontros">Encontros</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">

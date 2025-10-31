@@ -90,31 +90,31 @@ export default function Home({
     label: "Todos"
   }, {
     id: "festas",
-    label: "🎉 Festas"
+    label: "Festas"
   }, {
     id: "shows",
-    label: "🎤 Shows"
+    label: "Shows"
   }, {
     id: "fitness",
-    label: "💪 Fitness"
+    label: "Fitness"
   }, {
     id: "igreja",
-    label: "🙏 Igreja"
+    label: "Igreja"
   }, {
     id: "cursos",
-    label: "📚 Cursos"
+    label: "Cursos"
   }, {
     id: "bares",
-    label: "🍻 Bares"
+    label: "Bares"
   }, {
     id: "boates",
-    label: "🪩 Boates"
+    label: "Boates"
   }, {
     id: "esportes",
-    label: "⚽ Esportes"
+    label: "Esportes"
   }, {
     id: "encontros",
-    label: "👥 Encontros"
+    label: "Encontros"
   }];
   return <div className="min-h-screen bg-background pb-20">
       <Header title="Eventos" userType={userType} showNotifications={true} showLocation={true} />

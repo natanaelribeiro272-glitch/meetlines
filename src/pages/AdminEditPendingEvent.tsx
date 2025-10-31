@@ -35,18 +35,18 @@ export default function AdminEditPendingEvent() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const categories = [
-    { value: "festas", label: "🎉 Festas" },
-    { value: "shows", label: "🎸 Shows" },
-    { value: "eventos", label: "📅 Eventos" },
-    { value: "eletronica", label: "🎵 Eletrônica" },
-    { value: "rock", label: "🎸 Rock" },
-    { value: "pop", label: "🎤 Pop" },
-    { value: "forro", label: "🪗 Forró" },
-    { value: "sertanejo", label: "🤠 Sertanejo" },
-    { value: "funk", label: "🕺 Funk" },
-    { value: "samba", label: "🥁 Samba" },
-    { value: "jazz", label: "🎺 Jazz" },
-    { value: "outros", label: "🎭 Outros" }
+    { value: "festas", label: "Festas" },
+    { value: "shows", label: "Shows" },
+    { value: "eventos", label: "Eventos" },
+    { value: "eletronica", label: "Eletrônica" },
+    { value: "rock", label: "Rock" },
+    { value: "pop", label: "Pop" },
+    { value: "forro", label: "Forró" },
+    { value: "sertanejo", label: "Sertanejo" },
+    { value: "funk", label: "Funk" },
+    { value: "samba", label: "Samba" },
+    { value: "jazz", label: "Jazz" },
+    { value: "outros", label: "Outros" }
   ];
 
   useEffect(() => {
