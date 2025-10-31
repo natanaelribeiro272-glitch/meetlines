@@ -106,13 +106,27 @@ export function TicketPurchaseDialog({
 
       const firstTicketId = selectedTicketIds[0];
       const quantity = selectedTickets[firstTicketId];
-      console.log('[TicketPurchase] Invoking function with:', { firstTicketId, quantity, eventId });
+      const { total, platformFee, processingFee, subtotal } = calculateTotals();
+
+      console.log('[TicketPurchase] Invoking function with:', {
+        firstTicketId,
+        quantity,
+        eventId,
+        total,
+        platformFee,
+        processingFee,
+        subtotal
+      });
 
       const response = await supabase.functions.invoke("create-ticket-checkout", {
         body: {
           ticketTypeId: firstTicketId,
           quantity,
           eventId,
+          totalAmount: total,
+          platformFee: platformFee,
+          processingFee: processingFee,
+          subtotal: subtotal,
         },
       });
 

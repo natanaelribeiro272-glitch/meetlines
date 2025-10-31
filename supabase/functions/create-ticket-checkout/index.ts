@@ -53,8 +53,24 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log("[Checkout] User authenticated:", user.id);
-    const { ticketTypeId, quantity, eventId } = await req.json();
-    console.log("[Checkout] Request data:", { ticketTypeId, quantity, eventId });
+    const {
+      ticketTypeId,
+      quantity,
+      eventId,
+      totalAmount: providedTotal,
+      platformFee: providedPlatformFee,
+      processingFee: providedProcessingFee,
+      subtotal: providedSubtotal
+    } = await req.json();
+    console.log("[Checkout] Request data:", {
+      ticketTypeId,
+      quantity,
+      eventId,
+      providedTotal,
+      providedPlatformFee,
+      providedProcessingFee,
+      providedSubtotal
+    });
 
     console.log("[Checkout] Fetching ticket type");
     const { data: ticketType, error: ticketError } = await supabaseService
@@ -90,10 +106,21 @@ Deno.serve(async (req: Request) => {
     });
 
     const unitPrice = Number(ticketType.price);
-    const subtotal = unitPrice * quantity;
-    const platformFeePercent = 0.10;
-    const platformFee = subtotal * platformFeePercent;
-    const totalAmount = subtotal;
+
+    // Use values from frontend if provided, otherwise calculate
+    const subtotal = providedSubtotal ?? unitPrice * quantity;
+    const platformFee = providedPlatformFee ?? 0;
+    const processingFee = providedProcessingFee ?? 0;
+    const totalAmount = providedTotal ?? subtotal;
+
+    console.log("[Checkout] Price calculation:", {
+      unitPrice,
+      quantity,
+      subtotal,
+      platformFee,
+      processingFee,
+      totalAmount
+    });
 
     console.log("[Checkout] Creating ticket sale record");
     const ticketSale = await supabaseService
@@ -106,7 +133,7 @@ Deno.serve(async (req: Request) => {
         unit_price: unitPrice,
         subtotal: subtotal,
         platform_fee: platformFee,
-        payment_processing_fee: 0,
+        payment_processing_fee: processingFee,
         total_amount: totalAmount,
         buyer_name: profile?.display_name || user.email?.split("@")[0] || "Usuário",
         buyer_email: user.email || "",
@@ -122,16 +149,17 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log("[Checkout] Ticket sale created:", ticketSale.data.id);
-    console.log("[Checkout] Unit price:", unitPrice, "Quantity:", quantity, "Total:", unitPrice * quantity);
+    console.log("[Checkout] Amount to charge:", totalAmount);
 
+    // Stripe charges the TOTAL amount (including fees)
     const lineItems = [{
       price_data: {
         currency: "brl",
         product_data: {
           name: `${ticketType.name} - ${event.title}`,
-          description: `${quantity}x ${ticketType.name}`,
+          description: `${quantity}x ${ticketType.name} (inclui taxas)`,
         },
-        unit_amount: Math.round(unitPrice * 100),
+        unit_amount: Math.round((totalAmount / quantity) * 100),
       },
       quantity: quantity,
     }];
@@ -153,7 +181,9 @@ Deno.serve(async (req: Request) => {
         quantity: quantity.toString(),
         product_name: "ingressos meetlines",
         platform_fee: platformFee.toFixed(2),
-        platform_fee_percentage: (platformFeePercent * 100).toFixed(1),
+        processing_fee: processingFee.toFixed(2),
+        subtotal: subtotal.toFixed(2),
+        total_amount: totalAmount.toFixed(2),
       },
     });
 
