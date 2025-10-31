@@ -19,6 +19,15 @@ export default function Notifications() {
   const [requesterProfiles, setRequesterProfiles] = useState<Record<string, any>>({});
   const [userProfiles, setUserProfiles] = useState<Record<string, any>>({});
 
+  useEffect(() => {
+    if (user && notifications.length > 0) {
+      const unreadNotifications = notifications.filter(n => !n.read);
+      if (unreadNotifications.length > 0) {
+        markAllAsRead();
+      }
+    }
+  }, [user]);
+
   const todayNotifications = notifications.filter(n => {
     const date = new Date(n.created_at);
     const today = new Date();
