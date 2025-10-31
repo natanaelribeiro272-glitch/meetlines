@@ -303,11 +303,11 @@ export default function UserProfile({
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {[
-              { value: "solteiro", label: "Solteiro(a)", emoji: "😊" },
-              { value: "namorando", label: "Namorando", emoji: "💑" },
-              { value: "casado", label: "Casado(a)", emoji: "💍" },
-              { value: "relacionamento_aberto", label: "Relacionamento Aberto", emoji: "🌈" },
-              { value: "preferencia_nao_informar", label: "Não informar", emoji: "🤐" }
+              { value: "solteiro", label: "Solteiro(a)" },
+              { value: "namorando", label: "Namorando" },
+              { value: "casado", label: "Casado(a)" },
+              { value: "relacionamento_aberto", label: "Relacionamento Aberto" },
+              { value: "preferencia_nao_informar", label: "Não informar" }
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -323,7 +323,6 @@ export default function UserProfile({
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                 }`}
               >
-                <span className="mr-1">{opt.emoji}</span>
                 {opt.label}
               </button>
             ))}

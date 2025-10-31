@@ -13,15 +13,15 @@ export type CategoryValue =
   | 'encontros';
 
 export const CATEGORIES: { value: CategoryValue; label: string }[] = [
-  { value: 'festas', label: '🎉 Festas' },
-  { value: 'shows', label: '🎤 Shows' },
-  { value: 'fitness', label: '💪 Fitness' },
-  { value: 'igreja', label: '🙏 Igreja' },
-  { value: 'cursos', label: '📚 Cursos' },
-  { value: 'bares', label: '🍻 Bares' },
-  { value: 'boates', label: '🪩 Boates' },
-  { value: 'esportes', label: '⚽ Esportes' },
-  { value: 'encontros', label: '👥 Encontros' },
+  { value: 'festas', label: 'Festas' },
+  { value: 'shows', label: 'Shows' },
+  { value: 'fitness', label: 'Fitness' },
+  { value: 'igreja', label: 'Igreja' },
+  { value: 'cursos', label: 'Cursos' },
+  { value: 'bares', label: 'Bares' },
+  { value: 'boates', label: 'Boates' },
+  { value: 'esportes', label: 'Esportes' },
+  { value: 'encontros', label: 'Encontros' },
 ];
 
 // Optional normalization for legacy category values used elsewhere
