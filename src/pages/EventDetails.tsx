@@ -101,18 +101,27 @@ export default function EventDetails({
   // Check if user has already confirmed attendance
   useEffect(() => {
     const checkAttendance = async () => {
-      if (!user || !eventId) {
+      if (!user || !eventId || !event) {
         setCheckingAttendance(false);
         return;
       }
 
       try {
-        const { data, error } = await supabase
+        const isPlatformEvent = event.is_platform_event;
+
+        let query = supabase
           .from("event_registrations")
-          .select("attendance_confirmed")
-          .eq("event_id", eventId)
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .select("attendance_confirmed");
+
+        if (isPlatformEvent) {
+          query = query.eq("platform_event_id", eventId);
+        } else {
+          query = query.eq("event_id", eventId);
+        }
+
+        query = query.eq("user_id", user.id);
+
+        const { data, error } = await query.maybeSingle();
 
         if (!error && data) {
           setHasConfirmedAttendance(data.attendance_confirmed || false);
@@ -125,7 +134,7 @@ export default function EventDetails({
     };
 
     checkAttendance();
-  }, [user, eventId]);
+  }, [user, eventId, event]);
 
   // Load ticket settings if event has platform tickets
   useEffect(() => {
@@ -203,13 +212,22 @@ export default function EventDetails({
       setConfirmingAttendance(true);
 
       try {
-        // Check if user has registration
-        const { data: existingReg, error: checkError } = await supabase
+        const isPlatformEvent = event?.is_platform_event;
+
+        // Build query based on event type
+        let query = supabase
           .from("event_registrations")
-          .select("id, attendance_confirmed")
-          .eq("event_id", eventId)
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .select("id, attendance_confirmed");
+
+        if (isPlatformEvent) {
+          query = query.eq("platform_event_id", eventId);
+        } else {
+          query = query.eq("event_id", eventId);
+        }
+
+        query = query.eq("user_id", user.id);
+
+        const { data: existingReg, error: checkError } = await query.maybeSingle();
 
         if (checkError) {
           console.error("Error checking registration:", checkError);
@@ -240,14 +258,22 @@ export default function EventDetails({
             .eq("user_id", user.id)
             .single();
 
-          const { error: insertError } = await supabase.from("event_registrations").insert({
-            event_id: eventId,
+          const registrationData: any = {
             user_id: user.id,
             user_name: profile?.display_name || user.email?.split("@")[0] || "Usuário",
             user_email: user.email || "",
             attendance_confirmed: true,
             attendance_confirmed_at: new Date().toISOString(),
-          });
+          };
+
+          // Set the correct event ID field
+          if (isPlatformEvent) {
+            registrationData.platform_event_id = eventId;
+          } else {
+            registrationData.event_id = eventId;
+          }
+
+          const { error: insertError } = await supabase.from("event_registrations").insert(registrationData);
 
           if (insertError) {
             console.error("Error creating registration:", insertError);
@@ -281,14 +307,24 @@ export default function EventDetails({
       setConfirmingAttendance(true);
 
       try {
-        const { error } = await supabase
+        const isPlatformEvent = event?.is_platform_event;
+
+        let query = supabase
           .from("event_registrations")
           .update({
             attendance_confirmed: false,
             attendance_confirmed_at: null,
-          })
-          .eq("event_id", eventId)
-          .eq("user_id", user.id);
+          });
+
+        if (isPlatformEvent) {
+          query = query.eq("platform_event_id", eventId);
+        } else {
+          query = query.eq("event_id", eventId);
+        }
+
+        query = query.eq("user_id", user.id);
+
+        const { error } = await query;
 
         if (error) {
           console.error("Error canceling attendance:", error);
