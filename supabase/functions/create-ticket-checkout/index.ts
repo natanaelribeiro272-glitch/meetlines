@@ -53,12 +53,7 @@ Deno.serve(async (req: Request) => {
         events!inner(
           id,
           title,
-          organizer_id,
-          organizers!inner(
-            id,
-            stripe_account_id,
-            stripe_charges_enabled
-          )
+          organizer_id
         )
       `)
       .eq("id", ticketTypeId)
@@ -69,16 +64,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const event = ticketType.events;
-    const organizer = event.organizers;
-    const stripeAccountId = organizer.stripe_account_id;
-
-    if (!stripeAccountId) {
-      throw new Error("O organizador ainda não configurou pagamentos. Entre em contato com o organizador.");
-    }
-
-    if (!organizer.stripe_charges_enabled) {
-      throw new Error("A conta Stripe do organizador ainda não está ativa para receber pagamentos.");
-    }
 
     const { data: profile } = await supabaseService
       .from("profiles")
@@ -95,7 +80,6 @@ Deno.serve(async (req: Request) => {
     const platformFeePercent = 0.10;
     const platformFee = subtotal * platformFeePercent;
     const totalAmount = subtotal;
-    const platformFeeInCents = Math.round(platformFee * 100);
 
     const ticketSale = await supabaseService
       .from("ticket_sales")
@@ -121,21 +105,49 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Failed to create ticket sale: ${ticketSale.error.message}`);
     }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
+    const stripeProductId = Deno.env.get("STRIPE_PRODUCT_ID");
+    
+    const lineItems: any[] = [];
+    
+    if (stripeProductId) {
+      const prices = await stripe.prices.list({
+        product: stripeProductId,
+        active: true,
+        limit: 1,
+      });
+
+      if (prices.data.length > 0) {
+        lineItems.push({
+          price: prices.data[0].id,
+          quantity: quantity,
+        });
+      } else {
+        lineItems.push({
           price_data: {
             currency: "brl",
-            product_data: {
-              name: `${ticketType.name} - ${event.title}`,
-              description: `${quantity}x ${ticketType.name}`,
-            },
+            product: stripeProductId,
             unit_amount: Math.round(unitPrice * 100),
           },
           quantity: quantity,
+        });
+      }
+    } else {
+      lineItems.push({
+        price_data: {
+          currency: "brl",
+          product_data: {
+            name: `${ticketType.name} - ${event.title}`,
+            description: `${quantity}x ${ticketType.name}`,
+          },
+          unit_amount: Math.round(unitPrice * 100),
         },
-      ],
+        quantity: quantity,
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
       mode: "payment",
       success_url: `${req.headers.get("origin")}/ticket-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/event/${eventId}`,
@@ -148,12 +160,6 @@ Deno.serve(async (req: Request) => {
         product_name: "ingressos meetlines",
         platform_fee: platformFee.toFixed(2),
         platform_fee_percentage: (platformFeePercent * 100).toFixed(1),
-      },
-      payment_intent_data: {
-        application_fee_amount: platformFeeInCents,
-        transfer_data: {
-          destination: stripeAccountId,
-        },
       },
     });
 
