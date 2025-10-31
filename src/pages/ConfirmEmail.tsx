@@ -14,16 +14,20 @@ export default function ConfirmEmail() {
 
   useEffect(() => {
     const confirmEmail = async () => {
-      const token = searchParams.get("token");
+      const tokenHash = searchParams.get("token_hash");
+      const type = searchParams.get("type");
 
-      if (!token) {
+      if (!tokenHash || type !== "email") {
         setStatus("error");
-        setMessage("Token de confirmação não encontrado");
+        setMessage("Link de confirmação inválido");
         return;
       }
 
       try {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(token);
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "email"
+        });
 
         if (error) {
           console.error("Erro ao confirmar email:", error);

@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, name: string, role: 'user' | 'organizer') => {
     try {
-      // Cria a conta com autoConfirm temporariamente desabilitado
+      // Cria a conta com email de confirmação do Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -79,7 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             display_name: name,
             role: role
-          }
+          },
+          emailRedirectTo: role === 'organizer'
+            ? `${window.location.origin}/organizer-onboarding`
+            : `${window.location.origin}/user-onboarding`
         }
       });
 
@@ -89,37 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        // Envia email via Brevo API
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email-confirmation`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                email,
-                name,
-                confirmationToken: data.user.id
-              })
-            }
-          );
+        toast.success('Conta criada! Verifique seu email para confirmar.');
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Erro ao enviar email de confirmação:', errorText);
-            toast.error('Erro ao enviar email de confirmação');
-          } else {
-            toast.success('Conta criada! Verifique seu email para confirmar.');
-          }
-        } catch (emailError) {
-          console.error('Erro ao enviar email:', emailError);
-          toast.error('Erro ao enviar email de confirmação');
-        }
-
-        // Faz logout imediatamente
+        // Faz logout imediatamente para forçar confirmação de email
         await supabase.auth.signOut();
       }
 
