@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data: existingSale } = await supabaseClient
+    const { data: existingSale } = await supabaseService
       .from("ticket_sales")
       .select("id, stripe_checkout_session_id, created_at")
       .eq("user_id", user.id)
@@ -175,7 +175,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const { data: saleData, error: saleError } = await supabaseClient
+    const { data: saleData, error: saleError } = await supabaseService
       .from("ticket_sales")
       .insert({
         user_id: user.id,
