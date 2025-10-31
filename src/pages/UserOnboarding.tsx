@@ -432,6 +432,7 @@ export default function UserOnboarding() {
           city_id: cityId || null,
           birth_date: birthDate || null,
           notes: `Interesses: ${selectedInterests.join(', ')}`,
+          onboarding_completed: true,
         })
         .eq('user_id', userId);
 

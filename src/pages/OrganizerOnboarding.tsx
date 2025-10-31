@@ -202,7 +202,9 @@ export default function OrganizerOnboarding() {
           display_name: displayName,
           avatar_url: uploadedAvatarUrl,
           bio: bio,
-          role: 'organizer'
+          role: 'organizer',
+          email_confirmed: true,
+          onboarding_completed: true
         });
 
       // 5) Criar organizer

@@ -13,6 +13,8 @@ import EventPublicPage from "./pages/EventPublicPage";
 import AuthPage from "./pages/AuthPage";
 import OrganizerOnboarding from "./pages/OrganizerOnboarding";
 import UserOnboarding from "./pages/UserOnboarding";
+import EmailConfirmation from "./pages/EmailConfirmation";
+import ConfirmEmail from "./pages/ConfirmEmail";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCreatePlatformEvent from "./pages/AdminCreatePlatformEvent";
@@ -46,6 +48,8 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<MainLayout />} />
         <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
+        <Route path="/email-confirmation" element={<EmailConfirmation />} />
+        <Route path="/confirm-email" element={<ConfirmEmail />} />
         <Route path="/organizer-onboarding" element={<OrganizerOnboarding />} />
         <Route path="/user-onboarding" element={<UserOnboarding />} />
         <Route path="/notifications" element={<Notifications />} />

@@ -29,7 +29,8 @@ Deno.serve(async (req: Request) => {
       throw new Error("BREVO_API_KEY não configurada");
     }
 
-    const confirmationUrl = `${Deno.env.get("SUPABASE_URL")}/auth/v1/verify?token=${confirmationToken}&type=signup`;
+    const appUrl = Deno.env.get("APP_URL") || "http://localhost:5173";
+    const confirmationUrl = `${appUrl}/confirm-email?token=${confirmationToken}`;
 
     const emailHtml = `
       <!DOCTYPE html>

@@ -52,13 +52,19 @@ export default function AuthPage({
         setLoading(false);
       }
     } else {
-      navigate('/user-onboarding', {
-        state: {
-          email: formData.email,
-          password: formData.password,
-          name: formData.name,
+      setLoading(true);
+      try {
+        const { error } = await signUp(formData.email, formData.password, formData.name, 'user');
+        if (!error) {
+          navigate('/email-confirmation', {
+            state: {
+              email: formData.email
+            }
+          });
         }
-      });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
