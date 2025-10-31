@@ -71,11 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, name: string, role: 'user' | 'organizer') => {
     try {
+      // Cria a conta com autoConfirm temporariamente desabilitado
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/confirm-email`,
           data: {
             display_name: name,
             role: role
@@ -89,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
+        // Envia email via Brevo API
         try {
           const response = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email-confirmation`,
@@ -107,16 +108,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
 
           if (!response.ok) {
-            console.error('Erro ao enviar email de confirmação');
+            const errorText = await response.text();
+            console.error('Erro ao enviar email de confirmação:', errorText);
+            toast.error('Erro ao enviar email de confirmação');
+          } else {
+            toast.success('Conta criada! Verifique seu email para confirmar.');
           }
         } catch (emailError) {
           console.error('Erro ao enviar email:', emailError);
+          toast.error('Erro ao enviar email de confirmação');
         }
 
+        // Faz logout imediatamente
         await supabase.auth.signOut();
       }
 
-      toast.success('Conta criada! Verifique seu email para confirmar.');
       return { error: null };
     } catch (error: any) {
       toast.error('Erro ao criar conta');
