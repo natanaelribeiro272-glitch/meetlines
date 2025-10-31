@@ -125,10 +125,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     // First, create session in Stripe before creating database record
-    const stripeProductId = Deno.env.get("STRIPE_PRODUCT_ID");
-    if (!stripeProductId) {
-      logStep("STRIPE_PRODUCT_ID not configured, using dynamic product");
-    }
+    logStep("Creating Stripe customer");
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
@@ -146,14 +143,14 @@ Deno.serve(async (req: Request) => {
       logStep("New customer created", { customerId });
     }
 
+    // Always use dynamic product (don't use STRIPE_PRODUCT_ID)
     const sessionParams: any = {
       customer: customerId,
       line_items: [
         {
           price_data: {
             currency: "brl",
-            product: stripeProductId || undefined,
-            product_data: stripeProductId ? undefined : {
+            product_data: {
               name: `Ingresso Meetlines`,
               description: `${quantity}x ${ticketType.name} - ${ticketType.event.title}`,
             },
@@ -187,8 +184,19 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
-    logStep("Stripe checkout session created", { sessionId: session.id, url: session.url });
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(sessionParams);
+      logStep("Stripe checkout session created", { sessionId: session.id, url: session.url });
+    } catch (stripeError: any) {
+      logStep("Stripe session creation failed", {
+        error: stripeError.message,
+        type: stripeError.type,
+        code: stripeError.code,
+        raw: stripeError.raw
+      });
+      throw new Error(`Erro ao criar sessão de pagamento: ${stripeError.message}`);
+    }
 
     // Now create the database record with session ID already set
     const { data: saleData, error: saleError } = await supabaseService
