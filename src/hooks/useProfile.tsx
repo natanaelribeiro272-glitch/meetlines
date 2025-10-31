@@ -125,9 +125,23 @@ export function useProfile() {
 
       const fileName = `${user.id}/avatar.jpg`;
 
+      // Delete existing file first if it exists
+      const { error: deleteError } = await supabase.storage
+        .from('user-uploads')
+        .remove([fileName]);
+
+      // Ignore delete errors (file might not exist)
+      if (deleteError) {
+        console.log('No existing file to delete or error deleting:', deleteError);
+      }
+
+      // Upload new file
       const { error: uploadError } = await supabase.storage
         .from('user-uploads')
-        .upload(fileName, croppedFile, { upsert: true });
+        .upload(fileName, croppedFile, {
+          cacheControl: '0',
+          upsert: true
+        });
 
       if (uploadError) {
         console.error('Error uploading file:', uploadError);
@@ -135,15 +149,19 @@ export function useProfile() {
         return null;
       }
 
+      // Add timestamp to URL to bust cache
+      const timestamp = new Date().getTime();
       const { data: { publicUrl } } = supabase.storage
         .from('user-uploads')
         .getPublicUrl(fileName);
 
-      const success = await updateProfile({ avatar_url: publicUrl });
+      const urlWithCache = `${publicUrl}?t=${timestamp}`;
+
+      const success = await updateProfile({ avatar_url: urlWithCache });
 
       if (success) {
         toast.success('Foto de perfil atualizada!');
-        return publicUrl;
+        return urlWithCache;
       }
 
       return null;
