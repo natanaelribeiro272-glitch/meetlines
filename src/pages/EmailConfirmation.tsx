@@ -1,5 +1,5 @@
 import { useLocation, Navigate } from "react-router-dom";
-import { Mail, CheckCircle } from "lucide-react";
+import { Mail, CheckCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -10,6 +10,26 @@ export default function EmailConfirmation() {
   if (!email) {
     return <Navigate to="/auth" replace />;
   }
+
+  const openEmailApp = () => {
+    const domain = email.split('@')[1]?.toLowerCase();
+
+    const emailProviders: { [key: string]: string } = {
+      'gmail.com': 'https://mail.google.com',
+      'outlook.com': 'https://outlook.live.com',
+      'hotmail.com': 'https://outlook.live.com',
+      'yahoo.com': 'https://mail.yahoo.com',
+      'icloud.com': 'https://www.icloud.com/mail',
+    };
+
+    const providerUrl = emailProviders[domain];
+
+    if (providerUrl) {
+      window.open(providerUrl, '_blank');
+    } else {
+      window.location.href = 'mailto:';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -48,7 +68,15 @@ export default function EmailConfirmation() {
           </p>
         </div>
 
-        <div className="pt-4">
+        <div className="pt-4 space-y-3">
+          <Button
+            className="w-full"
+            onClick={openEmailApp}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Abrir email
+          </Button>
+
           <Button
             variant="outline"
             className="w-full"
