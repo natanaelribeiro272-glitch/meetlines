@@ -122,16 +122,8 @@ export function TicketPurchaseDialog({
 
       if (response.error) {
         console.error('[TicketPurchase] Function error:', response.error);
-
-        if (response.error.message) {
-          throw new Error(response.error.message);
-        }
-
-        const errorDetails = typeof response.error === 'object'
-          ? JSON.stringify(response.error, null, 2)
-          : String(response.error);
-
-        throw new Error(`Erro na função: ${errorDetails}`);
+        const errorMsg = response.error.message || JSON.stringify(response.error);
+        throw new Error(`Erro na função: ${errorMsg}`);
       }
 
       const data = response.data;
