@@ -139,6 +139,42 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: existingSale } = await supabaseClient
+      .from("ticket_sales")
+      .select("id, stripe_checkout_session_id, created_at")
+      .eq("user_id", user.id)
+      .eq("event_id", eventId)
+      .eq("ticket_type_id", ticketTypeId)
+      .eq("payment_status", "pending")
+      .gte("created_at", fiveMinutesAgo)
+      .maybeSingle();
+
+    if (existingSale?.stripe_checkout_session_id) {
+      logStep("Found existing pending sale", { saleId: existingSale.id });
+      try {
+        const existingSession = await stripe.checkout.sessions.retrieve(existingSale.stripe_checkout_session_id);
+        if (existingSession.status === "open" && existingSession.url) {
+          logStep("Reusing existing checkout session", { sessionId: existingSession.id });
+          return new Response(
+            JSON.stringify({
+              url: existingSession.url,
+              sessionId: existingSession.id,
+              totalAmount: totalAmount,
+              platformFee: platformFee,
+              subtotal: subtotal
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        }
+      } catch (stripeError) {
+        logStep("Existing session no longer valid", { error: stripeError });
+      }
+    }
+
     const { data: saleData, error: saleError } = await supabaseClient
       .from("ticket_sales")
       .insert({
