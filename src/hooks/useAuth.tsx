@@ -81,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: role
           },
           emailRedirectTo: role === 'organizer'
-            ? `${window.location.origin}/organizer-onboarding`
-            : `${window.location.origin}/user-onboarding`
+            ? 'https://meetlines.com.br/organizer-onboarding'
+            : 'https://meetlines.com.br/user-onboarding'
         }
       });
 
