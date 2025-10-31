@@ -122,46 +122,21 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log("[Checkout] Ticket sale created:", ticketSale.data.id);
+    console.log("[Checkout] Unit price:", unitPrice, "Quantity:", quantity, "Total:", unitPrice * quantity);
 
-    const stripeProductId = Deno.env.get("STRIPE_PRODUCT_ID");
-    
-    const lineItems: any[] = [];
-    
-    if (stripeProductId) {
-      const prices = await stripe.prices.list({
-        product: stripeProductId,
-        active: true,
-        limit: 1,
-      });
-
-      if (prices.data.length > 0) {
-        lineItems.push({
-          price: prices.data[0].id,
-          quantity: quantity,
-        });
-      } else {
-        lineItems.push({
-          price_data: {
-            currency: "brl",
-            product: stripeProductId,
-            unit_amount: Math.round(unitPrice * 100),
-          },
-          quantity: quantity,
-        });
-      }
-    } else {
-      lineItems.push({
-        price_data: {
-          currency: "brl",
-          product_data: {
-            name: `${ticketType.name} - ${event.title}`,
-            description: `${quantity}x ${ticketType.name}`,
-          },
-          unit_amount: Math.round(unitPrice * 100),
+    const lineItems = [{
+      price_data: {
+        currency: "brl",
+        product_data: {
+          name: `${ticketType.name} - ${event.title}`,
+          description: `${quantity}x ${ticketType.name}`,
         },
-        quantity: quantity,
-      });
-    }
+        unit_amount: Math.round(unitPrice * 100),
+      },
+      quantity: quantity,
+    }];
+
+    console.log("[Checkout] Line items:", JSON.stringify(lineItems));
 
     console.log("[Checkout] Creating Stripe session");
     const session = await stripe.checkout.sessions.create({
