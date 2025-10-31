@@ -171,34 +171,20 @@ Deno.serve(async (req: Request) => {
     }
     logStep("Sale record created", { saleId: saleData.id });
 
-    const products = await stripe.products.search({
-      query: 'active:\'true\' AND name:\'ingressos meetlines\'',
-      limit: 1
-    });
-
-    let productId: string;
-    if (products.data.length > 0) {
-      productId = products.data[0].id;
-      logStep("Found existing product 'ingressos meetlines'", { productId });
-    } else {
-      const newProduct = await stripe.products.create({
-        name: "ingressos meetlines",
-        description: "Ingressos para eventos na plataforma Meetlines",
-        metadata: {
-          platform: "meetlines"
-        }
-      });
-      productId = newProduct.id;
-      logStep("Created new product 'ingressos meetlines'", { productId });
-    }
-
     const sessionParams: any = {
       customer: customerId,
       line_items: [
         {
           price_data: {
             currency: "brl",
-            product: productId,
+            product_data: {
+              name: `${ticketType.name} - ${ticketType.event.title}`,
+              description: `Ingresso para ${ticketType.event.title}`,
+              metadata: {
+                event_id: eventId,
+                ticket_type_id: ticketTypeId,
+              }
+            },
             unit_amount: Math.round(totalAmount * 100),
           },
           quantity: 1,
