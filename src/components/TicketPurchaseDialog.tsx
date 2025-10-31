@@ -92,21 +92,21 @@ export function TicketPurchaseDialog({
   const handleCheckout = async () => {
     try {
       setLoading(true);
+      console.log('[TicketPurchase] Starting checkout process');
 
-      // Validate selections
       const selectedTicketIds = Object.keys(selectedTickets).filter(
         id => selectedTickets[id] > 0
       );
+      console.log('[TicketPurchase] Selected tickets:', selectedTicketIds);
 
       if (selectedTicketIds.length === 0) {
         toast.error("Selecione pelo menos um ingresso");
         return;
       }
 
-      // For now, we'll handle multiple ticket types by creating separate checkout sessions
-      // In a real-world scenario, you might want to handle this differently
       const firstTicketId = selectedTicketIds[0];
       const quantity = selectedTickets[firstTicketId];
+      console.log('[TicketPurchase] Invoking function with:', { firstTicketId, quantity, eventId });
 
       const { data, error } = await supabase.functions.invoke("create-ticket-checkout", {
         body: {
@@ -116,18 +116,34 @@ export function TicketPurchaseDialog({
         },
       });
 
-      if (error) throw error;
+      console.log('[TicketPurchase] Function response:', { data, error });
+
+      if (error) {
+        console.error('[TicketPurchase] Function error:', error);
+        throw new Error(error.message || 'Erro ao criar checkout');
+      }
+
+      if (!data) {
+        throw new Error("Nenhum dado retornado da função");
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       if (data?.url) {
-        window.open(data.url, "_blank");
+        console.log('[TicketPurchase] Redirecting to:', data.url);
+        window.location.href = data.url;
         onOpenChange(false);
         toast.success("Redirecionando para o checkout...");
       } else {
+        console.error('[TicketPurchase] No URL in response:', data);
         throw new Error("URL de checkout não recebida");
       }
     } catch (error) {
-      console.error("Erro ao criar checkout:", error);
-      toast.error("Erro ao processar compra. Tente novamente.");
+      console.error("[TicketPurchase] Checkout error:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao processar compra: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

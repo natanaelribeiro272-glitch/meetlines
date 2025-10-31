@@ -139,7 +139,12 @@ export default function EventDetails({
   // Load ticket settings if event has platform tickets
   useEffect(() => {
     const loadTicketSettings = async () => {
-      if (!event?.has_platform_tickets || !eventId) return;
+      if (!event?.has_platform_tickets || !eventId) {
+        setTicketSettings(null);
+        return;
+      }
+
+      console.log('[EventDetails] Loading ticket settings for event:', eventId);
 
       try {
         const { data, error } = await supabase
@@ -148,11 +153,37 @@ export default function EventDetails({
           .eq("event_id", eventId)
           .maybeSingle();
 
-        if (!error && data) {
+        if (error) {
+          console.error('[EventDetails] Error loading ticket settings:', error);
+          setTicketSettings({
+            platform_fee_percentage: 3,
+            payment_processing_fee_percentage: 2.5,
+            payment_processing_fee_fixed: 0.5,
+            fee_payer: 'buyer'
+          });
+          return;
+        }
+
+        if (data) {
+          console.log('[EventDetails] Ticket settings loaded:', data);
           setTicketSettings(data);
+        } else {
+          console.log('[EventDetails] No ticket settings found, using defaults');
+          setTicketSettings({
+            platform_fee_percentage: 3,
+            payment_processing_fee_percentage: 2.5,
+            payment_processing_fee_fixed: 0.5,
+            fee_payer: 'buyer'
+          });
         }
       } catch (error) {
-        console.error("Error loading ticket settings:", error);
+        console.error("[EventDetails] Exception loading ticket settings:", error);
+        setTicketSettings({
+          platform_fee_percentage: 3,
+          payment_processing_fee_percentage: 2.5,
+          payment_processing_fee_fixed: 0.5,
+          fee_payer: 'buyer'
+        });
       }
     };
 
@@ -743,7 +774,11 @@ export default function EventDetails({
               className="w-full bg-green-600 hover:bg-green-700 text-white"
               size="lg"
               onClick={() => {
+                console.log('[EventDetails] Buy ticket button clicked');
+                console.log('[EventDetails] Ticket settings:', ticketSettings);
+                console.log('[EventDetails] Ticket types:', event.ticket_types);
                 requireAuth(() => {
+                  console.log('[EventDetails] Opening ticket dialog');
                   setTicketDialogOpen(true);
                   trackEvent("InitiateCheckout", {
                     event_name: event?.title,
@@ -754,7 +789,7 @@ export default function EventDetails({
                 }, "comprar ingressos");
               }}
             >
-              💳 Comprar Ingresso - A partir de R$ {Math.min(...event.ticket_types.map(t => t.price)).toFixed(2)}
+              Comprar Ingresso - A partir de R$ {Math.min(...event.ticket_types.map(t => t.price)).toFixed(2)}
             </Button>
           )}
 
@@ -908,7 +943,7 @@ export default function EventDetails({
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
 
       {/* Ticket Purchase Dialog */}
-      {event?.has_platform_tickets && event.ticket_types && ticketSettings && (
+      {ticketDialogOpen && event?.ticket_types && ticketSettings && (
         <TicketPurchaseDialog
           open={ticketDialogOpen}
           onOpenChange={setTicketDialogOpen}
