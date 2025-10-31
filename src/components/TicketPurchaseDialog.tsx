@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ShoppingCart, Minus, Plus, AlertCircle } from "lucide-react";
+import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -45,45 +44,6 @@ export function TicketPurchaseDialog({
 }: TicketPurchaseDialogProps) {
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
-  const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
-  const [checkingStripe, setCheckingStripe] = useState(true);
-
-  useEffect(() => {
-    if (open) {
-      checkStripeConfiguration();
-    }
-  }, [open, eventId]);
-
-  const checkStripeConfiguration = async () => {
-    try {
-      setCheckingStripe(true);
-      const { data: event } = await supabase
-        .from('events')
-        .select('organizer_id')
-        .eq('id', eventId)
-        .maybeSingle();
-
-      if (!event) {
-        setStripeConfigured(false);
-        return;
-      }
-
-      const { data: organizer } = await supabase
-        .from('organizers')
-        .select('stripe_account_id, stripe_charges_enabled')
-        .eq('id', event.organizer_id)
-        .maybeSingle();
-
-      setStripeConfigured(
-        !!(organizer?.stripe_account_id && organizer?.stripe_charges_enabled)
-      );
-    } catch (error) {
-      console.error('Error checking Stripe configuration:', error);
-      setStripeConfigured(false);
-    } finally {
-      setCheckingStripe(false);
-    }
-  };
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -215,17 +175,6 @@ export function TicketPurchaseDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Stripe Configuration Alert */}
-          {!checkingStripe && stripeConfigured === false && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Este evento não pode vender ingressos porque o organizador ainda não configurou
-                sua conta de pagamento no Stripe. Entre em contato com o organizador.
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Ticket Types */}
           <div className="space-y-4">
             {ticketTypes.map((ticket) => {
@@ -333,13 +282,10 @@ export function TicketPurchaseDialog({
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 size="lg"
                 onClick={handleCheckout}
-                disabled={loading || stripeConfigured === false || checkingStripe}
+                disabled={loading}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                {loading ? "Processando..." :
-                 checkingStripe ? "Verificando..." :
-                 stripeConfigured === false ? "Pagamentos não configurados" :
-                 "Finalizar Compra"}
+                {loading ? "Processando..." : "Finalizar Compra"}
               </Button>
             </>
           )}

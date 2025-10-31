@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: organizer, error: organizerError } = await supabaseClient
       .from("organizers")
-      .select("user_id, stripe_account_id, stripe_charges_enabled")
+      .select("user_id")
       .eq("id", ticketType.event.organizer_id)
       .maybeSingle();
 
@@ -95,32 +95,26 @@ Deno.serve(async (req: Request) => {
       throw new Error("Organizadores não podem comprar ingressos dos próprios eventos");
     }
 
-    if (!organizer.stripe_account_id || !organizer.stripe_charges_enabled) {
-      throw new Error("Este organizador ainda não configurou pagamentos. Entre em contato com o organizador.");
-    }
-
-    logStep("User is not the organizer, proceeding with purchase", {
-      stripeAccountId: organizer.stripe_account_id
-    });
+    logStep("User is not the organizer, proceeding with purchase");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     const PLATFORM_FEE_PERCENTAGE = 3;
+    const PROCESSING_FEE_PERCENTAGE = 4.99;
+    const PROCESSING_FEE_FIXED = 0.39;
 
     const subtotal = ticketType.price * quantity;
     const platformFee = subtotal * (PLATFORM_FEE_PERCENTAGE / 100);
-    const totalAmount = subtotal + platformFee;
-
-    const applicationFeeAmount = Math.round(platformFee * 100);
+    const processingFee = (subtotal * (PROCESSING_FEE_PERCENTAGE / 100)) + PROCESSING_FEE_FIXED;
+    const totalAmount = subtotal + platformFee + processingFee;
 
     logStep("Fees calculated", {
       subtotal,
       platformFee,
-      platformFeePercentage: PLATFORM_FEE_PERCENTAGE,
-      totalAmount,
-      applicationFeeAmount
+      processingFee,
+      totalAmount
     });
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -155,7 +149,7 @@ Deno.serve(async (req: Request) => {
         unit_price: ticketType.price,
         subtotal,
         platform_fee: platformFee,
-        payment_processing_fee: 0,
+        payment_processing_fee: processingFee,
         total_amount: totalAmount,
         buyer_name: profile?.display_name || user.email,
         buyer_email: user.email,
@@ -171,19 +165,21 @@ Deno.serve(async (req: Request) => {
     }
     logStep("Sale record created", { saleId: saleData.id });
 
+    const stripeProductId = Deno.env.get("STRIPE_PRODUCT_ID");
+    if (!stripeProductId) {
+      logStep("STRIPE_PRODUCT_ID not configured, using dynamic product");
+    }
+
     const sessionParams: any = {
       customer: customerId,
       line_items: [
         {
           price_data: {
             currency: "brl",
-            product_data: {
-              name: `${ticketType.name} - ${ticketType.event.title}`,
-              description: `Ingresso para ${ticketType.event.title}`,
-              metadata: {
-                event_id: eventId,
-                ticket_type_id: ticketTypeId,
-              }
+            product: stripeProductId || undefined,
+            product_data: stripeProductId ? undefined : {
+              name: `Ingresso Meetlines`,
+              description: `${quantity}x ${ticketType.name} - ${ticketType.event.title}`,
             },
             unit_amount: Math.round(totalAmount * 100),
           },
@@ -194,12 +190,9 @@ Deno.serve(async (req: Request) => {
       success_url: `${req.headers.get("origin")}/ticket-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/event/${eventId}?payment=cancelled`,
       payment_intent_data: {
-        application_fee_amount: applicationFeeAmount,
-        transfer_data: {
-          destination: organizer.stripe_account_id,
-        },
         description: `${quantity}x ${ticketType.name} - ${ticketType.event.title}`,
         metadata: {
+          ticket_sale_id: saleData.id,
           ticket_type: ticketType.name,
           event_name: ticketType.event.title,
           quantity: quantity.toString(),
@@ -212,9 +205,11 @@ Deno.serve(async (req: Request) => {
         organizer_id: ticketType.event.organizer_id,
         ticket_type_id: ticketTypeId,
         quantity: quantity.toString(),
-        product_name: "ingressos meetlines",
+        event_title: ticketType.event.title,
+        ticket_name: ticketType.name,
+        subtotal: subtotal.toFixed(2),
         platform_fee: platformFee.toFixed(2),
-        platform_fee_percentage: PLATFORM_FEE_PERCENTAGE.toString(),
+        processing_fee: processingFee.toFixed(2),
       },
     };
 
