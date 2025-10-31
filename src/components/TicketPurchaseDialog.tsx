@@ -135,6 +135,14 @@ export function TicketPurchaseDialog({
       if (data.error) {
         console.error('[TicketPurchase] Data contains error:', data.error);
 
+        if (data.error.includes('STRIPE_SECRET_KEY')) {
+          toast.error("Pagamentos não configurados", {
+            duration: 8000,
+            description: data.error
+          });
+          return;
+        }
+
         if (data.error.includes('ainda não configurou pagamentos')) {
           toast.error(data.error, {
             duration: 6000,

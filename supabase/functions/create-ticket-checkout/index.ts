@@ -17,6 +17,13 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log("[Checkout] Starting checkout process");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY não configurado. Configure no Supabase Dashboard → Edge Functions → Secrets");
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -39,13 +46,17 @@ Deno.serve(async (req: Request) => {
       }
     );
 
+    console.log("[Checkout] Getting user");
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
-      throw new Error("Unauthorized");
+      throw new Error("Não autorizado. Faça login para continuar.");
     }
 
+    console.log("[Checkout] User authenticated:", user.id);
     const { ticketTypeId, quantity, eventId } = await req.json();
+    console.log("[Checkout] Request data:", { ticketTypeId, quantity, eventId });
 
+    console.log("[Checkout] Fetching ticket type");
     const { data: ticketType, error: ticketError } = await supabaseService
       .from("ticket_types")
       .select(`
@@ -60,9 +71,11 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (ticketError || !ticketType) {
-      throw new Error("Ticket type not found");
+      console.error("[Checkout] Ticket type error:", ticketError);
+      throw new Error(`Tipo de ingresso não encontrado: ${ticketError?.message || "ID inválido"}`);
     }
 
+    console.log("[Checkout] Ticket type found:", ticketType.name);
     const event = ticketType.events;
 
     const { data: profile } = await supabaseService
@@ -71,16 +84,18 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
+    console.log("[Checkout] Initializing Stripe");
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
-    const unitPrice = ticketType.price;
+    const unitPrice = Number(ticketType.price);
     const subtotal = unitPrice * quantity;
     const platformFeePercent = 0.10;
     const platformFee = subtotal * platformFeePercent;
     const totalAmount = subtotal;
 
+    console.log("[Checkout] Creating ticket sale record");
     const ticketSale = await supabaseService
       .from("ticket_sales")
       .insert({
@@ -102,8 +117,11 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (ticketSale.error) {
-      throw new Error(`Failed to create ticket sale: ${ticketSale.error.message}`);
+      console.error("[Checkout] Failed to create ticket sale:", ticketSale.error);
+      throw new Error(`Erro ao criar registro de venda: ${ticketSale.error.message}`);
     }
+
+    console.log("[Checkout] Ticket sale created:", ticketSale.data.id);
 
     const stripeProductId = Deno.env.get("STRIPE_PRODUCT_ID");
     
@@ -145,6 +163,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    console.log("[Checkout] Creating Stripe session");
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
@@ -163,10 +182,14 @@ Deno.serve(async (req: Request) => {
       },
     });
 
+    console.log("[Checkout] Stripe session created:", session.id);
+
     await supabaseService
       .from("ticket_sales")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", ticketSale.data.id);
+
+    console.log("[Checkout] Success! Returning URL:", session.url);
 
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),
@@ -179,8 +202,14 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error) {
     console.error("Error creating checkout:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error details:", errorMessage);
+
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      }),
       {
         status: 400,
         headers: {
