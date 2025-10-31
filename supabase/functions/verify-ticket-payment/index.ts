@@ -96,6 +96,18 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Get full sale info to increment ticket quantity
+    const { data: fullSale, error: fullSaleError } = await supabaseService
+      .from("ticket_sales")
+      .select("id, user_id, payment_status, total_amount, quantity, ticket_type_id")
+      .eq("id", sale.id)
+      .single();
+
+    if (fullSaleError || !fullSale) {
+      logStep("Error fetching full sale info", { error: fullSaleError });
+      throw new Error(`Failed to fetch full sale: ${fullSaleError?.message}`);
+    }
+
     // Update sale to completed
     const { error: updateError } = await supabaseService
       .from("ticket_sales")
@@ -113,6 +125,22 @@ Deno.serve(async (req: Request) => {
 
     logStep("Sale marked as completed", { saleId: sale.id });
 
+    // Increment ticket quantity_sold
+    const { error: quantityError } = await supabaseService
+      .rpc("increment_ticket_sold", {
+        ticket_type_id: fullSale.ticket_type_id,
+        quantity_to_add: fullSale.quantity
+      });
+
+    if (quantityError) {
+      logStep("Error updating ticket quantity_sold", { error: quantityError });
+    } else {
+      logStep("Ticket quantity_sold updated successfully", {
+        ticket_type_id: fullSale.ticket_type_id,
+        quantity: fullSale.quantity
+      });
+    }
+
     return new Response(
       JSON.stringify({ ok: true, payment_status: "completed" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
@@ -122,7 +150,10 @@ Deno.serve(async (req: Request) => {
     logStep("ERROR", { message: errorMessage });
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
     );
   }
 });
