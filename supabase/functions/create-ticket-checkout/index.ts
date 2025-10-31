@@ -172,6 +172,7 @@ Deno.serve(async (req: Request) => {
 
     const sessionParams: any = {
       customer: customerId,
+      customer_email: user.email,
       line_items: [
         {
           price_data: {
@@ -189,6 +190,7 @@ Deno.serve(async (req: Request) => {
       mode: "payment",
       success_url: `${req.headers.get("origin")}/ticket-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/event/${eventId}?payment=cancelled`,
+      payment_method_types: ["card"],
       payment_intent_data: {
         description: `${quantity}x ${ticketType.name} - ${ticketType.event.title}`,
         metadata: {
