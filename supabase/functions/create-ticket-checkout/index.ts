@@ -118,6 +118,18 @@ Deno.serve(async (req: Request) => {
       totalAmount
     });
 
+    const { data: profile } = await supabaseService
+      .from("profiles")
+      .select("display_name, phone")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    // First, create session in Stripe before creating database record
+    const stripeProductId = Deno.env.get("STRIPE_PRODUCT_ID");
+    if (!stripeProductId) {
+      logStep("STRIPE_PRODUCT_ID not configured, using dynamic product");
+    }
+
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
@@ -132,43 +144,6 @@ Deno.serve(async (req: Request) => {
       });
       customerId = newCustomer.id;
       logStep("New customer created", { customerId });
-    }
-
-    const { data: profile } = await supabaseService
-      .from("profiles")
-      .select("display_name, phone")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const { data: saleData, error: saleError } = await supabaseService
-      .from("ticket_sales")
-      .insert({
-        user_id: user.id,
-        event_id: eventId,
-        ticket_type_id: ticketTypeId,
-        quantity,
-        unit_price: ticketType.price,
-        subtotal,
-        platform_fee: platformFee,
-        payment_processing_fee: processingFee,
-        total_amount: totalAmount,
-        buyer_name: profile?.display_name || user.email,
-        buyer_email: user.email,
-        buyer_phone: profile?.phone,
-        payment_status: "pending",
-      })
-      .select()
-      .single();
-
-    if (saleError) {
-      logStep("Error creating sale record", { error: saleError });
-      throw new Error(`Failed to create sale record: ${saleError.message}`);
-    }
-    logStep("Sale record created", { saleId: saleData.id });
-
-    const stripeProductId = Deno.env.get("STRIPE_PRODUCT_ID");
-    if (!stripeProductId) {
-      logStep("STRIPE_PRODUCT_ID not configured, using dynamic product");
     }
 
     const sessionParams: any = {
@@ -193,14 +168,12 @@ Deno.serve(async (req: Request) => {
       payment_intent_data: {
         description: `${quantity}x ${ticketType.name} - ${ticketType.event.title}`,
         metadata: {
-          ticket_sale_id: saleData.id,
           ticket_type: ticketType.name,
           event_name: ticketType.event.title,
           quantity: quantity.toString(),
         }
       },
       metadata: {
-        ticket_sale_id: saleData.id,
         event_id: eventId,
         user_id: user.id,
         organizer_id: ticketType.event.organizer_id,
@@ -215,19 +188,44 @@ Deno.serve(async (req: Request) => {
     };
 
     const session = await stripe.checkout.sessions.create(sessionParams);
+    logStep("Stripe checkout session created", { sessionId: session.id, url: session.url });
 
-    const { error: updateError } = await supabaseService
+    // Now create the database record with session ID already set
+    const { data: saleData, error: saleError } = await supabaseService
       .from("ticket_sales")
-      .update({ stripe_checkout_session_id: session.id })
-      .eq("id", saleData.id);
+      .insert({
+        user_id: user.id,
+        event_id: eventId,
+        ticket_type_id: ticketTypeId,
+        quantity,
+        unit_price: ticketType.price,
+        subtotal,
+        platform_fee: platformFee,
+        payment_processing_fee: processingFee,
+        total_amount: totalAmount,
+        buyer_name: profile?.display_name || user.email,
+        buyer_email: user.email,
+        buyer_phone: profile?.phone,
+        payment_status: "pending",
+        stripe_checkout_session_id: session.id,
+      })
+      .select()
+      .single();
 
-    if (updateError) {
-      logStep("Error updating sale with session ID", { error: updateError });
-    } else {
-      logStep("Sale updated with session ID", { saleId: saleData.id, sessionId: session.id });
+    if (saleError) {
+      logStep("Error creating sale record", { error: saleError });
+      throw new Error(`Failed to create sale record: ${saleError.message}`);
     }
+    logStep("Sale record created", { saleId: saleData.id, sessionId: session.id });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    // Update metadata in session to include sale ID
+    await stripe.checkout.sessions.update(session.id, {
+      metadata: {
+        ...sessionParams.metadata,
+        ticket_sale_id: saleData.id,
+      }
+    });
+    logStep("Session metadata updated with ticket_sale_id");
 
     return new Response(
       JSON.stringify({
