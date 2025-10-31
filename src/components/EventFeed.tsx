@@ -95,7 +95,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
       {/* Eventos ao Vivo */}
       {live.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">🔴 Acontecendo Agora</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">Acontecendo Agora</h2>
           <div className="space-y-6">
             {live.map((event) => (
               <EventCard
@@ -136,7 +136,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
       {/* Próximos Eventos */}
       {upcoming.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">📅 Próximos Eventos</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">Próximos Eventos</h2>
           <div className="space-y-6">
             {upcoming.map((event) => (
               <EventCard
