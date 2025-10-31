@@ -72,8 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, name: string, role: 'user' | 'organizer') => {
     try {
       const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -90,7 +90,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error };
       }
 
-      toast.success('Conta criada com sucesso! Verifique seu email.');
+      if (data.user && data.session) {
+        const confirmationToken = data.session.access_token;
+
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email-confirmation`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                email,
+                name,
+                confirmationToken
+              })
+            }
+          );
+
+          if (!response.ok) {
+            console.error('Erro ao enviar email de confirmação');
+          }
+        } catch (emailError) {
+          console.error('Erro ao enviar email:', emailError);
+        }
+      }
+
+      toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');
       return { error: null };
     } catch (error: any) {
       toast.error('Erro ao criar conta');
