@@ -134,6 +134,15 @@ export function TicketPurchaseDialog({
 
       if (data.error) {
         console.error('[TicketPurchase] Data contains error:', data.error);
+
+        if (data.error.includes('ainda não configurou pagamentos')) {
+          toast.error(data.error, {
+            duration: 6000,
+            description: "O organizador precisa conectar sua conta Stripe antes de vender ingressos."
+          });
+          return;
+        }
+
         throw new Error(data.error);
       }
 
