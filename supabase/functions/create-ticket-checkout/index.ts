@@ -62,10 +62,16 @@ Deno.serve(async (req: Request) => {
       .from("ticket_types")
       .select("*, event:events(id, title, organizer_id)")
       .eq("id", ticketTypeId)
-      .single();
+      .maybeSingle();
 
-    if (ticketError || !ticketType) {
-      throw new Error("Ticket type not found");
+    if (ticketError) {
+      logStep("Error fetching ticket type", { error: ticketError });
+      throw new Error(`Erro ao buscar tipo de ingresso: ${ticketError.message}`);
+    }
+
+    if (!ticketType) {
+      logStep("Ticket type not found", { ticketTypeId });
+      throw new Error("Tipo de ingresso não encontrado");
     }
     logStep("Ticket type found", { ticketType });
 
@@ -73,10 +79,16 @@ Deno.serve(async (req: Request) => {
       .from("organizers")
       .select("user_id, stripe_account_id, stripe_charges_enabled")
       .eq("id", ticketType.event.organizer_id)
-      .single();
+      .maybeSingle();
 
-    if (organizerError || !organizer) {
-      throw new Error("Organizer not found");
+    if (organizerError) {
+      logStep("Error fetching organizer", { error: organizerError });
+      throw new Error(`Erro ao buscar organizador: ${organizerError.message}`);
+    }
+
+    if (!organizer) {
+      logStep("Organizer not found", { organizerId: ticketType.event.organizer_id });
+      throw new Error("Organizador não encontrado");
     }
 
     if (organizer.user_id === user.id) {

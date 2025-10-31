@@ -108,7 +108,7 @@ export function TicketPurchaseDialog({
       const quantity = selectedTickets[firstTicketId];
       console.log('[TicketPurchase] Invoking function with:', { firstTicketId, quantity, eventId });
 
-      const { data, error } = await supabase.functions.invoke("create-ticket-checkout", {
+      const response = await supabase.functions.invoke("create-ticket-checkout", {
         body: {
           ticketTypeId: firstTicketId,
           quantity,
@@ -116,18 +116,24 @@ export function TicketPurchaseDialog({
         },
       });
 
-      console.log('[TicketPurchase] Function response:', { data, error });
+      console.log('[TicketPurchase] Full response:', response);
+      console.log('[TicketPurchase] Response data:', response.data);
+      console.log('[TicketPurchase] Response error:', response.error);
 
-      if (error) {
-        console.error('[TicketPurchase] Function error:', error);
-        throw new Error(error.message || 'Erro ao criar checkout');
+      if (response.error) {
+        console.error('[TicketPurchase] Function error:', response.error);
+        const errorMsg = response.error.message || JSON.stringify(response.error);
+        throw new Error(`Erro na função: ${errorMsg}`);
       }
+
+      const data = response.data;
 
       if (!data) {
         throw new Error("Nenhum dado retornado da função");
       }
 
       if (data.error) {
+        console.error('[TicketPurchase] Data contains error:', data.error);
         throw new Error(data.error);
       }
 
