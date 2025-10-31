@@ -23,10 +23,10 @@ Deno.serve(async (req: Request) => {
   try {
     const { email, name, confirmationToken }: EmailRequest = await req.json();
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
 
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY não configurada");
+    if (!brevoApiKey) {
+      throw new Error("BREVO_API_KEY não configurada");
     }
 
     const confirmationUrl = `${Deno.env.get("SUPABASE_URL")}/auth/v1/verify?token=${confirmationToken}&type=signup`;
@@ -132,34 +132,42 @@ Se você não criou esta conta, por favor ignore este email.
 © ${new Date().getFullYear()} Meetlines. Todos os direitos reservados.
     `.trim();
 
-    const resendResponse = await fetch("https://api.resend.com/emails", {
+    const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${resendApiKey}`,
+        "api-key": brevoApiKey,
       },
       body: JSON.stringify({
-        from: "Meetlines <noreply@meetlines.app>",
-        to: [email],
+        sender: {
+          name: "Meetlines",
+          email: "noreply@meetlines.app"
+        },
+        to: [
+          {
+            email: email,
+            name: name
+          }
+        ],
         subject: "Confirme seu email - Meetlines",
-        html: emailHtml,
-        text: emailText,
+        htmlContent: emailHtml,
+        textContent: emailText,
       }),
     });
 
-    if (!resendResponse.ok) {
-      const errorData = await resendResponse.text();
-      console.error("Erro Resend:", errorData);
+    if (!brevoResponse.ok) {
+      const errorData = await brevoResponse.text();
+      console.error("Erro Brevo:", errorData);
       throw new Error(`Erro ao enviar email: ${errorData}`);
     }
 
-    const responseData = await resendResponse.json();
+    const responseData = await brevoResponse.json();
 
     return new Response(
       JSON.stringify({
         success: true,
         message: "Email enviado com sucesso",
-        emailId: responseData.id
+        messageId: responseData.messageId
       }),
       {
         headers: {
