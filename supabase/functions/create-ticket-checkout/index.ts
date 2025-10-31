@@ -58,7 +58,8 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing required parameters: ticketTypeId, quantity, eventId");
     }
 
-    const { data: ticketType, error: ticketError } = await supabaseClient
+    // Use service role to bypass RLS for reading data
+    const { data: ticketType, error: ticketError } = await supabaseService
       .from("ticket_types")
       .select("*, event:events(id, title, organizer_id)")
       .eq("id", ticketTypeId)
@@ -75,7 +76,7 @@ Deno.serve(async (req: Request) => {
     }
     logStep("Ticket type found", { ticketType });
 
-    const { data: organizer, error: organizerError } = await supabaseClient
+    const { data: organizer, error: organizerError } = await supabaseService
       .from("organizers")
       .select("user_id")
       .eq("id", ticketType.event.organizer_id)
@@ -133,13 +134,13 @@ Deno.serve(async (req: Request) => {
       logStep("New customer created", { customerId });
     }
 
-    const { data: profile } = await supabaseClient
+    const { data: profile } = await supabaseService
       .from("profiles")
       .select("display_name, phone")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const { data: saleData, error: saleError } = await supabaseClient
+    const { data: saleData, error: saleError } = await supabaseService
       .from("ticket_sales")
       .insert({
         user_id: user.id,
