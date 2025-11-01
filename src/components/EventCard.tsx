@@ -76,7 +76,7 @@ export function EventCard({
       {/* Header - Organizer info */}
       <div className="p-4 pb-3">
         <div
-          className={isPlatformEvent ? "flex items-center gap-3" : "flex items-center gap-3 cursor-pointer hover:bg-accent/50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"}
+          className={isPlatformEvent ? "flex items-center gap-3" : "flex items-center gap-3 cursor-pointer -mx-4 -my-2 px-4 py-2 rounded-lg"}
           onClick={(e) => {
             if (!isPlatformEvent && onOrganizerClick) {
               e.stopPropagation();
