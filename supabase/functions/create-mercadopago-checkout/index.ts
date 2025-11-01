@@ -169,8 +169,9 @@ Deno.serve(async (req: Request) => {
     const preference = {
       items: [
         {
+          id: ticketTypeId,
           title: `${ticketType.name} - ${event.title}`,
-          description: `${quantity}x ${ticketType.name} (inclui taxas)`,
+          description: `${quantity}x ${ticketType.name}`,
           quantity: 1,
           unit_price: calculatedTotalAmount,
           currency_id: "BRL",
@@ -199,9 +200,13 @@ Deno.serve(async (req: Request) => {
           { id: "ticket" },
           { id: "atm" }
         ],
+        default_payment_method_id: "pix",
         installments: 1,
       },
       statement_descriptor: "MEETLINES",
+      expires: true,
+      expiration_date_from: new Date().toISOString(),
+      expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       metadata: {
         ticket_sale_id: ticketSale.data.id,
         ticket_type_id: ticketTypeId,
