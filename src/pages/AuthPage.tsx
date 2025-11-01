@@ -195,19 +195,10 @@ export default function AuthPage({
             </span>
           </button>
         </div>
-
-        {/* Demo Login */}
-        
-        {/* Footer */}
-        <div className="text-center pt-6 pb-4">
-          <p className="text-xs text-muted-foreground">
-            Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
-          </p>
-        </div>
         </div>
 
           {/* Right Side - Features */}
-          <div className="space-y-6 order-2 lg:order-2">
+          <div className="space-y-6 order-2 lg:order-2 hidden lg:block">
             <div className="text-center lg:text-left space-y-4">
               <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl md:text-5xl">MeetLines</h1>
               <p className="text-lg text-muted-foreground">Conecte-se com pessoas e descubra eventos incríveis</p>
@@ -247,8 +238,22 @@ export default function AuthPage({
                 );
               })}
             </div>
+
+            {/* Footer */}
+            <div className="text-center lg:text-left pt-4">
+              <p className="text-xs text-muted-foreground">
+                Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
+              </p>
+            </div>
           </div>
 
+        </div>
+
+        {/* Mobile Footer */}
+        <div className="text-center pt-8 lg:hidden">
+          <p className="text-xs text-muted-foreground">
+            Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
+          </p>
         </div>
       </div>
     </div>;
