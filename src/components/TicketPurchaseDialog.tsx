@@ -44,6 +44,9 @@ export function TicketPurchaseDialog({
 }: TicketPurchaseDialogProps) {
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [verifyingPromo, setVerifyingPromo] = useState(false);
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -65,6 +68,61 @@ export function TicketPurchaseDialog({
     }));
   };
 
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      toast.error("Digite um código promocional");
+      return;
+    }
+
+    setVerifyingPromo(true);
+    try {
+      const { data, error } = await supabase
+        .from("promo_codes")
+        .select("*")
+        .eq("event_id", eventId)
+        .eq("code", promoCode.toUpperCase())
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        toast.error("Código promocional inválido");
+        return;
+      }
+
+      const now = new Date();
+      if (data.valid_from && new Date(data.valid_from) > now) {
+        toast.error("Este código ainda não está válido");
+        return;
+      }
+
+      if (data.valid_until && new Date(data.valid_until) < now) {
+        toast.error("Este código expirou");
+        return;
+      }
+
+      if (data.max_uses && data.current_uses >= data.max_uses) {
+        toast.error("Este código atingiu o limite de usos");
+        return;
+      }
+
+      const { subtotal } = calculateTotals();
+      if (data.min_purchase_amount > 0 && subtotal < data.min_purchase_amount) {
+        toast.error(`Compra mínima de R$ ${data.min_purchase_amount.toFixed(2)} para este código`);
+        return;
+      }
+
+      setAppliedPromo(data);
+      toast.success(`Código ${data.code} aplicado!`);
+    } catch (error) {
+      console.error("Error applying promo code:", error);
+      toast.error("Erro ao validar código promocional");
+    } finally {
+      setVerifyingPromo(false);
+    }
+  };
+
   const calculateTotals = () => {
     let subtotal = 0;
     let totalQuantity = 0;
@@ -77,16 +135,27 @@ export function TicketPurchaseDialog({
       }
     });
 
-    const platformFee = subtotal * (ticketSettings.platform_fee_percentage / 100);
-    const processingFee = 
-      subtotal * (ticketSettings.payment_processing_fee_percentage / 100) +
+    let promoDiscount = 0;
+    if (appliedPromo) {
+      if (appliedPromo.discount_type === "percentage") {
+        promoDiscount = subtotal * (appliedPromo.discount_value / 100);
+      } else {
+        promoDiscount = appliedPromo.discount_value;
+      }
+      promoDiscount = Math.min(promoDiscount, subtotal);
+    }
+
+    const subtotalAfterPromo = subtotal - promoDiscount;
+    const platformFee = subtotalAfterPromo * (ticketSettings.platform_fee_percentage / 100);
+    const processingFee =
+      subtotalAfterPromo * (ticketSettings.payment_processing_fee_percentage / 100) +
       (ticketSettings.payment_processing_fee_fixed * totalQuantity);
 
-    const total = ticketSettings.fee_payer === 'buyer' 
-      ? subtotal + platformFee + processingFee
-      : subtotal;
+    const total = ticketSettings.fee_payer === 'buyer'
+      ? subtotalAfterPromo + platformFee + processingFee
+      : subtotalAfterPromo;
 
-    return { subtotal, platformFee, processingFee, total, totalQuantity };
+    return { subtotal, platformFee, processingFee, total, totalQuantity, promoDiscount };
   };
 
   const handleCheckout = async () => {
@@ -106,7 +175,7 @@ export function TicketPurchaseDialog({
 
       const firstTicketId = selectedTicketIds[0];
       const quantity = selectedTickets[firstTicketId];
-      const { total, platformFee, processingFee, subtotal } = calculateTotals();
+      const { total, platformFee, processingFee, subtotal, promoDiscount } = calculateTotals();
 
       console.log('[TicketPurchase] Invoking function with:', {
         firstTicketId,
@@ -115,7 +184,9 @@ export function TicketPurchaseDialog({
         total,
         platformFee,
         processingFee,
-        subtotal
+        subtotal,
+        promoDiscount,
+        promoCodeId: appliedPromo?.id
       });
 
       const response = await supabase.functions.invoke("create-ticket-checkout", {
@@ -127,6 +198,8 @@ export function TicketPurchaseDialog({
           platformFee: platformFee,
           processingFee: processingFee,
           subtotal: subtotal,
+          promoCodeId: appliedPromo?.id || null,
+          promoDiscount: promoDiscount,
         },
       });
 
@@ -264,12 +337,58 @@ export function TicketPurchaseDialog({
             <>
               <Separator />
 
+              {/* Promo Code */}
+              <div className="space-y-2">
+                <Label>Código Promocional</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Digite o código"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    disabled={!!appliedPromo || loading}
+                  />
+                  {!appliedPromo ? (
+                    <Button
+                      onClick={applyPromoCode}
+                      disabled={verifyingPromo || loading || !promoCode.trim()}
+                      variant="outline"
+                    >
+                      {verifyingPromo ? "Verificando..." : "Aplicar"}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        setAppliedPromo(null);
+                        setPromoCode("");
+                      }}
+                      variant="destructive"
+                    >
+                      Remover
+                    </Button>
+                  )}
+                </div>
+                {appliedPromo && (
+                  <p className="text-sm text-green-600">
+                    Código {appliedPromo.code} aplicado!
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
               {/* Summary */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal ({totals.totalQuantity} ingresso{totals.totalQuantity > 1 ? 's' : ''})</span>
                   <span>R$ {totals.subtotal.toFixed(2)}</span>
                 </div>
+
+                {totals.promoDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="font-medium">Desconto Promocional</span>
+                    <span>- R$ {totals.promoDiscount.toFixed(2)}</span>
+                  </div>
+                )}
 
                 {ticketSettings.fee_payer === 'buyer' && (
                   <>

@@ -60,7 +60,9 @@ Deno.serve(async (req: Request) => {
       totalAmount: providedTotal,
       platformFee: providedPlatformFee,
       processingFee: providedProcessingFee,
-      subtotal: providedSubtotal
+      subtotal: providedSubtotal,
+      promoCodeId,
+      promoDiscount
     } = await req.json();
     console.log("[Checkout] Request data:", {
       ticketTypeId,
@@ -69,7 +71,9 @@ Deno.serve(async (req: Request) => {
       providedTotal,
       providedPlatformFee,
       providedProcessingFee,
-      providedSubtotal
+      providedSubtotal,
+      promoCodeId,
+      promoDiscount
     });
 
     console.log("[Checkout] Fetching ticket type");
@@ -107,7 +111,6 @@ Deno.serve(async (req: Request) => {
 
     const unitPrice = Number(ticketType.price);
 
-    // Use values from frontend if provided, otherwise calculate
     const subtotal = providedSubtotal ?? unitPrice * quantity;
     const platformFee = providedPlatformFee ?? 0;
     const processingFee = providedProcessingFee ?? 0;
@@ -139,6 +142,8 @@ Deno.serve(async (req: Request) => {
         buyer_email: user.email || "",
         buyer_phone: profile?.phone || null,
         payment_status: "pending",
+        promo_code_id: promoCodeId || null,
+        promo_discount: promoDiscount || 0,
       })
       .select()
       .single();
@@ -151,7 +156,6 @@ Deno.serve(async (req: Request) => {
     console.log("[Checkout] Ticket sale created:", ticketSale.data.id);
     console.log("[Checkout] Amount to charge:", totalAmount);
 
-    // Stripe charges the TOTAL amount (including fees)
     const lineItems = [{
       price_data: {
         currency: "brl",

@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
 
         const { data: sale, error: fetchError } = await supabaseService
           .from("ticket_sales")
-          .select("id, payment_status, quantity, ticket_type_id")
+          .select("id, payment_status, quantity, ticket_type_id, promo_code_id, promo_discount, user_id")
           .eq("id", ticketSaleId)
           .single();
 
@@ -129,6 +129,34 @@ Deno.serve(async (req: Request) => {
                 ticket_type_id: sale.ticket_type_id,
                 quantity: sale.quantity
               });
+            }
+
+            if (sale.promo_code_id) {
+              const { error: promoUseError } = await supabaseService
+                .from("promo_code_uses")
+                .insert({
+                  promo_code_id: sale.promo_code_id,
+                  ticket_sale_id: sale.id,
+                  user_id: sale.user_id,
+                  discount_applied: sale.promo_discount || 0
+                });
+
+              if (promoUseError) {
+                logStep("Error recording promo code use", { error: promoUseError });
+              } else {
+                const { error: promoIncrementError } = await supabaseService
+                  .rpc("increment_promo_code_uses", {
+                    promo_code_id_param: sale.promo_code_id
+                  });
+
+                if (promoIncrementError) {
+                  logStep("Error incrementing promo code uses", { error: promoIncrementError });
+                } else {
+                  logStep("Promo code use recorded successfully", {
+                    promo_code_id: sale.promo_code_id
+                  });
+                }
+              }
             }
           }
         }

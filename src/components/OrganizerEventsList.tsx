@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle, Ticket, ClipboardList, DollarSign, Camera } from "lucide-react";
+import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle, Ticket, ClipboardList, DollarSign, Camera, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useOrganizer } from "@/hooks/useOrganizer";
 import { useNavigate } from "react-router-dom";
 import TicketScanner from "./TicketScanner";
+import { OrganizerPromoCodes } from "./OrganizerPromoCodes";
 import event1 from "@/assets/event-1.jpg";
 import event2 from "@/assets/event-2.jpg";
 
@@ -28,6 +29,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [promoCodesEventId, setPromoCodesEventId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -211,14 +213,23 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                       </Button>
                       {event.has_paid_tickets && (
                         <>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="flex-1"
                             onClick={() => navigate(`/event/${event.id}/sales`)}
                           >
                             <DollarSign className="h-4 w-4 mr-1" />
                             Vendas
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => setPromoCodesEventId(event.id)}
+                          >
+                            <Tag className="h-4 w-4 mr-1" />
+                            Promoções
                           </Button>
                           <TicketScanner eventId={event.id} />
                         </>
@@ -578,6 +589,15 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!promoCodesEventId} onOpenChange={(open) => !open && setPromoCodesEventId(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Códigos Promocionais</DialogTitle>
+          </DialogHeader>
+          {promoCodesEventId && <OrganizerPromoCodes eventId={promoCodesEventId} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
