@@ -88,6 +88,46 @@ export function useFriendship(friendId: string | undefined) {
     setLoading(true);
 
     try {
+      // First check if there's already a friendship in either direction
+      const { data: existingFriendship, error: checkError } = await supabase
+        .from('friendships')
+        .select('id, status, user_id, friend_id')
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      // If friendship already exists
+      if (existingFriendship) {
+        if (existingFriendship.status === 'accepted') {
+          toast.info('Vocês já são amigos!');
+          setFriendshipStatus('accepted');
+          return true;
+        } else if (existingFriendship.status === 'pending') {
+          // If the other person sent a request to us, accept it
+          if (existingFriendship.user_id === friendId && existingFriendship.friend_id === user.id) {
+            const { error: updateError } = await supabase
+              .from('friendships')
+              .update({ status: 'accepted' })
+              .eq('id', existingFriendship.id);
+
+            if (updateError) throw updateError;
+
+            setFriendshipStatus('accepted');
+            toast.success('Solicitação aceita!');
+            return true;
+          } else {
+            // We already sent a request
+            toast.info('Solicitação já enviada. Aguardando resposta.');
+            setFriendshipStatus('pending');
+            return true;
+          }
+        }
+      }
+
+      // Create new friendship request
       const { error } = await supabase
         .from('friendships')
         .insert({
