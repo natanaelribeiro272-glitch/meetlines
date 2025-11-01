@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Users, Search, Crown, CalendarDays } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { EventFeed } from "@/components/EventFeed";
 import { OrganizerStoriesBar } from "@/components/OrganizerStoriesBar";
@@ -34,7 +33,7 @@ export default function Home({
     profile
   } = useProfile();
   const [hasLiveEvent] = useState(true);
-  const [hasWeekEvents, setHasWeekEvents] = useState(true);
+  const [hasWeekEvents] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [userInterests, setUserInterests] = useState<string[]>([]);
@@ -60,31 +59,6 @@ export default function Home({
   const handleCreateStory = () => {
     setUploadDialogOpen(true);
   };
-  const checkWeekEvents = async () => {
-    try {
-      const now = new Date();
-      const endOfWeek = new Date(now);
-      endOfWeek.setDate(now.getDate() + 7);
-
-      const { data, error } = await supabase
-        .from('events')
-        .select('id')
-        .eq('status', 'upcoming')
-        .gte('event_date', now.toISOString())
-        .lte('event_date', endOfWeek.toISOString())
-        .limit(1);
-
-      if (error) {
-        console.error('Erro ao verificar eventos da semana:', error);
-        return;
-      }
-
-      console.log('Week events check:', data);
-      setHasWeekEvents(data && data.length > 0);
-    } catch (error) {
-      console.error('Erro ao verificar eventos da semana:', error);
-    }
-  };
 
   const handleUploadStory = (file: File) => {
     if (!organizerData) return;
@@ -107,10 +81,6 @@ export default function Home({
     }
   }, [profile]);
 
-  // Check for week events on mount and when refreshKey changes
-  useEffect(() => {
-    checkWeekEvents();
-  }, [refreshKey]);
 
   // Scroll to top when refreshKey changes
   useEffect(() => {
