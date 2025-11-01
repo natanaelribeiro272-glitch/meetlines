@@ -49,13 +49,17 @@ export default function UserChatDialog({
     const loadMessages = async () => {
       setLoading(true);
       try {
+        // Fetch messages between current user and recipient
         const { data, error } = await supabase
           .from('user_messages')
           .select('*')
           .or(`and(from_user_id.eq.${user.id},to_user_id.eq.${recipientId}),and(from_user_id.eq.${recipientId},to_user_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error loading messages:', error);
+          throw error;
+        }
         setMessages(data || []);
 
         // Mark received messages as read
@@ -132,25 +136,37 @@ export default function UserChatDialog({
 
     setSending(true);
     try {
+      console.log('Tentando enviar mensagem:', {
+        from_user_id: user.id,
+        to_user_id: recipientId,
+        content: newMessage.trim()
+      });
+
       const { data, error } = await supabase
         .from('user_messages')
         .insert({
           from_user_id: user.id,
           to_user_id: recipientId,
-          content: newMessage.trim()
+          content: newMessage.trim(),
+          read: false
         })
         .select('*')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao enviar mensagem:', error);
+        throw error;
+      }
+
+      console.log('Mensagem enviada com sucesso:', data);
 
       if (data) {
         setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
       }
       setNewMessage("");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      toast.error('Erro ao enviar mensagem');
+      toast.error(error?.message || 'Erro ao enviar mensagem');
     } finally {
       setSending(false);
     }
