@@ -222,6 +222,15 @@ export function TicketPurchaseDialog({
       if (response.error) {
         console.error('[TicketPurchase] Function error:', response.error);
         const errorMsg = response.error.message || JSON.stringify(response.error);
+
+        if (errorMsg.includes('MERCADOPAGO_ACCESS_TOKEN')) {
+          toast.error("Mercado Pago não configurado", {
+            duration: 8000,
+            description: "O sistema de pagamentos ainda não foi configurado. Entre em contato com o suporte."
+          });
+          return;
+        }
+
         throw new Error(`Erro na função: ${errorMsg}`);
       }
 
@@ -233,6 +242,14 @@ export function TicketPurchaseDialog({
 
       if (data.error) {
         console.error('[TicketPurchase] Data contains error:', data.error);
+
+        if (data.error.includes('MERCADOPAGO_ACCESS_TOKEN')) {
+          toast.error("Mercado Pago não configurado", {
+            duration: 8000,
+            description: "O sistema de pagamentos ainda não foi configurado. Entre em contato com o suporte."
+          });
+          return;
+        }
 
         if (data.error.includes('STRIPE_SECRET_KEY')) {
           toast.error("Pagamentos não configurados", {

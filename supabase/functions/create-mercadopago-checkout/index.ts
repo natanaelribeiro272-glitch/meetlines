@@ -20,7 +20,8 @@ Deno.serve(async (req: Request) => {
 
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!accessToken) {
-      throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
+      console.error("[MercadoPago] MERCADOPAGO_ACCESS_TOKEN não está configurado nas variáveis de ambiente");
+      throw new Error("Sistema de pagamento Mercado Pago não configurado. Entre em contato com o administrador.");
     }
 
     const supabaseClient = createClient(
