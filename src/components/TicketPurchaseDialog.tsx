@@ -49,6 +49,7 @@ export function TicketPurchaseDialog({
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [verifyingPromo, setVerifyingPromo] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"mercadopago" | "stripe">("mercadopago");
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -194,7 +195,13 @@ export function TicketPurchaseDialog({
         promoCodeId: appliedPromo?.id
       });
 
-      const response = await supabase.functions.invoke("create-ticket-checkout", {
+      const functionName = paymentMethod === "mercadopago"
+        ? "create-mercadopago-checkout"
+        : "create-ticket-checkout";
+
+      console.log('[TicketPurchase] Using payment method:', paymentMethod, 'with function:', functionName);
+
+      const response = await supabase.functions.invoke(functionName, {
         body: {
           ticketTypeId: firstTicketId,
           quantity,
@@ -439,6 +446,37 @@ export function TicketPurchaseDialog({
                     *As taxas serão deduzidas do valor repassado ao organizador
                   </p>
                 )}
+              </div>
+
+              {/* Payment Method Selection */}
+              <div className="space-y-3">
+                <Label>Método de Pagamento</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("mercadopago")}
+                    className={`border-2 rounded-lg p-4 text-center transition-all ${
+                      paymentMethod === "mercadopago"
+                        ? "border-green-600 bg-green-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="font-semibold mb-1">Mercado Pago</div>
+                    <div className="text-xs text-muted-foreground">PIX, Cartão, Boleto</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("stripe")}
+                    className={`border-2 rounded-lg p-4 text-center transition-all ${
+                      paymentMethod === "stripe"
+                        ? "border-blue-600 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="font-semibold mb-1">Stripe</div>
+                    <div className="text-xs text-muted-foreground">Cartão Internacional</div>
+                  </button>
+                </div>
               </div>
 
               <Button
