@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Copy, Check, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import QRCode from "react-qr-code";
 
 declare global {
   interface Window {
@@ -24,198 +22,146 @@ export function MercadoPagoPayment({
   onPaymentSuccess,
   onPaymentError,
 }: MercadoPagoPaymentProps) {
-  const [pixData, setPixData] = useState<{
-    qrCode: string;
-    qrCodeBase64?: string;
-  } | null>(null);
-  const [copiedPix, setCopiedPix] = useState(false);
   const [loading, setLoading] = useState(true);
-  const mpRef = useRef<any>(null);
+  const [checkoutReady, setCheckoutReady] = useState(false);
 
   useEffect(() => {
     const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
 
+    console.log("[MercadoPago] Public Key:", publicKey ? "✓ Present" : "✗ Missing");
+    console.log("[MercadoPago] Preference ID:", preferenceId);
+    console.log("[MercadoPago] Amount:", amount);
+
     if (!publicKey) {
-      onPaymentError("Chave pública do Mercado Pago não configurada");
+      const error = "Chave pública do Mercado Pago não configurada";
+      console.error("[MercadoPago]", error);
+      onPaymentError(error);
+      setLoading(false);
       return;
     }
 
-    const loadMercadoPago = async () => {
+    if (!preferenceId) {
+      const error = "Preference ID não fornecido";
+      console.error("[MercadoPago]", error);
+      onPaymentError(error);
+      setLoading(false);
+      return;
+    }
+
+    const loadMercadoPago = () => {
       if (window.MercadoPago) {
-        initializePayment(publicKey);
+        console.log("[MercadoPago] SDK already loaded");
+        setCheckoutReady(true);
+        setLoading(false);
         return;
       }
 
+      console.log("[MercadoPago] Loading SDK...");
       const script = document.createElement("script");
       script.src = "https://sdk.mercadopago.com/js/v2";
       script.async = true;
       script.onload = () => {
-        initializePayment(publicKey);
+        console.log("[MercadoPago] SDK loaded successfully");
+        setCheckoutReady(true);
+        setLoading(false);
       };
       script.onerror = () => {
+        console.error("[MercadoPago] Failed to load SDK");
         onPaymentError("Erro ao carregar Mercado Pago SDK");
         setLoading(false);
       };
       document.body.appendChild(script);
     };
 
-    const initializePayment = async (publicKey: string) => {
-      try {
-        const mp = new window.MercadoPago(publicKey, {
-          locale: "pt-BR",
-        });
-        mpRef.current = mp;
-
-        const bricksBuilder = mp.bricks();
-
-        const renderPaymentBrick = async () => {
-          const settings = {
-            initialization: {
-              amount: amount,
-              preferenceId: preferenceId,
-              payer: {
-                email: "",
-              },
-            },
-            customization: {
-              paymentMethods: {
-                minInstallments: 1,
-                maxInstallments: 1,
-              },
-              visual: {
-                style: {
-                  theme: "default",
-                },
-              },
-            },
-            callbacks: {
-              onReady: () => {
-                console.log("[MercadoPago] Payment Brick ready");
-                setLoading(false);
-              },
-              onSubmit: ({ selectedPaymentMethod, formData }: any) => {
-                return new Promise((resolve, reject) => {
-                  console.log("[MercadoPago] Payment submitted:", { selectedPaymentMethod, formData });
-
-                  if (selectedPaymentMethod === "pix") {
-                    setPixData({
-                      qrCode: formData.transaction_details?.external_resource_url || "",
-                      qrCodeBase64: formData.point_of_interaction?.transaction_data?.qr_code_base64,
-                    });
-                  }
-
-                  setTimeout(() => {
-                    onPaymentSuccess();
-                    resolve(formData);
-                  }, 1000);
-                });
-              },
-              onError: (error: any) => {
-                console.error("[MercadoPago] Error:", error);
-                onPaymentError(error.message || "Erro no pagamento");
-                setLoading(false);
-              },
-            },
-          };
-
-          await bricksBuilder.create("payment", "payment-brick-container", settings);
-        };
-
-        renderPaymentBrick();
-      } catch (error) {
-        console.error("[MercadoPago] Initialization error:", error);
-        onPaymentError("Erro ao inicializar pagamento");
-        setLoading(false);
-      }
-    };
-
     loadMercadoPago();
+  }, [preferenceId, amount, onPaymentError]);
 
-    return () => {
-      if (mpRef.current) {
-        try {
-          mpRef.current = null;
-        } catch (error) {
-          console.error("Error cleaning up MercadoPago:", error);
-        }
-      }
-    };
-  }, [preferenceId, amount, onPaymentSuccess, onPaymentError]);
-
-  const copyPixCode = async () => {
-    if (!pixData?.qrCode) return;
+  const openCheckout = () => {
+    const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
 
     try {
-      await navigator.clipboard.writeText(pixData.qrCode);
-      setCopiedPix(true);
-      toast.success("Código PIX copiado!");
-      setTimeout(() => setCopiedPix(false), 3000);
+      console.log("[MercadoPago] Opening Checkout Pro");
+      const mp = new window.MercadoPago(publicKey, {
+        locale: "pt-BR",
+      });
+
+      mp.checkout({
+        preference: {
+          id: preferenceId,
+        },
+        autoOpen: true,
+      });
+
+      toast.info("Aguardando pagamento...", {
+        description: "Complete o pagamento na janela do Mercado Pago",
+        duration: 5000,
+      });
     } catch (error) {
-      toast.error("Erro ao copiar código PIX");
+      console.error("[MercadoPago] Error opening checkout:", error);
+      onPaymentError("Erro ao abrir checkout: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
-  if (pixData) {
+  if (loading) {
     return (
-      <div className="space-y-6 py-4">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="p-4 bg-white rounded-lg border-2 border-gray-200">
-            <QRCode value={pixData.qrCode} size={256} />
-          </div>
-
-          <div className="w-full space-y-3">
-            <p className="text-sm text-center text-muted-foreground">
-              Escaneie o QR Code com o app do seu banco ou copie o código PIX
-            </p>
-
-            <div className="flex gap-2">
-              <Input
-                value={pixData.qrCode}
-                readOnly
-                className="font-mono text-xs"
-              />
-              <Button
-                onClick={copyPixCode}
-                variant="outline"
-                className="shrink-0"
-              >
-                {copiedPix ? (
-                  <Check className="h-4 w-4 text-green-600" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold text-blue-900">
-                Instruções:
-              </p>
-              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                <li>Abra o app do seu banco</li>
-                <li>Escolha pagar com PIX QR Code</li>
-                <li>Escaneie o código ou cole a chave PIX</li>
-                <li>Confirme o pagamento</li>
-              </ol>
-            </div>
-
-            <p className="text-xs text-center text-muted-foreground">
-              Após o pagamento, você receberá seus ingressos por e-mail
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">
+          Carregando checkout do Mercado Pago...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {loading && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div className="space-y-6 py-6">
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <svg className="h-8 w-8 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
         </div>
-      )}
-      <div id="payment-brick-container"></div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2">
+            Pagamento via Mercado Pago
+          </h3>
+          <p className="text-sm text-muted-foreground mb-1">
+            Valor total: <span className="font-semibold text-foreground">R$ {amount.toFixed(2)}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Clique no botão abaixo para abrir o checkout
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+        <p className="text-sm font-semibold text-blue-900">
+          Formas de pagamento disponíveis:
+        </p>
+        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+          <li>PIX (pagamento instantâneo)</li>
+          <li>Cartão de crédito</li>
+          <li>Cartão de débito</li>
+        </ul>
+      </div>
+
+      <Button
+        onClick={openCheckout}
+        className="w-full h-12 text-base font-semibold"
+        size="lg"
+        disabled={!checkoutReady}
+      >
+        {checkoutReady ? "Abrir Checkout Mercado Pago" : "Carregando..."}
+      </Button>
+
+      <p className="text-xs text-center text-muted-foreground">
+        Você será redirecionado para o ambiente seguro do Mercado Pago
+      </p>
     </div>
   );
 }
