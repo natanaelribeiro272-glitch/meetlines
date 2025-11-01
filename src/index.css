@@ -165,13 +165,9 @@ All colors MUST be HSL.
 }
 
 @layer components {
-  /* Event card animations */
+  /* Event card - no animations */
   .event-card {
-    @apply transition-smooth hover:scale-[1.02] hover:shadow-elevated;
-  }
-
-  .event-card:hover {
-    box-shadow: var(--shadow-elevated);
+    /* No hover effects */
   }
   
   /* Instagram-style avatar */
