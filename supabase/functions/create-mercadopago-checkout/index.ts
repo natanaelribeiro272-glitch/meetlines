@@ -17,8 +17,13 @@ Deno.serve(async (req: Request) => {
 
   try {
     console.log("[MercadoPago] Starting checkout process");
+    console.log("[MercadoPago] Request method:", req.method);
+    console.log("[MercadoPago] Request headers:", Object.fromEntries(req.headers.entries()));
 
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    console.log("[MercadoPago] Access token exists:", !!accessToken);
+    console.log("[MercadoPago] Access token length:", accessToken?.length || 0);
+
     if (!accessToken) {
       console.error("[MercadoPago] MERCADOPAGO_ACCESS_TOKEN não está configurado nas variáveis de ambiente");
       throw new Error("Sistema de pagamento Mercado Pago não configurado. Entre em contato com o administrador.");
@@ -211,6 +216,8 @@ Deno.serve(async (req: Request) => {
     };
 
     console.log("[MercadoPago] Creating preference");
+    console.log("[MercadoPago] Preference data:", JSON.stringify(preference, null, 2));
+
     const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
@@ -220,10 +227,14 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify(preference),
     });
 
+    console.log("[MercadoPago] API Response status:", response.status);
+    console.log("[MercadoPago] API Response ok:", response.ok);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[MercadoPago] API Error:", errorText);
-      throw new Error(`Erro ao criar preferência no Mercado Pago: ${errorText}`);
+      console.error("[MercadoPago] API Response headers:", Object.fromEntries(response.headers.entries()));
+      throw new Error(`Erro ao criar preferência no Mercado Pago (${response.status}): ${errorText}`);
     }
 
     const preferenceData = await response.json();
