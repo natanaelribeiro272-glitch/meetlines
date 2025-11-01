@@ -92,6 +92,10 @@ Deno.serve(async (req: Request) => {
         .update({
           payment_status: paymentStatus,
           payment_intent_id: payment.id.toString(),
+          paid_at: paymentStatus === "completed" ? new Date().toISOString() : null,
+          mercadopago_payment_id: payment.id.toString(),
+          payment_gateway: "mercadopago",
+          payment_method: payment.payment_method_id || payment.payment_type_id || "pix"
         })
         .eq("id", ticketSaleId);
 
@@ -150,6 +154,73 @@ Deno.serve(async (req: Request) => {
             console.error("[MercadoPago Webhook] Error generating tickets:", ticketsError);
           } else {
             console.log("[MercadoPago Webhook] Tickets generated successfully");
+          }
+
+          const { data: fullSale, error: fullSaleError } = await supabaseService
+            .from("ticket_sales")
+            .select(`
+              id,
+              event_id,
+              total_amount,
+              platform_fee,
+              payment_processing_fee,
+              events!inner(organizer_id)
+            `)
+            .eq("id", ticketSaleId)
+            .single();
+
+          if (fullSaleError || !fullSale) {
+            console.error("[MercadoPago Webhook] Error fetching full sale data for transaction:", fullSaleError);
+          } else {
+            const grossAmount = Number(fullSale.total_amount);
+            const platformFee = Number(fullSale.platform_fee);
+            const paymentGatewayFee = Number(fullSale.payment_processing_fee);
+            const netAmount = grossAmount - platformFee - paymentGatewayFee;
+
+            const { data: financialData } = await supabaseService
+              .from("organizer_financial_data")
+              .select("auto_transfer, transfer_day")
+              .eq("organizer_id", fullSale.events.organizer_id)
+              .maybeSingle();
+
+            let transferScheduledDate = null;
+            if (financialData?.auto_transfer) {
+              const now = new Date();
+              const transferDay = financialData.transfer_day || 5;
+              const scheduledDate = new Date(now.getFullYear(), now.getMonth(), transferDay);
+
+              if (scheduledDate < now) {
+                scheduledDate.setMonth(scheduledDate.getMonth() + 1);
+              }
+              transferScheduledDate = scheduledDate.toISOString();
+            }
+
+            const { error: transactionError } = await supabaseService
+              .from("ticket_sales_transactions")
+              .insert({
+                ticket_sale_id: ticketSaleId,
+                organizer_id: fullSale.events.organizer_id,
+                event_id: fullSale.event_id,
+                gross_amount: grossAmount,
+                platform_fee: platformFee,
+                payment_gateway_fee: paymentGatewayFee,
+                net_amount: netAmount,
+                transaction_status: "pending",
+                payment_date: new Date().toISOString(),
+                payment_id: payment.id.toString(),
+                transfer_scheduled_date: transferScheduledDate
+              });
+
+            if (transactionError) {
+              console.error("[MercadoPago Webhook] Error creating transaction record:", transactionError);
+            } else {
+              console.log("[MercadoPago Webhook] Transaction record created successfully", {
+                ticketSaleId,
+                grossAmount,
+                netAmount,
+                organizerId: fullSale.events.organizer_id
+              });
+            }
           }
         }
       }
