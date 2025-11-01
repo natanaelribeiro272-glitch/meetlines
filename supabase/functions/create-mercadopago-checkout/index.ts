@@ -187,8 +187,17 @@ Deno.serve(async (req: Request) => {
       notification_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mercadopago-webhook`,
       external_reference: ticketSale.data.id,
       payment_methods: {
-        excluded_payment_types: [],
-        installments: 12,
+        excluded_payment_types: [
+          { id: "credit_card" },
+          { id: "debit_card" },
+          { id: "ticket" },
+          { id: "bank_transfer" },
+          { id: "atm" },
+          { id: "digital_currency" },
+          { id: "digital_wallet" },
+          { id: "prepaid_card" }
+        ],
+        installments: 1,
       },
       statement_descriptor: "MEETLINES",
       metadata: {

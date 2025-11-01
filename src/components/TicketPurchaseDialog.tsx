@@ -49,7 +49,7 @@ export function TicketPurchaseDialog({
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [verifyingPromo, setVerifyingPromo] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("pix");
+  const paymentMethod = "pix";
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -195,11 +195,9 @@ export function TicketPurchaseDialog({
         promoCodeId: appliedPromo?.id
       });
 
-      const functionName = paymentMethod === "pix"
-        ? "create-mercadopago-checkout"
-        : "create-ticket-checkout";
+      const functionName = "create-mercadopago-checkout";
 
-      console.log('[TicketPurchase] Using payment method:', paymentMethod, 'with function:', functionName);
+      console.log('[TicketPurchase] Using payment method: PIX with function:', functionName);
 
       const response = await supabase.functions.invoke(functionName, {
         body: {
@@ -448,34 +446,18 @@ export function TicketPurchaseDialog({
                 )}
               </div>
 
-              {/* Payment Method Selection */}
-              <div className="space-y-3">
-                <Label>Método de Pagamento</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("pix")}
-                    className={`border-2 rounded-lg p-4 text-center transition-all ${
-                      paymentMethod === "pix"
-                        ? "border-green-600 bg-green-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="font-semibold mb-1">PIX</div>
-                    <div className="text-xs text-muted-foreground">Pagamento instantâneo</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("card")}
-                    className={`border-2 rounded-lg p-4 text-center transition-all ${
-                      paymentMethod === "card"
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="font-semibold mb-1">Cartão</div>
-                    <div className="text-xs text-muted-foreground">Crédito ou Débito</div>
-                  </button>
+              {/* Payment Method Info */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-green-900">Pagamento via PIX</div>
+                    <div className="text-sm text-green-700 mt-0.5">Pagamento instantâneo e seguro</div>
+                  </div>
                 </div>
               </div>
 
