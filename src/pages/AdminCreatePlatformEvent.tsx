@@ -118,11 +118,11 @@ export default function AdminCreatePlatformEvent() {
         imageUrl = publicUrl;
       }
 
-      // Combine date and time
-      const eventDateTime = new Date(`${formData.date}T${formData.time}`);
-      
-      // Combine end date and time (obrigatório)
-      const eventEndDateTime = new Date(`${formData.end_date}T${formData.end_time}`);
+      // Combine date and time preserving local timezone
+      const eventDateTime = new Date(`${formData.date}T${formData.time}:00`);
+
+      // Combine end date and time (obrigatório) preserving local timezone
+      const eventEndDateTime = new Date(`${formData.end_date}T${formData.end_time}:00`);
 
       const { error } = await supabase.from('platform_events').insert({
         title: formData.title,

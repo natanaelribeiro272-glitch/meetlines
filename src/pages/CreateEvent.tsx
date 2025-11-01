@@ -149,18 +149,30 @@ export default function CreateEvent({
           if (error) throw error;
           
           if (data) {
-            // Parse date and time from event_date
+            // Parse date and time from event_date (convert UTC to local time)
             const eventDate = new Date(data.event_date);
-            const dateStr = eventDate.toISOString().split('T')[0];
-            const timeStr = eventDate.toTimeString().slice(0, 5);
-            
-            // Parse end date and time if exists
+            const year = eventDate.getFullYear();
+            const month = String(eventDate.getMonth() + 1).padStart(2, '0');
+            const day = String(eventDate.getDate()).padStart(2, '0');
+            const hours = String(eventDate.getHours()).padStart(2, '0');
+            const minutes = String(eventDate.getMinutes()).padStart(2, '0');
+
+            const dateStr = `${year}-${month}-${day}`;
+            const timeStr = `${hours}:${minutes}`;
+
+            // Parse end date and time if exists (convert UTC to local time)
             let endDateStr = "";
             let endTimeStr = "";
             if (data.end_date) {
               const endDate = new Date(data.end_date);
-              endDateStr = endDate.toISOString().split('T')[0];
-              endTimeStr = endDate.toTimeString().slice(0, 5);
+              const endYear = endDate.getFullYear();
+              const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+              const endDay = String(endDate.getDate()).padStart(2, '0');
+              const endHours = String(endDate.getHours()).padStart(2, '0');
+              const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+
+              endDateStr = `${endYear}-${endMonth}-${endDay}`;
+              endTimeStr = `${endHours}:${endMinutes}`;
             }
             
             setEventData({
@@ -281,11 +293,11 @@ export default function CreateEvent({
         imageUrl = publicUrl;
       }
 
-      // Combine date and time
-      const eventDateTime = new Date(`${eventData.date}T${eventData.time}`);
-      
-      // Combine end date and time (obrigatório)
-      const eventEndDateTime = new Date(`${eventData.endDate}T${eventData.endTime}`);
+      // Combine date and time preserving local timezone
+      const eventDateTime = new Date(`${eventData.date}T${eventData.time}:00`);
+
+      // Combine end date and time (obrigatório) preserving local timezone
+      const eventEndDateTime = new Date(`${eventData.endDate}T${eventData.endTime}:00`);
 
       // Update public notes if changed
       if (publicNotes !== profile?.notes) {
@@ -429,11 +441,11 @@ export default function CreateEvent({
             description: ticket.description,
             price: ticket.price,
             quantity: ticket.quantity,
-            sales_start_date: ticket.salesStartDate && ticket.salesStartTime 
-              ? new Date(`${ticket.salesStartDate}T${ticket.salesStartTime}`).toISOString()
+            sales_start_date: ticket.salesStartDate && ticket.salesStartTime
+              ? new Date(`${ticket.salesStartDate}T${ticket.salesStartTime}:00`).toISOString()
               : null,
             sales_end_date: ticket.salesEndDate && ticket.salesEndTime
-              ? new Date(`${ticket.salesEndDate}T${ticket.salesEndTime}`).toISOString()
+              ? new Date(`${ticket.salesEndDate}T${ticket.salesEndTime}:00`).toISOString()
               : null,
             min_quantity_per_purchase: ticket.minQuantity,
             max_quantity_per_purchase: ticket.maxQuantity,
