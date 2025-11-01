@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Users, Search, Crown } from "lucide-react";
+import { Users, Search, Crown, CalendarDays } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { EventFeed } from "@/components/EventFeed";
 import { OrganizerStoriesBar } from "@/components/OrganizerStoriesBar";
@@ -33,6 +34,7 @@ export default function Home({
     profile
   } = useProfile();
   const [hasLiveEvent] = useState(true);
+  const [hasWeekEvents, setHasWeekEvents] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [userInterests, setUserInterests] = useState<string[]>([]);
@@ -58,6 +60,26 @@ export default function Home({
   const handleCreateStory = () => {
     setUploadDialogOpen(true);
   };
+  const checkWeekEvents = async () => {
+    try {
+      const now = new Date();
+      const endOfWeek = new Date(now);
+      endOfWeek.setDate(now.getDate() + 7);
+
+      const { data } = await supabase
+        .from('events')
+        .select('id')
+        .eq('status', 'upcoming')
+        .gte('event_date', now.toISOString())
+        .lte('event_date', endOfWeek.toISOString())
+        .limit(1);
+
+      setHasWeekEvents(data && data.length > 0);
+    } catch (error) {
+      console.error('Erro ao verificar eventos da semana:', error);
+    }
+  };
+
   const handleUploadStory = (file: File) => {
     if (!organizerData) return;
     // Inicia o upload em background
@@ -78,6 +100,11 @@ export default function Home({
       }
     }
   }, [profile]);
+
+  // Check for week events on mount
+  useEffect(() => {
+    checkWeekEvents();
+  }, []);
 
   // Scroll to top when refreshKey changes
   useEffect(() => {
@@ -151,7 +178,7 @@ export default function Home({
           </div>}
 
         {/* Live Event CTA */}
-        {hasLiveEvent && <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20 shadow-card cursor-pointer transition-all hover:bg-surface/80" onClick={() => onEventClick("live-events")}>
+        {hasLiveEvent && <div className="mb-4 p-4 bg-surface rounded-lg border border-primary/20 shadow-card cursor-pointer transition-all hover:bg-surface/80" onClick={() => onEventClick("live-events")}>
             <div className="flex items-center gap-3">
               <div className="h-3 w-3 bg-destructive rounded-full animate-pulse" />
               <div className="flex-1">
@@ -159,6 +186,19 @@ export default function Home({
                   Evento acontecendo agora!
                 </p>
                 <p className="text-xs text-muted-foreground">Clique aqui e saiba todos eventos que estão rolando na cidade</p>
+              </div>
+            </div>
+          </div>}
+
+        {/* Week Events CTA */}
+        {hasWeekEvents && <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20 shadow-card cursor-pointer transition-all hover:bg-surface/80" onClick={() => onEventClick("week-events")}>
+            <div className="flex items-center gap-3">
+              <CalendarDays className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  Nessa Semana
+                </p>
+                <p className="text-xs text-muted-foreground">Descubra todos os eventos que acontecerão nos próximos 7 dias</p>
               </div>
             </div>
           </div>}

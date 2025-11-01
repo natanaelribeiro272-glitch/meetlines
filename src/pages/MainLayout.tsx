@@ -11,6 +11,7 @@ import FindFriends from "./FindFriends";
 import OrganizerPage from "./OrganizerPage";
 import UserProfile from "./UserProfile";
 import LiveEvents from "./LiveEvents";
+import WeekEvents from "./WeekEvents";
 import OrganizerProfile from "./OrganizerProfile";
 import CreateEvent from "./CreateEvent";
 import OrdersManagement from "./OrdersManagement";
@@ -26,7 +27,7 @@ export default function MainLayout() {
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventAttendances" | "eventRegistrations" | "organizerEvents" | "editEvent">("feed");
+  const [currentView, setCurrentView] = useState<"feed" | "eventDetails" | "findFriends" | "liveEvents" | "weekEvents" | "organizerProfile" | "organizersList" | "eventRegistration" | "eventAttendances" | "eventRegistrations" | "organizerEvents" | "editEvent">("feed");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
@@ -130,6 +131,8 @@ export default function MainLayout() {
   const handleEventClick = (eventId: string) => {
     if (eventId === "live-events") {
       setCurrentView("liveEvents");
+    } else if (eventId === "week-events") {
+      setCurrentView("weekEvents");
     } else if (eventId === "register") {
       setCurrentView("eventRegistration");
     } else if (eventId === "registrations") {
@@ -212,6 +215,8 @@ export default function MainLayout() {
             return <FindFriends onBack={handleBackToFeed} />;
           case "liveEvents":
             return <LiveEvents onBack={handleBackToFeed} onEventClick={handleEventClick} />;
+          case "weekEvents":
+            return <WeekEvents onBack={handleBackToFeed} onEventClick={handleEventClick} onOrganizerClick={handleOrganizerClick} />;
           case "organizerProfile":
             return <OrganizerProfile onBack={handleBackToFeed} organizerId={currentOrganizerId || undefined} onEventClick={handleEventClick} />;
           case "organizersList":
