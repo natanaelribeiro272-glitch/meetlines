@@ -57,13 +57,6 @@ export function TicketPurchaseDialog({
     paymentId: string;
     expirationDate?: string;
   } | null>(null);
-  const [totalsState, setTotalsState] = useState<{
-    total: number;
-    platformFee: number;
-    processingFee: number;
-    subtotal: number;
-    promoDiscount: number;
-  } | null>(null);
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -284,23 +277,22 @@ export function TicketPurchaseDialog({
         throw new Error(data.error);
       }
 
-      if (paymentMethod === "pix" && data?.preferenceId) {
-        console.log('[TicketPurchase] Preference ID received:', data.preferenceId);
-        setTotalsState({ total, platformFee, processingFee, subtotal, promoDiscount });
+      if (paymentMethod === "pix" && data?.qrCode) {
+        console.log('[TicketPurchase] PIX QR Code received');
         setPixData({
-          qrCode: "",
-          qrCodeBase64: "",
-          paymentId: data.preferenceId,
-          expirationDate: "",
+          qrCode: data.qrCode,
+          qrCodeBase64: data.qrCodeBase64,
+          paymentId: data.paymentId,
+          expirationDate: data.expirationDate,
         });
-        toast.success("Carregando pagamento...");
+        toast.success("QR Code PIX gerado!");
       } else if (data?.url) {
         console.log('[TicketPurchase] Redirecting to:', data.url);
         window.location.href = data.url;
         onOpenChange(false);
         toast.success("Redirecionando para o checkout...");
       } else {
-        console.error('[TicketPurchase] No URL or preference ID in response:', data);
+        console.error('[TicketPurchase] No URL or QR code in response:', data);
         throw new Error("Dados de pagamento não recebidos");
       }
     } catch (error) {
@@ -317,26 +309,11 @@ export function TicketPurchaseDialog({
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setPixData(null);
-      setTotalsState(null);
       setSelectedTickets({});
       setAppliedPromo(null);
       setPromoCode("");
     }
     onOpenChange(open);
-  };
-
-  const handlePaymentSuccess = () => {
-    toast.success("Pagamento processado com sucesso!");
-    setTimeout(() => {
-      window.location.href = "/ticket-success";
-    }, 1500);
-  };
-
-  const handlePaymentError = (error: string) => {
-    toast.error("Erro no pagamento", {
-      description: error,
-    });
-    setLoading(false);
   };
 
   return (
@@ -349,20 +326,19 @@ export function TicketPurchaseDialog({
           <p className="text-muted-foreground">{eventTitle}</p>
         </DialogHeader>
 
-        {pixData && totalsState ? (
+        {pixData ? (
           <div className="space-y-4">
             <MercadoPagoPayment
-              preferenceId={pixData.paymentId}
-              amount={totalsState.total}
-              onPaymentSuccess={handlePaymentSuccess}
-              onPaymentError={handlePaymentError}
+              qrCode={pixData.qrCode}
+              qrCodeBase64={pixData.qrCodeBase64}
+              expirationDate={pixData.expirationDate}
             />
             <Button
               onClick={() => handleDialogClose(false)}
               variant="outline"
               className="w-full"
             >
-              Cancelar
+              Fechar
             </Button>
           </div>
         ) : (
