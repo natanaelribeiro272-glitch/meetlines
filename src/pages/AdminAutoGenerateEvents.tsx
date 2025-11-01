@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Sparkles, Loader2, Upload, Image as ImageIcon, MapPin } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Upload, Image as ImageIcon, MapPin, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AdminAutoGenerateEvents() {
   const navigate = useNavigate();
@@ -128,18 +129,38 @@ export default function AdminAutoGenerateEvents() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       if (data?.success) {
         const count = data.eventsCreated || 0;
         toast.success(`${count} evento(s) encontrado(s) e criado(s) com sucesso!`);
         navigate('/admin/pending-events');
       } else {
-        throw new Error(data?.error || 'Erro ao buscar eventos');
+        const errorMsg = data?.error || 'Erro ao buscar eventos';
+
+        if (errorMsg.includes('OPENAI_API_KEY')) {
+          toast.error('Configuração necessária: OPENAI_API_KEY não está configurada no Supabase. Configure em: Dashboard → Project Settings → Edge Functions → Secrets');
+        } else if (errorMsg.includes('Nenhum evento encontrado')) {
+          toast.error(`Nenhum evento encontrado para "${cityName}". Tente outra cidade ou termo de busca.`);
+        } else {
+          toast.error(errorMsg);
+        }
+        return;
       }
     } catch (error) {
       console.error('Error searching by city:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao processar busca');
+      const errorMsg = error instanceof Error ? error.message : 'Erro ao processar busca';
+
+      if (errorMsg.includes('OPENAI_API_KEY') || errorMsg.includes('não configurada')) {
+        toast.error('Configure OPENAI_API_KEY no Supabase Dashboard → Edge Functions → Secrets', {
+          duration: 6000
+        });
+      } else {
+        toast.error(`Erro: ${errorMsg}`);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -169,6 +190,19 @@ export default function AdminAutoGenerateEvents() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Configuração Necessária</AlertTitle>
+            <AlertDescription>
+              Esta funcionalidade requer que a <strong>OPENAI_API_KEY</strong> esteja configurada no Supabase.
+              <br />
+              Configure em: <strong>Supabase Dashboard → Edge Functions → Secrets</strong>
+              <br />
+              <span className="text-xs text-muted-foreground mt-1 block">
+                Opcionalmente, configure também SERPER_API_KEY para melhores resultados (https://serper.dev)
+              </span>
+            </AlertDescription>
+          </Alert>
           <div className="space-y-2">
             <Label htmlFor="cityName">Nome da Cidade *</Label>
             <Input
