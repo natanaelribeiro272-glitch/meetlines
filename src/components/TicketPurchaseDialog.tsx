@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingCart, Minus, Plus, Copy, Check } from "lucide-react";
+import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import QRCode from "react-qr-code";
+import { MercadoPagoPayment } from "./MercadoPagoPayment";
 
 interface TicketType {
   id: string;
@@ -57,7 +57,13 @@ export function TicketPurchaseDialog({
     paymentId: string;
     expirationDate?: string;
   } | null>(null);
-  const [copiedPix, setCopiedPix] = useState(false);
+  const [totalsState, setTotalsState] = useState<{
+    total: number;
+    platformFee: number;
+    processingFee: number;
+    subtotal: number;
+    promoDiscount: number;
+  } | null>(null);
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -278,22 +284,23 @@ export function TicketPurchaseDialog({
         throw new Error(data.error);
       }
 
-      if (paymentMethod === "pix" && data?.qrCode) {
-        console.log('[TicketPurchase] PIX QR Code received');
+      if (paymentMethod === "pix" && data?.preferenceId) {
+        console.log('[TicketPurchase] Preference ID received:', data.preferenceId);
+        setTotalsState({ total, platformFee, processingFee, subtotal, promoDiscount });
         setPixData({
-          qrCode: data.qrCode,
-          qrCodeBase64: data.qrCodeBase64,
-          paymentId: data.paymentId,
-          expirationDate: data.expirationDate,
+          qrCode: "",
+          qrCodeBase64: "",
+          paymentId: data.preferenceId,
+          expirationDate: "",
         });
-        toast.success("QR Code PIX gerado com sucesso!");
+        toast.success("Carregando pagamento...");
       } else if (data?.url) {
         console.log('[TicketPurchase] Redirecting to:', data.url);
         window.location.href = data.url;
         onOpenChange(false);
         toast.success("Redirecionando para o checkout...");
       } else {
-        console.error('[TicketPurchase] No URL or QR code in response:', data);
+        console.error('[TicketPurchase] No URL or preference ID in response:', data);
         throw new Error("Dados de pagamento não recebidos");
       }
     } catch (error) {
@@ -307,27 +314,29 @@ export function TicketPurchaseDialog({
 
   const totals = calculateTotals();
 
-  const copyPixCode = async () => {
-    if (!pixData?.qrCode) return;
-
-    try {
-      await navigator.clipboard.writeText(pixData.qrCode);
-      setCopiedPix(true);
-      toast.success("Código PIX copiado!");
-      setTimeout(() => setCopiedPix(false), 3000);
-    } catch (error) {
-      toast.error("Erro ao copiar código PIX");
-    }
-  };
-
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setPixData(null);
+      setTotalsState(null);
       setSelectedTickets({});
       setAppliedPromo(null);
       setPromoCode("");
     }
     onOpenChange(open);
+  };
+
+  const handlePaymentSuccess = () => {
+    toast.success("Pagamento processado com sucesso!");
+    setTimeout(() => {
+      window.location.href = "/ticket-success";
+    }, 1500);
+  };
+
+  const handlePaymentError = (error: string) => {
+    toast.error("Erro no pagamento", {
+      description: error,
+    });
+    setLoading(false);
   };
 
   return (
@@ -340,67 +349,20 @@ export function TicketPurchaseDialog({
           <p className="text-muted-foreground">{eventTitle}</p>
         </DialogHeader>
 
-        {pixData ? (
-          <div className="space-y-6 py-4">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-200">
-                <QRCode value={pixData.qrCode} size={256} />
-              </div>
-
-              <div className="w-full space-y-3">
-                <p className="text-sm text-center text-muted-foreground">
-                  Escaneie o QR Code com o app do seu banco ou copie o código PIX
-                </p>
-
-                <div className="flex gap-2">
-                  <Input
-                    value={pixData.qrCode}
-                    readOnly
-                    className="font-mono text-xs"
-                  />
-                  <Button
-                    onClick={copyPixCode}
-                    variant="outline"
-                    className="shrink-0"
-                  >
-                    {copiedPix ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-                  <p className="text-sm font-semibold text-blue-900">
-                    Instruções:
-                  </p>
-                  <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                    <li>Abra o app do seu banco</li>
-                    <li>Escolha pagar com PIX QR Code</li>
-                    <li>Escaneie o código ou cole a chave PIX</li>
-                    <li>Confirme o pagamento</li>
-                  </ol>
-                </div>
-
-                {pixData.expirationDate && (
-                  <p className="text-xs text-center text-muted-foreground">
-                    Este código expira em {new Date(pixData.expirationDate).toLocaleString('pt-BR')}
-                  </p>
-                )}
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Após o pagamento, você receberá seus ingressos por e-mail
-                </p>
-              </div>
-            </div>
-
+        {pixData && totalsState ? (
+          <div className="space-y-4">
+            <MercadoPagoPayment
+              preferenceId={pixData.paymentId}
+              amount={totalsState.total}
+              onPaymentSuccess={handlePaymentSuccess}
+              onPaymentError={handlePaymentError}
+            />
             <Button
               onClick={() => handleDialogClose(false)}
               variant="outline"
               className="w-full"
             >
-              Fechar
+              Cancelar
             </Button>
           </div>
         ) : (
