@@ -197,11 +197,7 @@ Deno.serve(async (req: Request) => {
           { id: "credit_card" },
           { id: "debit_card" },
           { id: "ticket" },
-          { id: "atm" },
-          { id: "prepaid_card" }
-        ],
-        excluded_payment_methods: [
-          { id: "account_money" }
+          { id: "atm" }
         ],
         installments: 1,
       },
