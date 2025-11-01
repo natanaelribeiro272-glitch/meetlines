@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle, Ticket, ClipboardList, DollarSign, Camera, Tag } from "lucide-react";
+import { Calendar, MapPin, Eye, Users, Settings, Edit, Trash2, StopCircle, Ticket, ClipboardList, DollarSign, Camera, Tag, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -147,7 +147,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
               {upcomingEvents.map((event) => (
                 <Card key={event.id} className="overflow-hidden">
                   <CardContent className="p-4">
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 relative">
                       {event.image_url && (
                         <img
                           src={event.image_url}
@@ -182,29 +182,51 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                             </Badge>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-1 text-sm text-emerald-600 mt-2">
                           <Users className="h-3 w-3" />
                           <span>{event.current_attendees}/{event.max_attendees || '∞'} participantes</span>
                         </div>
                       </div>
+                      <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="absolute top-0 right-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          {event.is_live && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setOpenDropdownId(null);
+                                handleEndEvent(event.id);
+                              }}
+                              className="text-orange-600"
+                            >
+                              <StopCircle className="h-4 w-4 mr-2" />
+                              Encerrar Evento
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(event.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                      {event.is_live && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleEndEvent(event.id)}
-                        >
-                          <StopCircle className="h-4 w-4 mr-1" />
-                          Encerrar Evento
-                        </Button>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
+
+                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 min-w-[100px]"
                         disabled={!event.requires_registration}
                         onClick={() => onManageRegistrations?.(event.id)}
                       >
@@ -216,7 +238,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1"
+                            className="flex-1 min-w-[100px]"
                             onClick={() => navigate(`/event/${event.id}/sales`)}
                           >
                             <DollarSign className="h-4 w-4 mr-1" />
@@ -225,7 +247,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1"
+                            className="flex-1 min-w-[100px]"
                             onClick={() => setPromoCodesEventId(event.id)}
                           >
                             <Tag className="h-4 w-4 mr-1" />
@@ -234,36 +256,6 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                           <TicketScanner eventId={event.id} />
                         </>
                       )}
-                      <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditEvent(event)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              setOpenDropdownId(null);
-                              handleEndEvent(event.id);
-                            }}
-                            className="text-orange-600"
-                          >
-                            <StopCircle className="h-4 w-4 mr-2" />
-                            Encerrar Evento
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteClick(event.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
@@ -285,7 +277,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
             completedEvents.map((event) => (
               <Card key={event.id} className="overflow-hidden">
                 <CardContent className="p-4">
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 relative">
                     {event.image_url && (
                       <img
                         src={event.image_url}
@@ -313,46 +305,10 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         </Badge>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                    {event.requires_registration && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => onManageRegistrations?.(event.id)}
-                      >
-                        <ClipboardList className="h-4 w-4 mr-1" />
-                        Cadastros
-                      </Button>
-                    )}
-                    {event.has_paid_tickets && (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => navigate(`/event/${event.id}/sales`)}
-                        >
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          Vendas
-                        </Button>
-                        <TicketScanner eventId={event.id} />
-                      </>
-                    )}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => onViewAttendances?.(event.id)}
-                    >
-                      <Users className="h-4 w-4 mr-1" />
-                      Confirmações
-                    </Button>
                     <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <Settings className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="absolute top-0 right-0">
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -360,17 +316,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => {
-                            setOpenDropdownId(null);
-                            handleEndEvent(event.id);
-                          }}
-                          className="text-orange-600"
-                        >
-                          <StopCircle className="h-4 w-4 mr-2" />
-                          Encerrar Evento
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteClick(event.id)}
                           className="text-destructive"
                         >
@@ -379,6 +325,43 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+                    {event.requires_registration && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 min-w-[100px]"
+                        onClick={() => onManageRegistrations?.(event.id)}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-1" />
+                        Cadastros
+                      </Button>
+                    )}
+                    {event.has_paid_tickets && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 min-w-[100px]"
+                          onClick={() => navigate(`/event/${event.id}/sales`)}
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Vendas
+                        </Button>
+                        <TicketScanner eventId={event.id} />
+                      </>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 min-w-[100px]"
+                      onClick={() => onViewAttendances?.(event.id)}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      Confirmações
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -396,7 +379,7 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
             events.map((event) => (
               <Card key={event.id} className="overflow-hidden">
                 <CardContent className="p-4">
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 relative">
                     {event.image_url && (
                       <img
                         src={event.image_url}
@@ -427,66 +410,40 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                             </Badge>
                           )}
                           <Badge variant="secondary" className={
-                            event.status === 'completed' 
+                            event.status === 'completed'
                               ? "bg-emerald-500/10 text-emerald-600"
                               : "bg-primary/10 text-primary"
                           }>
-                            {event.status === 'upcoming' ? 'Próximo' : 
+                            {event.status === 'upcoming' ? 'Próximo' :
                              event.status === 'completed' ? 'Realizado' : event.status}
                           </Badge>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                    {event.is_live && (
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleEndEvent(event.id)}
-                      >
-                        <StopCircle className="h-4 w-4 mr-1" />
-                        Encerrar Evento
-                      </Button>
-                    )}
                     <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Gerenciar
+                        <Button variant="ghost" size="icon" className="absolute top-0 right-0">
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onManageRegistrations?.(event.id)}>
-                          <ClipboardList className="h-4 w-4 mr-2" />
-                          Ver Cadastros
-                        </DropdownMenuItem>
-                        {event.has_paid_tickets && (
-                          <DropdownMenuItem onClick={() => navigate(`/event/${event.id}/sales`)}>
-                            <DollarSign className="h-4 w-4 mr-2" />
-                            Ver Vendas
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => onViewAttendances?.(event.id)}>
-                          <Users className="h-4 w-4 mr-2" />
-                          Ver Confirmações
-                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEditEvent(event)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => {
-                            setOpenDropdownId(null);
-                            handleEndEvent(event.id);
-                          }}
-                          className="text-orange-600"
-                        >
-                          <StopCircle className="h-4 w-4 mr-2" />
-                          Encerrar Evento
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        {event.is_live && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setOpenDropdownId(null);
+                              handleEndEvent(event.id);
+                            }}
+                            className="text-orange-600"
+                          >
+                            <StopCircle className="h-4 w-4 mr-2" />
+                            Encerrar Evento
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
                           onClick={() => handleDeleteClick(event.id)}
                           className="text-destructive"
                         >
@@ -495,6 +452,50 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 min-w-[100px]"
+                      onClick={() => onManageRegistrations?.(event.id)}
+                    >
+                      <ClipboardList className="h-4 w-4 mr-1" />
+                      Cadastros
+                    </Button>
+                    {event.has_paid_tickets && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 min-w-[100px]"
+                          onClick={() => navigate(`/event/${event.id}/sales`)}
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Vendas
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 min-w-[100px]"
+                          onClick={() => setPromoCodesEventId(event.id)}
+                        >
+                          <Tag className="h-4 w-4 mr-1" />
+                          Promoções
+                        </Button>
+                        <TicketScanner eventId={event.id} />
+                      </>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 min-w-[100px]"
+                      onClick={() => onViewAttendances?.(event.id)}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      Confirmações
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
