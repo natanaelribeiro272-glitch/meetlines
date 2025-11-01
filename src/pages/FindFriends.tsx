@@ -71,11 +71,12 @@ const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessage
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-medium text-foreground">{person.name}</h3>
-            <span className="text-xs text-muted-foreground">• {person.distance}</span>
-            {person.isFriend && (
+            {friendshipStatus === 'accepted' ? (
               <Badge className="bg-green-500/20 text-green-400 border-0 text-xs">
                 🤝 Amigo
               </Badge>
+            ) : (
+              <span className="text-xs text-muted-foreground">• {person.distance}</span>
             )}
           </div>
           
@@ -154,39 +155,36 @@ const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessage
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
-          <Button 
-            variant={friendshipStatus === 'accepted' ? "default" : "outline"} 
-            size="sm" 
-            onClick={handleFriendshipToggle}
-            disabled={loading}
-            className={friendshipStatus === 'accepted' ? "text-green-400 bg-green-500/20 border-green-500" : ""}
-          >
-            {friendshipStatus === 'accepted' ? (
-              <UserCheck className="h-4 w-4" />
-            ) : (
+          {friendshipStatus !== 'accepted' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleFriendshipToggle}
+              disabled={loading}
+            >
               <UserPlus className="h-4 w-4" />
-            )}
-          </Button>
-          <Button 
-            variant={likedUsers.has(person.user_id) ? "default" : "outline"} 
-            size="sm" 
+            </Button>
+          )}
+          <Button
+            variant={likedUsers.has(person.user_id) ? "default" : "outline"}
+            size="sm"
             onClick={() => handleLike(person.user_id)}
           >
-            <Heart 
-              className="h-4 w-4" 
-              fill={likedUsers.has(person.user_id) ? "currentColor" : "none"} 
+            <Heart
+              className="h-4 w-4"
+              fill={likedUsers.has(person.user_id) ? "currentColor" : "none"}
             />
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleMessage(person)} 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleMessage(person)}
             className="relative"
           >
             <MessageCircle className="h-4 w-4" />
             {unreadMessages.get(person.user_id) && unreadMessages.get(person.user_id)! > 0 && (
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full"
               >
                 {unreadMessages.get(person.user_id)}
