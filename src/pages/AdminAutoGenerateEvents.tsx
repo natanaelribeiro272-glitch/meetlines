@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Sparkles, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Upload, Image as ImageIcon, MapPin } from 'lucide-react';
 
 export default function AdminAutoGenerateEvents() {
   const navigate = useNavigate();
@@ -17,6 +17,8 @@ export default function AdminAutoGenerateEvents() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [cityName, setCityName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (adminLoading) {
     return null;
@@ -108,6 +110,41 @@ export default function AdminAutoGenerateEvents() {
     }
   };
 
+  const handleSearchByCity = async () => {
+    if (!cityName.trim()) {
+      toast.error('Por favor, insira o nome da cidade');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const query = searchQuery.trim() || `eventos ${cityName.trim()}`;
+
+      const { data, error } = await supabase.functions.invoke('search-events-by-city', {
+        body: {
+          city: cityName.trim(),
+          searchQuery: query
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        const count = data.eventsCreated || 0;
+        toast.success(`${count} evento(s) encontrado(s) e criado(s) com sucesso!`);
+        navigate('/admin/pending-events');
+      } else {
+        throw new Error(data?.error || 'Erro ao buscar eventos');
+      }
+    } catch (error) {
+      console.error('Error searching by city:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao processar busca');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-2xl">
       <div className="flex items-center gap-4 mb-6">
@@ -119,6 +156,81 @@ export default function AdminAutoGenerateEvents() {
           <p className="text-muted-foreground">Use IA para extrair eventos de APIs externas</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Buscar Eventos por Cidade
+          </CardTitle>
+          <CardDescription>
+            Informe o nome da cidade e nossa IA irá buscar eventos automaticamente no Google, processar os resultados
+            e criar eventos com base nas informações encontradas. Os eventos serão salvos como "pendentes" para revisão.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="cityName">Nome da Cidade *</Label>
+            <Input
+              id="cityName"
+              type="text"
+              placeholder="Ex: São Paulo, Rio de Janeiro, Belo Horizonte"
+              value={cityName}
+              onChange={(e) => setCityName(e.target.value)}
+              disabled={isProcessing}
+            />
+            <p className="text-xs text-muted-foreground">
+              Digite o nome da cidade onde deseja buscar eventos
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="searchQuery">Termo de Busca (opcional)</Label>
+            <Input
+              id="searchQuery"
+              type="text"
+              placeholder="Ex: shows, festas, teatro, exposições"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isProcessing}
+            />
+            <p className="text-xs text-muted-foreground">
+              Deixe em branco para buscar todos os tipos de eventos
+            </p>
+          </div>
+
+          <div className="pt-4">
+            <Button
+              onClick={handleSearchByCity}
+              disabled={isProcessing || !cityName.trim()}
+              className="w-full"
+              size="lg"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Buscando e criando eventos...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Buscar e Criar Eventos
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="pt-4 border-t space-y-2">
+            <h3 className="font-semibold text-sm">Como funciona:</h3>
+            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>A IA busca eventos no Google para a cidade especificada</li>
+              <li>Analisa os resultados e extrai informações dos eventos</li>
+              <li>Cria eventos automaticamente como "pendentes"</li>
+              <li>Você revisa, edita e aprova os eventos antes de publicá-los</li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
