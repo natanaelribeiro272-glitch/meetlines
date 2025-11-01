@@ -299,23 +299,16 @@ export default function UserProfile({
             {socialPlatforms.map(platform => {
             const Icon = platform.icon;
             const currentUrl = profile?.[platform.field] || "";
-            return <div key={platform.id} className="flex items-start gap-3 p-4 border rounded-lg bg-card">
+            return <div key={platform.id} className="flex items-start gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => currentUrl && window.open(currentUrl, '_blank')}>
                   <Icon className={`h-5 w-5 ${platform.color} mt-0.5 flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm mb-1">{platform.label}</p>
-                    <p className="text-sm text-muted-foreground break-all">
-                      {currentUrl || 'Não configurado'}
+                    <p className="font-medium text-sm">{platform.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {currentUrl ? 'Link de redirecionamento' : 'Não configurado'}
                     </p>
                   </div>
                   {currentUrl && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 flex-shrink-0"
-                      onClick={() => window.open(currentUrl, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   )}
                 </div>;
           })}
