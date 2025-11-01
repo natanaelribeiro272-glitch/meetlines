@@ -153,31 +153,28 @@ export default function Home({
             </Button>
           </div>}
 
-        {/* Live Event CTA */}
-        {hasLiveEvent && <div className="mb-4 p-4 bg-surface rounded-lg border border-primary/20 shadow-card cursor-pointer transition-all hover:bg-surface/80" onClick={() => onEventClick("live-events")}>
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 bg-destructive rounded-full animate-pulse" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">
-                  Evento acontecendo agora!
-                </p>
-                <p className="text-xs text-muted-foreground">Clique aqui e saiba todos eventos que estão rolando na cidade</p>
-              </div>
-            </div>
-          </div>}
+        {/* Quick Event Navigation */}
+        <div className="mb-6 flex gap-3">
+          {hasLiveEvent && (
+            <button
+              onClick={() => onEventClick("live-events")}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-surface rounded-lg border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-surface/80 hover:border-primary/40"
+            >
+              <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-foreground">Agora</span>
+            </button>
+          )}
 
-        {/* Week Events CTA */}
-        {hasWeekEvents && <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20 shadow-card cursor-pointer transition-all hover:bg-surface/80" onClick={() => onEventClick("week-events")}>
-            <div className="flex items-center gap-3">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">
-                  Nessa Semana
-                </p>
-                <p className="text-xs text-muted-foreground">Descubra todos os eventos que acontecerão nos próximos 7 dias</p>
-              </div>
-            </div>
-          </div>}
+          {hasWeekEvents && (
+            <button
+              onClick={() => onEventClick("week-events")}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-surface rounded-lg border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-surface/80 hover:border-primary/40"
+            >
+              <CalendarDays className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">Nessa Semana</span>
+            </button>
+          )}
+        </div>
 
         {/* Event Feed */}
         {userInterests.length > 0 && selectedCategory === "todos"}
