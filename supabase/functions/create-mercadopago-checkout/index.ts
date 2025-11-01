@@ -150,6 +150,14 @@ Deno.serve(async (req: Request) => {
 
     console.log("[MercadoPago] Ticket sale created:", ticketSale.data.id);
 
+    await supabaseService
+      .from("ticket_sales")
+      .update({
+        payment_gateway: "mercadopago",
+        payment_method: "pix"
+      })
+      .eq("id", ticketSale.data.id);
+
     const origin = req.headers.get("origin") || "https://meetlines.app";
 
     const preference = {
@@ -214,7 +222,7 @@ Deno.serve(async (req: Request) => {
     await supabaseService
       .from("ticket_sales")
       .update({
-        stripe_checkout_session_id: preferenceData.id,
+        mercadopago_preference_id: preferenceData.id,
       })
       .eq("id", ticketSale.data.id);
 

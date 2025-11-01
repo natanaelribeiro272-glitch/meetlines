@@ -156,6 +156,14 @@ Deno.serve(async (req: Request) => {
     console.log("[Checkout] Ticket sale created:", ticketSale.data.id);
     console.log("[Checkout] Amount to charge:", totalAmount);
 
+    await supabaseService
+      .from("ticket_sales")
+      .update({
+        payment_gateway: "stripe",
+        payment_method: "card"
+      })
+      .eq("id", ticketSale.data.id);
+
     const lineItems = [{
       price_data: {
         currency: "brl",
@@ -170,19 +178,14 @@ Deno.serve(async (req: Request) => {
 
     console.log("[Checkout] Line items:", JSON.stringify(lineItems));
 
-    console.log("[Checkout] Creating Stripe session with PIX support");
+    console.log("[Checkout] Creating Stripe session for card payments");
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card", "pix"],
+      payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
       locale: "pt-BR",
       success_url: `${req.headers.get("origin")}/ticket-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/event/${eventId}`,
-      payment_method_options: {
-        pix: {
-          expires_after_seconds: 86400,
-        },
-      },
       metadata: {
         ticket_sale_id: ticketSale.data.id,
         ticket_type_id: ticketTypeId,
