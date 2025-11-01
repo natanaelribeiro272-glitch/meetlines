@@ -123,93 +123,99 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
       if (error) throw error;
       if (platformError) throw platformError;
 
-      // Para cada evento regular, buscar estatísticas de curtidas e comentários
-      const eventsWithStats = await Promise.all(
-        (eventsData || []).map(async (event: any) => {
-          // Buscar perfil do organizador
-          const { data: organizerProfile } = await supabase
-            .from('profiles')
-            .select('display_name, avatar_url')
-            .eq('user_id', event.organizer.user_id)
-            .maybeSingle();
+      // Buscar todos os dados necessários em batch para otimização
+      const eventIds = (eventsData || []).map((e: any) => e.id);
+      const organizerUserIds = (eventsData || []).map((e: any) => e.organizer?.user_id).filter(Boolean);
 
-          // Contar curtidas
-          const { count: likesCount } = await supabase
-            .from('event_likes')
-            .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id);
+      let organizerProfiles: any[] = [];
+      let likesData: any = { data: [] };
+      let commentsData: any = { data: [] };
+      let registrationsData: any = { data: [] };
+      let ticketTypesData: any = { data: [] };
+      let userLikesData: any = { data: [] };
 
-          // Contar comentários
-          const { count: commentsCount } = await supabase
-            .from('event_comments')
-            .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id);
+      // Só buscar dados se houver eventos
+      if (eventIds.length > 0) {
+        // Buscar perfis dos organizadores em batch
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', organizerUserIds);
 
-          // Contar cadastros totais
-          const { count: registrationsCount } = await supabase
-            .from('event_registrations')
-            .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id);
+        organizerProfiles = profiles || [];
 
-          // Contar presenças confirmadas
-          const { count: confirmedAttendeesCount } = await supabase
-            .from('event_registrations')
-            .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id)
-            .eq('attendance_confirmed', true);
-
-          // Contar usuários únicos (para evitar duplicação)
-          const { data: uniqueUsersData } = await supabase
-            .from('event_registrations')
-            .select('user_id')
-            .eq('event_id', event.id);
-          
-          const uniqueAttendeesCount = new Set(uniqueUsersData?.map(r => r.user_id) || []).size;
-
-          // Verificar se tem tickets pagos
-          const { data: ticketTypes } = await supabase
+        // Buscar estatísticas em batch usando aggregation
+        [likesData, commentsData, registrationsData, ticketTypesData, userLikesData] = await Promise.all([
+          // Curtidas por evento
+          supabase.rpc('get_event_likes_count', { event_ids: eventIds }),
+          // Comentários por evento
+          supabase.rpc('get_event_comments_count', { event_ids: eventIds }),
+          // Registros por evento
+          supabase.rpc('get_event_registrations_stats', { event_ids: eventIds }),
+          // Tickets pagos por evento
+          supabase
             .from('ticket_types')
-            .select('price')
-            .eq('event_id', event.id)
-            .eq('is_active', true);
+            .select('event_id, price')
+            .in('event_id', eventIds)
+            .eq('is_active', true),
+          // Curtidas do usuário (se logado)
+          user
+            ? supabase
+                .from('event_likes')
+                .select('event_id')
+                .in('event_id', eventIds)
+                .eq('user_id', user.id)
+            : Promise.resolve({ data: [] })
+        ]);
+      }
 
-          const hasPaidTickets = (ticketTypes && ticketTypes.length > 0 && ticketTypes.some(t => Number(t.price) > 0)) || 
-                                 (event.ticket_price && Number(event.ticket_price) > 0) ||
-                                 !!event.ticket_link;
-
-          // Verificar se o usuário curtiu (se logado)
-          let isLiked = false;
-          if (user) {
-            const { data: likeData } = await supabase
-              .from('event_likes')
-              .select('id')
-              .eq('event_id', event.id)
-              .eq('user_id', user.id)
-              .maybeSingle();
-            
-            isLiked = !!likeData;
-          }
-
-          return {
-            ...event,
-            is_platform_event: false,
-            organizer: {
-              ...event.organizer,
-              profile: {
-                display_name: organizerProfile?.display_name,
-                avatar_url: event.organizer.avatar_url || organizerProfile?.avatar_url
-              }
-            },
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            is_liked: isLiked,
-            registrations_count: registrationsCount || 0,
-            confirmed_attendees_count: confirmedAttendeesCount || 0,
-            unique_attendees_count: uniqueAttendeesCount || 0,
-            has_paid_tickets: hasPaidTickets,
-          };
-        })
+      const profilesMap = new Map(
+        organizerProfiles.map(p => [p.user_id, p])
       );
+
+      // Criar mapas para acesso rápido
+      const likesMap = new Map((likesData.data || []).map((l: any) => [l.event_id, l.count]));
+      const commentsMap = new Map((commentsData.data || []).map((c: any) => [c.event_id, c.count]));
+      const registrationsMap = new Map((registrationsData.data || []).map((r: any) => [r.event_id, r]));
+      const userLikesSet = new Set((userLikesData.data || []).map((l: any) => l.event_id));
+
+      const ticketsByEvent = new Map<string, any[]>();
+      (ticketTypesData.data || []).forEach((ticket: any) => {
+        if (!ticketsByEvent.has(ticket.event_id)) {
+          ticketsByEvent.set(ticket.event_id, []);
+        }
+        ticketsByEvent.get(ticket.event_id)!.push(ticket);
+      });
+
+      // Processar eventos com os dados já carregados
+      const eventsWithStats = (eventsData || []).map((event: any) => {
+        const organizerProfile = profilesMap.get(event.organizer?.user_id);
+        const eventTickets = ticketsByEvent.get(event.id) || [];
+        const registrationStats = registrationsMap.get(event.id) || { total: 0, confirmed: 0, unique: 0 };
+
+        const hasPaidTickets = eventTickets.some(t => Number(t.price) > 0) ||
+                               (event.ticket_price && Number(event.ticket_price) > 0) ||
+                               !!event.ticket_link;
+
+        return {
+          ...event,
+          is_platform_event: false,
+          organizer: {
+            ...event.organizer,
+            profile: {
+              display_name: organizerProfile?.display_name,
+              avatar_url: event.organizer.avatar_url || organizerProfile?.avatar_url
+            }
+          },
+          likes_count: likesMap.get(event.id) || 0,
+          comments_count: commentsMap.get(event.id) || 0,
+          is_liked: userLikesSet.has(event.id),
+          registrations_count: registrationStats.total || 0,
+          confirmed_attendees_count: registrationStats.confirmed || 0,
+          unique_attendees_count: registrationStats.unique || 0,
+          has_paid_tickets: hasPaidTickets,
+        };
+      });
 
       // Processar platform_events
       const platformEventsWithStats = (platformEventsData || []).map((platformEvent: any) => ({
