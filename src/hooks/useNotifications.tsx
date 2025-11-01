@@ -12,6 +12,8 @@ export interface Notification {
   message: string;
   read: boolean;
   created_at: string;
+  from_user_id?: string;
+  data?: any;
 }
 
 export function useNotifications() {

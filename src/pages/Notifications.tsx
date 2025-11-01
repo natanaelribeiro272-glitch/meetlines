@@ -66,26 +66,35 @@ export default function Notifications() {
       const userInteractions = notifications.filter(n => ['user_like', 'user_message', 'event_like'].includes(n.type));
 
       for (const notification of friendRequests) {
-        const { data: friendships } = await supabase
+        // Get from_user_id from notification (who sent the friend request)
+        const fromUserId = notification.from_user_id || notification.organizer_id;
+
+        if (!fromUserId) continue;
+
+        // Fetch the friendship request for this specific user
+        const { data: friendship } = await supabase
           .from('friendships')
-          .select('user_id')
+          .select('user_id, id')
+          .eq('user_id', fromUserId)
           .eq('friend_id', user?.id)
           .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
           .maybeSingle();
 
-        if (friendships) {
+        if (friendship) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('user_id, display_name, avatar_url, interest, relationship_status')
-            .eq('user_id', friendships.user_id)
+            .eq('user_id', friendship.user_id)
             .maybeSingle();
 
           if (profile) {
             setRequesterProfiles(prev => ({
               ...prev,
-              [notification.id]: { ...profile, friendshipUserId: friendships.user_id }
+              [notification.id]: {
+                ...profile,
+                friendshipUserId: friendship.user_id,
+                friendshipId: friendship.id
+              }
             }));
           }
         }
@@ -197,15 +206,17 @@ export default function Notifications() {
     }
   };
 
-  const handleAcceptRequest = async (notificationId: string, requesterId: string) => {
-    const success = await acceptFriendRequest('', requesterId);
+  const handleAcceptRequest = async (notificationId: string, requesterId: string, friendshipId?: string) => {
+    console.log('handleAcceptRequest called:', { notificationId, requesterId, friendshipId });
+    const success = await acceptFriendRequest(friendshipId || '', requesterId);
     if (success) {
       deleteNotification(notificationId);
     }
   };
 
-  const handleDeclineRequest = async (notificationId: string, requesterId: string) => {
-    const success = await declineFriendRequest('', requesterId);
+  const handleDeclineRequest = async (notificationId: string, requesterId: string, friendshipId?: string) => {
+    console.log('handleDeclineRequest called:', { notificationId, requesterId, friendshipId });
+    const success = await declineFriendRequest(friendshipId || '', requesterId);
     if (success) {
       deleteNotification(notificationId);
     }
@@ -313,7 +324,11 @@ export default function Notifications() {
                               className="flex-1 h-8"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAcceptRequest(notification.id, requesterProfile.friendshipUserId);
+                                handleAcceptRequest(
+                                  notification.id,
+                                  requesterProfile.friendshipUserId,
+                                  requesterProfile.friendshipId
+                                );
                               }}
                               disabled={requestLoading}
                             >
@@ -325,7 +340,11 @@ export default function Notifications() {
                               className="flex-1 h-8"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeclineRequest(notification.id, requesterProfile.friendshipUserId);
+                                handleDeclineRequest(
+                                  notification.id,
+                                  requesterProfile.friendshipUserId,
+                                  requesterProfile.friendshipId
+                                );
                               }}
                               disabled={requestLoading}
                             >
