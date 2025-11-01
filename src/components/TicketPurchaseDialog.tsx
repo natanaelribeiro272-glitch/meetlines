@@ -250,10 +250,18 @@ export function TicketPurchaseDialog({
       if (data.error) {
         console.error('[TicketPurchase] Data contains error:', data.error);
 
-        if (data.error.includes('MERCADOPAGO_ACCESS_TOKEN')) {
-          toast.error("Mercado Pago não configurado", {
-            duration: 8000,
-            description: "O sistema de pagamentos ainda não foi configurado. Entre em contato com o suporte."
+        if (data.error.includes('MERCADOPAGO_ACCESS_TOKEN') || data.error.includes('Mercado Pago não configurado')) {
+          toast.error("⚠️ Mercado Pago não configurado", {
+            duration: 10000,
+            description: "O Access Token do Mercado Pago precisa ser configurado. Vá em Supabase > Project Settings > Edge Functions > Secrets e adicione MERCADOPAGO_ACCESS_TOKEN com seu Access Token de produção do Mercado Pago."
+          });
+          return;
+        }
+
+        if (data.error.includes('QR Code PIX não foi gerado')) {
+          toast.error("❌ Erro ao gerar QR Code PIX", {
+            duration: 10000,
+            description: "Sua conta do Mercado Pago pode não estar configurada para aceitar PIX. Verifique se o PIX está ativado na sua conta."
           });
           return;
         }

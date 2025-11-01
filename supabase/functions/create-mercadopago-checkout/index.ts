@@ -19,8 +19,11 @@ Deno.serve(async (req: Request) => {
     console.log("[MercadoPago PIX] Starting PIX checkout process");
 
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    console.log("[MercadoPago PIX] Access Token present:", !!accessToken);
+
     if (!accessToken) {
-      throw new Error("Sistema de pagamento Mercado Pago não configurado.");
+      console.error("[MercadoPago PIX] MERCADOPAGO_ACCESS_TOKEN not found in environment");
+      throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado. Por favor, configure o Access Token do Mercado Pago nos secrets do Supabase.");
     }
 
     const supabaseClient = createClient(
