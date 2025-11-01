@@ -306,7 +306,12 @@ export function TicketPurchaseDialog({
     } catch (error) {
       console.error("[TicketPurchase] Checkout error:", error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      toast.error(`Erro ao processar compra: ${errorMessage}`);
+      console.error("[TicketPurchase] Full error object:", JSON.stringify(error, null, 2));
+
+      toast.error("Erro ao gerar QR Code PIX", {
+        description: errorMessage,
+        duration: 10000,
+      });
     } finally {
       setLoading(false);
     }
