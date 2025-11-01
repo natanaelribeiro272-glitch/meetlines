@@ -156,37 +156,27 @@ export default function OrganizerEventsList({ onCreateEvent, onManageRegistratio
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-foreground line-clamp-1">
-                              {event.title}
-                            </h3>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                              <Calendar className="h-3 w-3" />
-                              <span>{new Date(event.event_date).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <MapPin className="h-3 w-3" />
-                              <span className="line-clamp-1">{event.location}</span>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-1 items-end">
-                            {event.is_live && (
-                              <Badge variant="destructive" className="mb-1">
-                                <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
-                                AO VIVO
-                              </Badge>
-                            )}
-                            <Badge variant="secondary" className="bg-primary/10 text-primary">
-                              {event.status === 'upcoming' ? 'Próximo' : event.status}
-                            </Badge>
-                          </div>
+                        <h3 className="font-medium text-foreground line-clamp-1">
+                          {event.title}
+                        </h3>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{new Date(event.event_date).toLocaleDateString('pt-BR')}</span>
                         </div>
-
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          <span className="line-clamp-1">{event.location}</span>
+                        </div>
                         <div className="flex items-center gap-1 text-sm text-emerald-600 mt-2">
                           <Users className="h-3 w-3" />
                           <span>{event.current_attendees}/{event.max_attendees || '∞'} participantes</span>
                         </div>
+                        {event.is_live && (
+                          <Badge variant="destructive" className="w-fit mt-2">
+                            <div className="h-2 w-2 bg-white rounded-full animate-pulse mr-1" />
+                            AO VIVO
+                          </Badge>
+                        )}
                       </div>
                       <DropdownMenu open={openDropdownId === event.id} onOpenChange={(open) => setOpenDropdownId(open ? event.id : null)}>
                         <DropdownMenuTrigger asChild>
