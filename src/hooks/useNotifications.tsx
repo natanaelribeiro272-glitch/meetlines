@@ -29,14 +29,26 @@ export function useNotifications() {
     }
 
     fetchNotifications();
-    
-    // Realtime subscription
+
+    // Realtime subscription - only for INSERT and DELETE events to avoid duplication
     const channel = supabase
       .channel('notifications-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,

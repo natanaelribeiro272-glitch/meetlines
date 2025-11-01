@@ -8,10 +8,25 @@ export function useFriendRequest() {
   const acceptFriendRequest = async (friendshipId: string, requesterId: string) => {
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Find the friendship by requester ID and current user as friend
+      const { data: friendship, error: fetchError } = await supabase
+        .from('friendships')
+        .select('id')
+        .eq('user_id', requesterId)
+        .eq('friend_id', user.id)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!friendship) throw new Error('Friendship request not found');
+
       const { error } = await supabase
         .from('friendships')
         .update({ status: 'accepted' })
-        .or(`and(id.eq.${friendshipId}),and(user_id.eq.${requesterId})`);
+        .eq('id', friendship.id);
 
       if (error) throw error;
 
@@ -29,10 +44,25 @@ export function useFriendRequest() {
   const declineFriendRequest = async (friendshipId: string, requesterId: string) => {
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Find the friendship by requester ID and current user as friend
+      const { data: friendship, error: fetchError } = await supabase
+        .from('friendships')
+        .select('id')
+        .eq('user_id', requesterId)
+        .eq('friend_id', user.id)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!friendship) throw new Error('Friendship request not found');
+
       const { error } = await supabase
         .from('friendships')
         .delete()
-        .or(`and(id.eq.${friendshipId}),and(user_id.eq.${requesterId})`);
+        .eq('id', friendship.id);
 
       if (error) throw error;
 
