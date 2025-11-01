@@ -195,6 +195,8 @@ export function TicketPurchaseDialog({
         quantity,
         eventId,
         total,
+        totalType: typeof total,
+        totalIsNaN: isNaN(total),
         platformFee,
         processingFee,
         subtotal,
@@ -202,23 +204,29 @@ export function TicketPurchaseDialog({
         promoCodeId: appliedPromo?.id
       });
 
+      const totalAmount = Number(total);
+      if (isNaN(totalAmount) || totalAmount <= 0) {
+        throw new Error(`Valor total inválido: ${total}. Tipo: ${typeof total}`);
+      }
+
       const functionName = paymentMethod === "pix"
         ? "create-mercadopago-checkout"
         : "create-ticket-checkout";
 
       console.log('[TicketPurchase] Using payment method:', paymentMethod, 'with function:', functionName);
+      console.log('[TicketPurchase] Total amount to send:', totalAmount);
 
       const response = await supabase.functions.invoke(functionName, {
         body: {
           ticketTypeId: firstTicketId,
           quantity,
           eventId,
-          totalAmount: total,
-          platformFee: platformFee,
-          processingFee: processingFee,
-          subtotal: subtotal,
+          totalAmount: totalAmount,
+          platformFee: Number(platformFee),
+          processingFee: Number(processingFee),
+          subtotal: Number(subtotal),
           promoCodeId: appliedPromo?.id || null,
-          promoDiscount: promoDiscount,
+          promoDiscount: Number(promoDiscount),
         },
       });
 

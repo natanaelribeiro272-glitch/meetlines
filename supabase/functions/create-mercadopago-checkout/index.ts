@@ -98,11 +98,27 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     const unitPrice = Number(ticketType.price);
-    const calculatedSubtotal = subtotal ?? unitPrice * quantity;
-    const calculatedPlatformFee = platformFee ?? 0;
-    const calculatedProcessingFee = processingFee ?? 0;
-    const calculatedTotalAmount = totalAmount ?? calculatedSubtotal;
+    const calculatedSubtotal = Number(subtotal ?? unitPrice * quantity);
+    const calculatedPlatformFee = Number(platformFee ?? 0);
+    const calculatedProcessingFee = Number(processingFee ?? 0);
+    const calculatedTotalAmount = Number(totalAmount ?? calculatedSubtotal);
 
+    console.log("[MercadoPago PIX] Calculated values:", {
+      unitPrice,
+      calculatedSubtotal,
+      calculatedPlatformFee,
+      calculatedProcessingFee,
+      calculatedTotalAmount,
+      quantity
+    });
+
+    if (isNaN(calculatedTotalAmount) || calculatedTotalAmount <= 0) {
+      throw new Error(`Invalid total amount: ${calculatedTotalAmount}. Original value: ${totalAmount}`);
+    }
+
+    const roundedTotalAmount = Math.round(calculatedTotalAmount * 100) / 100;
+
+    console.log("[MercadoPago PIX] Rounded total amount:", roundedTotalAmount);
     console.log("[MercadoPago PIX] Creating ticket sale record");
     const ticketSale = await supabaseService
       .from("ticket_sales")
@@ -135,7 +151,7 @@ Deno.serve(async (req: Request) => {
     console.log("[MercadoPago PIX] Ticket sale created:", ticketSale.data.id);
 
     const paymentData = {
-      transaction_amount: calculatedTotalAmount,
+      transaction_amount: roundedTotalAmount,
       description: `${quantity}x ${ticketType.name} - ${event.title}`,
       payment_method_id: "pix",
       payer: {
@@ -224,7 +240,7 @@ Deno.serve(async (req: Request) => {
         qrCodeBase64: qrCodeBase64,
         ticketUrl: ticketUrl,
         expirationDate: paymentResponse.date_of_expiration,
-        transactionAmount: calculatedTotalAmount,
+        transactionAmount: roundedTotalAmount,
       }),
       {
         headers: {
