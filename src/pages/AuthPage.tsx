@@ -100,53 +100,16 @@ export default function AuthPage({
 
   return <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          
-          {/* Left Side - Features */}
-          <div className="space-y-6">
-            <div className="text-center lg:text-left space-y-4">
-              <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl md:text-5xl">MeetLines</h1>
-              <p className="text-lg text-muted-foreground">Conecte-se com pessoas e descubra eventos incríveis</p>
-              
-              {/* User Type Toggle */}
-              <div className="flex items-center justify-center lg:justify-start pt-2">
-                <div className="flex bg-surface rounded-lg p-1 border border-border">
-                  <button 
-                    type="button" 
-                    onClick={() => setPreviewUserType("user")} 
-                    className={`px-6 py-2 text-sm font-medium rounded-md transition-smooth ${previewUserType === "user" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    👤 Usuário
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => setPreviewUserType("organizer")} 
-                    className={`px-6 py-2 text-sm font-medium rounded-md transition-smooth ${previewUserType === "organizer" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    🎯 Organizador
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div key={index} className="flex items-start gap-3 p-4 rounded-lg bg-card/50 border border-border/50 hover:border-primary/50 transition-colors">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="text-sm text-muted-foreground text-left">{feature.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {/* Mobile Logo */}
+        <div className="text-center mb-8 lg:hidden">
+          <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl">MeetLines</h1>
+          <p className="text-sm text-muted-foreground mt-2">Conecte-se com pessoas e descubra eventos incríveis</p>
+        </div>
 
-          {/* Right Side - Auth Form */}
-          <div className="w-full max-w-md mx-auto lg:mx-0 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+
+          {/* Left Side - Auth Form */}
+          <div className="w-full max-w-md mx-auto lg:mx-0 space-y-6 order-1 lg:order-1">
         {/* Organizer Link & Theme Toggle */}
         <div className="flex justify-between items-center">
           {isLogin ? (
@@ -242,7 +205,50 @@ export default function AuthPage({
           </p>
         </div>
         </div>
-        
+
+          {/* Right Side - Features */}
+          <div className="space-y-6 order-2 lg:order-2">
+            <div className="text-center lg:text-left space-y-4">
+              <h1 className="font-bold gradient-primary bg-clip-text text-[#147dc7] text-4xl md:text-5xl">MeetLines</h1>
+              <p className="text-lg text-muted-foreground">Conecte-se com pessoas e descubra eventos incríveis</p>
+
+              {/* User Type Toggle */}
+              <div className="flex items-center justify-center lg:justify-start pt-2">
+                <div className="flex bg-surface rounded-lg p-1 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewUserType("user")}
+                    className={`px-6 py-2 text-sm font-medium rounded-md transition-smooth ${previewUserType === "user" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    👤 Usuário
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewUserType("organizer")}
+                    className={`px-6 py-2 text-sm font-medium rounded-md transition-smooth ${previewUserType === "organizer" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    🎯 Organizador
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Features Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={index} className="flex items-start gap-3 p-4 rounded-lg bg-card/50 border border-border/50 hover:border-primary/50 transition-colors">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground text-left">{feature.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>;
