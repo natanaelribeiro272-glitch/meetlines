@@ -34,7 +34,7 @@ export default function Home({
     profile
   } = useProfile();
   const [hasLiveEvent] = useState(true);
-  const [hasWeekEvents, setHasWeekEvents] = useState(false);
+  const [hasWeekEvents, setHasWeekEvents] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [userInterests, setUserInterests] = useState<string[]>([]);
@@ -66,7 +66,7 @@ export default function Home({
       const endOfWeek = new Date(now);
       endOfWeek.setDate(now.getDate() + 7);
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('events')
         .select('id')
         .eq('status', 'upcoming')
@@ -74,6 +74,12 @@ export default function Home({
         .lte('event_date', endOfWeek.toISOString())
         .limit(1);
 
+      if (error) {
+        console.error('Erro ao verificar eventos da semana:', error);
+        return;
+      }
+
+      console.log('Week events check:', data);
       setHasWeekEvents(data && data.length > 0);
     } catch (error) {
       console.error('Erro ao verificar eventos da semana:', error);
@@ -101,10 +107,10 @@ export default function Home({
     }
   }, [profile]);
 
-  // Check for week events on mount
+  // Check for week events on mount and when refreshKey changes
   useEffect(() => {
     checkWeekEvents();
-  }, []);
+  }, [refreshKey]);
 
   // Scroll to top when refreshKey changes
   useEffect(() => {
