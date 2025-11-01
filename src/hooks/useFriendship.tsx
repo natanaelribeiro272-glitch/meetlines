@@ -15,6 +15,41 @@ export function useFriendship(friendId: string | undefined) {
     }
 
     checkFriendshipStatus();
+
+    // Subscribe to realtime updates for this friendship
+    const channel = supabase
+      .channel(`friendship-${user.id}-${friendId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendships',
+          filter: `user_id=eq.${user.id},friend_id=eq.${friendId}`
+        },
+        (payload) => {
+          console.log('Friendship change detected:', payload);
+          checkFriendshipStatus();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendships',
+          filter: `user_id=eq.${friendId},friend_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Friendship change detected (reverse):', payload);
+          checkFriendshipStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, friendId]);
 
   const checkFriendshipStatus = async () => {
@@ -105,5 +140,6 @@ export function useFriendship(friendId: string | undefined) {
     loading,
     addFriend,
     removeFriend,
+    refreshStatus: checkFriendshipStatus,
   };
 }

@@ -36,16 +36,23 @@ interface FindFriendsProps {
 }
 
 // UserCard component with friendship button
-const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessages, onFriendshipChange }: { 
-  person: Attendee; 
+const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessages, onFriendshipChange }: {
+  person: Attendee;
   handleLike: (userId: string) => void;
   handleMessage: (person: Attendee) => void;
   likedUsers: Set<string>;
   unreadMessages: Map<string, number>;
   onFriendshipChange: () => void;
 }) => {
-  const { friendshipStatus, loading, addFriend, removeFriend } = useFriendship(person.user_id);
+  const { friendshipStatus, loading, addFriend, removeFriend, refreshStatus } = useFriendship(person.user_id);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+
+  // Refresh status when component mounts or person changes
+  useEffect(() => {
+    if (refreshStatus) {
+      refreshStatus();
+    }
+  }, [person.user_id]);
 
   const handleFriendshipToggle = async () => {
     if (friendshipStatus === 'accepted') {
@@ -53,6 +60,8 @@ const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessage
     } else {
       await addFriend();
     }
+    // Force refresh the friendship status
+    await refreshStatus();
     onFriendshipChange();
   };
 
