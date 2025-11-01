@@ -57,44 +57,56 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (!serperApiKey) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "SERPER_API_KEY não configurada",
-        }),
-        {
-          status: 500,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
     const query = searchQuery || `eventos ${city}`;
     console.log(`Buscando: ${query}`);
 
-    const serperResponse = await fetch("https://google.serper.dev/search", {
-      method: "POST",
-      headers: {
-        "X-API-KEY": serperApiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        q: query,
-        gl: "br",
-        hl: "pt-br",
-        num: 10,
-      }),
-    });
+    let searchResults: any;
 
-    if (!serperResponse.ok) {
-      throw new Error(`Erro na busca do Google: ${serperResponse.statusText}`);
+    if (serperApiKey) {
+      const serperResponse = await fetch("https://google.serper.dev/search", {
+        method: "POST",
+        headers: {
+          "X-API-KEY": serperApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          q: query,
+          gl: "br",
+          hl: "pt-br",
+          num: 10,
+        }),
+      });
+
+      if (!serperResponse.ok) {
+        throw new Error(`Erro na busca do Google: ${serperResponse.statusText}`);
+      }
+
+      searchResults = await serperResponse.json();
+    } else {
+      const encodedQuery = encodeURIComponent(`${query} brasil 2025`);
+      const searchUrl = `https://www.google.com/search?q=${encodedQuery}&gl=br&hl=pt-br`;
+
+      const htmlResponse = await fetch(searchUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+      });
+
+      if (!htmlResponse.ok) {
+        throw new Error(`Erro ao buscar no Google: ${htmlResponse.statusText}`);
+      }
+
+      const html = await htmlResponse.text();
+
+      searchResults = {
+        organic: [{
+          title: "Resultados de busca",
+          snippet: html.substring(0, 10000),
+          link: searchUrl,
+        }],
+      };
     }
 
-    const searchResults = await serperResponse.json();
     console.log("Resultados da busca:", JSON.stringify(searchResults, null, 2));
 
     const openaiResponse = await fetch(
@@ -110,48 +122,11 @@ Deno.serve(async (req: Request) => {
           messages: [
             {
               role: "system",
-              content: `Você é um assistente especializado em extrair informações de eventos a partir de resultados de busca do Google.
-
-Sua tarefa é analisar os resultados da busca e extrair informações sobre eventos reais que encontrar.
-
-Para cada evento encontrado, extraia:
-- title: título do evento
-- description: descrição detalhada (mínimo 100 caracteres)
-- event_date: data no formato ISO 8601 (YYYY-MM-DDTHH:MM:SS)
-- end_date: data de término no formato ISO 8601 (se houver)
-- location: local específico (nome do lugar, endereço)
-- city: ${city}
-- price: preço em reais (número) ou 0 se for gratuito
-- category: uma categoria adequada (musica, teatro, esportes, gastronomia, arte, tecnologia, etc)
-- event_url: URL oficial do evento (se disponível)
-
-IMPORTANTE:
-- Retorne APENAS eventos com data futura (não eventos passados)
-- Se não encontrar a data exata, NÃO invente uma data
-- A descrição deve ter no mínimo 100 caracteres
-- Retorne no máximo 5 eventos
-- Se não encontrar eventos válidos, retorne um array vazio
-
-Responda APENAS com um JSON válido no formato:
-{
-  "events": [
-    {
-      "title": "...",
-      "description": "...",
-      "event_date": "...",
-      "end_date": "...",
-      "location": "...",
-      "city": "...",
-      "price": 0,
-      "category": "...",
-      "event_url": "..."
-    }
-  ]
-}`,
+              content: `Você é um assistente especializado em extrair informações de eventos a partir de resultados de busca do Google.\n\nSua tarefa é analisar os resultados da busca e extrair informações sobre eventos reais que encontrar.\n\nPara cada evento encontrado, extraia:\n- title: título do evento\n- description: descrição detalhada (mínimo 100 caracteres)\n- event_date: data no formato ISO 8601 (YYYY-MM-DDTHH:MM:SS)\n- end_date: data de término no formato ISO 8601 (se houver)\n- location: local específico (nome do lugar, endereço)\n- city: ${city}\n- price: preço em reais (número) ou 0 se for gratuito\n- category: uma categoria adequada (musica, teatro, esportes, gastronomia, arte, tecnologia, etc)\n- event_url: URL oficial do evento (se disponível)\n\nIMPORTANTE:\n- Retorne APENAS eventos com data futura (não eventos passados)\n- Se não encontrar a data exata, NÃO invente uma data\n- A descrição deve ter no mínimo 100 caracteres\n- Retorne no máximo 5 eventos\n- Se não encontrar eventos válidos, retorne um array vazio\n\nResponda APENAS com um JSON válido no formato:\n{\n  \"events\": [\n    {\n      \"title\": \"...\",\n      \"description\": \"...\",\n      \"event_date\": \"...\",\n      \"end_date\": \"...\",\n      \"location\": \"...\",\n      \"city\": \"...\",\n      \"price\": 0,\n      \"category\": \"...\",\n      \"event_url\": \"...\"\n    }\n  ]\n}`,
             },
             {
               role: "user",
-              content: `Extraia informações de eventos a partir destes resultados de busca para "${query}":\n\n${JSON.stringify(
+              content: `Extraia informações de eventos a partir destes resultados de busca para \"${query}\":\\n\\n${JSON.stringify(
                 searchResults
               )}`,
             },
