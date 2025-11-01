@@ -151,7 +151,7 @@ export default function Home({
           </div>}
 
         {/* Live Event CTA */}
-        {hasLiveEvent && <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20 glow-purple cursor-pointer transition-all hover:bg-surface/80" onClick={() => onEventClick("live-events")}>
+        {hasLiveEvent && <div className="mb-6 p-4 bg-surface rounded-lg border border-primary/20 shadow-card cursor-pointer transition-all hover:bg-surface/80" onClick={() => onEventClick("live-events")}>
             <div className="flex items-center gap-3">
               <div className="h-3 w-3 bg-destructive rounded-full animate-pulse" />
               <div className="flex-1">

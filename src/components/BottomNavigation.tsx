@@ -62,8 +62,8 @@ export function BottomNavigation({ activeTab, onTabChange, userType, onHomeRefre
               onClick={() => handleTabChange(item.id)}
               className={cn(
                 "flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-smooth relative",
-                isActive 
-                  ? "text-primary glow-purple" 
+                isActive
+                  ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

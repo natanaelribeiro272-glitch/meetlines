@@ -52,10 +52,10 @@ All colors MUST be HSL.
     --gradient-glow: linear-gradient(180deg, hsl(var(--background)), hsl(var(--surface)));
     --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--surface-elevated)));
     
-    /* Shadows with purple glow */
-    --shadow-purple: 0 0 30px hsl(var(--primary) / 0.3);
-    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4);
-    --shadow-elevated: 0 12px 40px hsl(0 0% 0% / 0.6);
+    /* Shadows without glow */
+    --shadow-purple: 0 4px 12px hsl(0 0% 0% / 0.2);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.15);
+    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.2);
     
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -105,10 +105,10 @@ All colors MUST be HSL.
     --gradient-glow: linear-gradient(180deg, hsl(var(--background)), hsl(var(--surface)));
     --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--surface-elevated)));
     
-    /* Shadows with colorful glow */
-    --shadow-purple: 0 0 30px hsl(var(--primary) / 0.2);
-    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.08);
-    --shadow-elevated: 0 12px 40px hsl(0 0% 0% / 0.12);
+    /* Shadows without glow */
+    --shadow-purple: 0 4px 12px hsl(0 0% 0% / 0.08);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.06);
+    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.1);
   }
 }
 
@@ -154,13 +154,13 @@ All colors MUST be HSL.
     transition: var(--transition-bounce);
   }
   
-  /* Glow effect for interactive elements */
+  /* Subtle shadow for interactive elements */
   .glow-purple {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.2);
   }
-  
+
   .glow-purple-strong {
-    box-shadow: 0 0 40px hsl(var(--primary) / 0.6);
+    box-shadow: 0 6px 20px hsl(0 0% 0% / 0.25);
   }
 }
 
@@ -169,9 +169,9 @@ All colors MUST be HSL.
   .event-card {
     @apply transition-smooth hover:scale-[1.02] hover:shadow-elevated;
   }
-  
+
   .event-card:hover {
-    box-shadow: var(--shadow-elevated), var(--shadow-purple);
+    box-shadow: var(--shadow-elevated);
   }
   
   /* Instagram-style avatar */
@@ -187,12 +187,12 @@ All colors MUST be HSL.
   
   /* Floating action button */
   .fab {
-    @apply fixed bottom-6 right-6 gradient-primary shadow-elevated glow-purple;
+    @apply fixed bottom-6 right-6 gradient-primary shadow-elevated;
   }
-  
-  /* Purple glow button */
+
+  /* Button with shadow */
   .btn-glow {
-    @apply gradient-primary shadow-purple transition-smooth hover:glow-purple-strong hover:scale-105;
+    @apply gradient-primary shadow-card transition-smooth hover:shadow-elevated hover:scale-105;
   }
   
   /* Hide scrollbar but keep scroll functionality */
