@@ -116,7 +116,10 @@ export function TicketPurchaseDialog({
       }
 
       setAppliedPromo(data);
-      toast.success(`Código ${data.code} aplicado!`);
+      const discountText = data.discount_type === "percentage"
+        ? `${data.discount_value}%`
+        : `R$ ${data.discount_value.toFixed(2)}`;
+      toast.success(`Código aplicado! Desconto de ${discountText}`);
     } catch (error) {
       console.error("Error applying promo code:", error);
       toast.error("Erro ao validar código promocional");
@@ -353,9 +356,9 @@ export function TicketPurchaseDialog({
                     <Button
                       onClick={applyPromoCode}
                       disabled={verifyingPromo || loading || !promoCode.trim()}
-                      variant="outline"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                     >
-                      {verifyingPromo ? "Verificando..." : "Aplicar"}
+                      {verifyingPromo ? "Verificando..." : "Validar"}
                     </Button>
                   ) : (
                     <Button
@@ -370,9 +373,26 @@ export function TicketPurchaseDialog({
                   )}
                 </div>
                 {appliedPromo && (
-                  <p className="text-sm text-green-600">
-                    Código {appliedPromo.code} aplicado!
-                  </p>
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-green-700">
+                          Código {appliedPromo.code} aplicado!
+                        </p>
+                        <p className="text-xs text-green-600 mt-1">
+                          {appliedPromo.discount_type === "percentage"
+                            ? `Desconto de ${appliedPromo.discount_value}%`
+                            : `Desconto de R$ ${appliedPromo.discount_value.toFixed(2)}`
+                          }
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-700">
+                          - R$ {totals.promoDiscount.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
