@@ -244,7 +244,7 @@ Deno.serve(async (req: Request) => {
         details: error instanceof Error ? error.stack : undefined
       }),
       {
-        status: 400,
+        status: 200,
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",

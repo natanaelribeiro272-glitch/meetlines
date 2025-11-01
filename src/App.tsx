@@ -37,6 +37,7 @@ import EventRegistration from "./pages/EventRegistration";
 import EventRegistrations from "./pages/EventRegistrations";
 import EventAttendances from "./pages/EventAttendances";
 import FindFriends from "./pages/FindFriends";
+import TestMercadoPago from "./pages/TestMercadoPago";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,8 @@ const AppContent = () => {
         <Route path="/admin/pending-event/:eventId/edit" element={<AdminEditPendingEvent />} />
         <Route path="/admin/organizer-payments" element={<AdminOrganizerPayments />} />
         <Route path="/admin/organizer-payments/:organizerId" element={<AdminOrganizerPaymentDetails />} />
+
+        <Route path="/test-mercadopago" element={<TestMercadoPago />} />
 
         <Route path="/:organizerSlug/:eventSlug" element={<EventPublicPage />} />
         <Route path="/:slug" element={<PublicOrganizerProfile />} />
