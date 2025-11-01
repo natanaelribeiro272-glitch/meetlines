@@ -13,20 +13,38 @@ export default function TestMercadoPago() {
 
     try {
       console.log('Getting session...');
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       console.log('Session:', session ? 'OK' : 'NO SESSION');
+      console.log('Session error:', sessionError);
+
+      if (!session) {
+        setResult({
+          success: false,
+          error: 'Você precisa estar logado para testar. Por favor, faça login primeiro.',
+          needsAuth: true
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log('Session user:', session.user?.email);
+      console.log('Access token present:', !!session.access_token);
 
       setResult({ status: 'Chamando função edge...' });
 
+      console.log('Invoking function with auth:', `Bearer ${session.access_token.substring(0, 20)}...`);
+
       const response = await supabase.functions.invoke('test-mercadopago', {
         headers: {
-          Authorization: `Bearer ${session?.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
 
       console.log('Full test response:', response);
       console.log('Response data:', response.data);
       console.log('Response error:', response.error);
+      console.log('Response error name:', response.error?.name);
+      console.log('Response error message:', response.error?.message);
 
       setResult({
         success: !response.error,

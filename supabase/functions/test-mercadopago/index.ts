@@ -15,14 +15,33 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log("[TEST] Starting MercadoPago test");
+
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
 
-    console.log("Access Token present:", !!accessToken);
-    console.log("Access Token length:", accessToken?.length);
-    console.log("Access Token starts with:", accessToken?.substring(0, 10));
+    console.log("[TEST] Environment variables check:");
+    console.log("[TEST] - MERCADOPAGO_ACCESS_TOKEN present:", !!accessToken);
+    console.log("[TEST] - Token length:", accessToken?.length || 0);
+    console.log("[TEST] - Token prefix:", accessToken?.substring(0, 15) || "N/A");
+    console.log("[TEST] - SUPABASE_URL:", Deno.env.get("SUPABASE_URL"));
 
     if (!accessToken) {
-      throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
+      const error = {
+        error: "MERCADOPAGO_ACCESS_TOKEN não configurado",
+        message: "O Access Token do Mercado Pago não está configurado nas variáveis de ambiente do Supabase.",
+        instructions: "Configure o secret MERCADOPAGO_ACCESS_TOKEN no painel do Supabase."
+      };
+      console.error("[TEST] Error:", error);
+      return new Response(
+        JSON.stringify(error),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
     }
 
     const testPayment = {
@@ -36,7 +55,7 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    console.log("Sending test payment:", JSON.stringify(testPayment, null, 2));
+    console.log("[TEST] Sending test payment to MercadoPago API:", JSON.stringify(testPayment, null, 2));
 
     const response = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
@@ -48,31 +67,36 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify(testPayment),
     });
 
-    console.log("Response status:", response.status);
-    console.log("Response headers:", JSON.stringify([...response.headers.entries()]));
+    console.log("[TEST] Response status:", response.status);
+    console.log("[TEST] Response status text:", response.statusText);
 
     const responseText = await response.text();
-    console.log("Response body:", responseText);
+    console.log("[TEST] Response body:", responseText);
 
     let responseData;
     try {
       responseData = JSON.parse(responseText);
     } catch (e) {
-      responseData = { raw: responseText };
+      responseData = { raw: responseText, parseError: String(e) };
     }
 
+    const result = {
+      success: response.ok,
+      httpStatus: response.status,
+      statusText: response.statusText,
+      mercadopagoResponse: responseData,
+      tokenInfo: {
+        configured: true,
+        length: accessToken.length,
+        prefix: accessToken.substring(0, 15),
+      },
+      testData: testPayment
+    };
+
+    console.log("[TEST] Final result:", JSON.stringify(result, null, 2));
+
     return new Response(
-      JSON.stringify({
-        success: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        data: responseData,
-        tokenInfo: {
-          present: !!accessToken,
-          length: accessToken?.length,
-          prefix: accessToken?.substring(0, 15),
-        }
-      }, null, 2),
+      JSON.stringify(result, null, 2),
       {
         status: 200,
         headers: {
@@ -82,12 +106,14 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Test error:", error);
+    console.error("[TEST] Unexpected error:", error);
+    const errorResult = {
+      error: "Erro inesperado no teste",
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    };
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      }),
+      JSON.stringify(errorResult),
       {
         status: 200,
         headers: {
