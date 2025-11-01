@@ -49,7 +49,7 @@ export function TicketPurchaseDialog({
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [verifyingPromo, setVerifyingPromo] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"mercadopago" | "stripe">("mercadopago");
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("pix");
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -195,7 +195,7 @@ export function TicketPurchaseDialog({
         promoCodeId: appliedPromo?.id
       });
 
-      const functionName = paymentMethod === "mercadopago"
+      const functionName = paymentMethod === "pix"
         ? "create-mercadopago-checkout"
         : "create-ticket-checkout";
 
@@ -454,27 +454,27 @@ export function TicketPurchaseDialog({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("mercadopago")}
+                    onClick={() => setPaymentMethod("pix")}
                     className={`border-2 rounded-lg p-4 text-center transition-all ${
-                      paymentMethod === "mercadopago"
+                      paymentMethod === "pix"
                         ? "border-green-600 bg-green-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="font-semibold mb-1">Mercado Pago</div>
-                    <div className="text-xs text-muted-foreground">PIX, Cartão, Boleto</div>
+                    <div className="font-semibold mb-1">PIX</div>
+                    <div className="text-xs text-muted-foreground">Pagamento instantâneo</div>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("stripe")}
+                    onClick={() => setPaymentMethod("card")}
                     className={`border-2 rounded-lg p-4 text-center transition-all ${
-                      paymentMethod === "stripe"
+                      paymentMethod === "card"
                         ? "border-blue-600 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="font-semibold mb-1">Stripe</div>
-                    <div className="text-xs text-muted-foreground">Cartão Internacional</div>
+                    <div className="font-semibold mb-1">Cartão</div>
+                    <div className="text-xs text-muted-foreground">Crédito ou Débito</div>
                   </button>
                 </div>
               </div>
