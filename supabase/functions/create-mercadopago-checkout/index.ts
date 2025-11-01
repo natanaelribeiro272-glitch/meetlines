@@ -16,17 +16,11 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log("[MercadoPago] Starting checkout process");
-    console.log("[MercadoPago] Request method:", req.method);
-    console.log("[MercadoPago] Request headers:", Object.fromEntries(req.headers.entries()));
+    console.log("[MercadoPago] Starting PIX checkout process");
 
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
-    console.log("[MercadoPago] Access token exists:", !!accessToken);
-    console.log("[MercadoPago] Access token length:", accessToken?.length || 0);
-
     if (!accessToken) {
-      console.error("[MercadoPago] MERCADOPAGO_ACCESS_TOKEN não está configurado nas variáveis de ambiente");
-      throw new Error("Sistema de pagamento Mercado Pago não configurado. Entre em contato com o administrador.");
+      throw new Error("Sistema de pagamento Mercado Pago não configurado.");
     }
 
     const supabaseClient = createClient(
@@ -51,13 +45,11 @@ Deno.serve(async (req: Request) => {
       }
     );
 
-    console.log("[MercadoPago] Getting user");
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
       throw new Error("Não autorizado. Faça login para continuar.");
     }
 
-    console.log("[MercadoPago] User authenticated:", user.id);
     const {
       ticketTypeId,
       quantity,
@@ -70,19 +62,6 @@ Deno.serve(async (req: Request) => {
       promoDiscount
     } = await req.json();
 
-    console.log("[MercadoPago] Request data:", {
-      ticketTypeId,
-      quantity,
-      eventId,
-      totalAmount,
-      platformFee,
-      processingFee,
-      subtotal,
-      promoCodeId,
-      promoDiscount
-    });
-
-    console.log("[MercadoPago] Fetching ticket type");
     const { data: ticketType, error: ticketError } = await supabaseService
       .from("ticket_types")
       .select(`
@@ -97,11 +76,9 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (ticketError || !ticketType) {
-      console.error("[MercadoPago] Ticket type error:", ticketError);
       throw new Error(`Tipo de ingresso não encontrado: ${ticketError?.message || "ID inválido"}`);
     }
 
-    console.log("[MercadoPago] Ticket type found:", ticketType.name);
     const event = ticketType.events;
 
     const { data: profile } = await supabaseService
@@ -115,15 +92,6 @@ Deno.serve(async (req: Request) => {
     const calculatedPlatformFee = platformFee ?? 0;
     const calculatedProcessingFee = processingFee ?? 0;
     const calculatedTotalAmount = totalAmount ?? calculatedSubtotal;
-
-    console.log("[MercadoPago] Price calculation:", {
-      unitPrice,
-      quantity,
-      calculatedSubtotal,
-      calculatedPlatformFee,
-      calculatedProcessingFee,
-      calculatedTotalAmount
-    });
 
     console.log("[MercadoPago] Creating ticket sale record");
     const ticketSale = await supabaseService
@@ -142,7 +110,8 @@ Deno.serve(async (req: Request) => {
         buyer_email: user.email || "",
         buyer_phone: profile?.phone || null,
         payment_status: "pending",
-        payment_method: "mercadopago",
+        payment_method: "pix",
+        payment_gateway: "mercadopago",
         promo_code_id: promoCodeId || null,
         promo_discount: promoDiscount || 0,
       })
@@ -150,63 +119,21 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (ticketSale.error) {
-      console.error("[MercadoPago] Failed to create ticket sale:", ticketSale.error);
       throw new Error(`Erro ao criar registro de venda: ${ticketSale.error.message}`);
     }
 
     console.log("[MercadoPago] Ticket sale created:", ticketSale.data.id);
 
-    await supabaseService
-      .from("ticket_sales")
-      .update({
-        payment_gateway: "mercadopago",
-        payment_method: "pix"
-      })
-      .eq("id", ticketSale.data.id);
-
-    const origin = req.headers.get("origin") || "https://meetlines.app";
-
-    const preference = {
-      items: [
-        {
-          id: ticketTypeId,
-          title: `${ticketType.name} - ${event.title}`,
-          description: `${quantity}x ${ticketType.name}`,
-          quantity: 1,
-          unit_price: calculatedTotalAmount,
-          currency_id: "BRL",
-        },
-      ],
+    const paymentData = {
+      transaction_amount: calculatedTotalAmount,
+      description: `${quantity}x ${ticketType.name} - ${event.title}`,
+      payment_method_id: "pix",
       payer: {
-        name: profile?.display_name || user.email?.split("@")[0] || "Usuário",
         email: user.email || "",
-        phone: profile?.phone ? {
-          area_code: profile.phone.substring(0, 2),
-          number: profile.phone.substring(2),
-        } : undefined,
+        first_name: profile?.display_name || user.email?.split("@")[0] || "Usuário",
       },
-      back_urls: {
-        success: `${origin}/ticket-success`,
-        failure: `${origin}/event/${eventId}`,
-        pending: `${origin}/ticket-success`,
-      },
-      auto_return: "approved",
       notification_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mercadopago-webhook`,
       external_reference: ticketSale.data.id,
-      payment_methods: {
-        excluded_payment_types: [
-          { id: "credit_card" },
-          { id: "debit_card" },
-          { id: "ticket" },
-          { id: "atm" }
-        ],
-        default_payment_method_id: "pix",
-        installments: 1,
-      },
-      statement_descriptor: "MEETLINES",
-      expires: true,
-      expiration_date_from: new Date().toISOString(),
-      expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       metadata: {
         ticket_sale_id: ticketSale.data.id,
         ticket_type_id: ticketTypeId,
@@ -216,45 +143,53 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    console.log("[MercadoPago] Creating preference");
-    console.log("[MercadoPago] Preference data:", JSON.stringify(preference, null, 2));
+    console.log("[MercadoPago] Creating PIX payment");
 
-    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    const response = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
+        "X-Idempotency-Key": ticketSale.data.id,
       },
-      body: JSON.stringify(preference),
+      body: JSON.stringify(paymentData),
     });
-
-    console.log("[MercadoPago] API Response status:", response.status);
-    console.log("[MercadoPago] API Response ok:", response.ok);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[MercadoPago] API Error:", errorText);
-      console.error("[MercadoPago] API Response headers:", Object.fromEntries(response.headers.entries()));
-      throw new Error(`Erro ao criar preferência no Mercado Pago (${response.status}): ${errorText}`);
+      throw new Error(`Erro ao criar pagamento PIX (${response.status}): ${errorText}`);
     }
 
-    const preferenceData = await response.json();
-    console.log("[MercadoPago] Preference created:", preferenceData.id);
+    const paymentResponse = await response.json();
+    console.log("[MercadoPago] Payment created:", paymentResponse.id);
+
+    const qrCode = paymentResponse.point_of_interaction?.transaction_data?.qr_code;
+    const qrCodeBase64 = paymentResponse.point_of_interaction?.transaction_data?.qr_code_base64;
+    const ticketUrl = paymentResponse.point_of_interaction?.transaction_data?.ticket_url;
+
+    if (!qrCode) {
+      throw new Error("QR Code não foi gerado pelo Mercado Pago");
+    }
 
     await supabaseService
       .from("ticket_sales")
       .update({
-        mercadopago_preference_id: preferenceData.id,
+        mercadopago_payment_id: paymentResponse.id.toString(),
+        mercadopago_preference_id: paymentResponse.id.toString(),
       })
       .eq("id", ticketSale.data.id);
 
-    console.log("[MercadoPago] Success! Returning URL:", preferenceData.init_point);
+    console.log("[MercadoPago] Success! Returning PIX data");
 
     return new Response(
       JSON.stringify({
-        sessionId: preferenceData.id,
-        url: preferenceData.init_point,
-        preferenceId: preferenceData.id,
+        paymentId: paymentResponse.id,
+        qrCode: qrCode,
+        qrCodeBase64: qrCodeBase64,
+        ticketUrl: ticketUrl,
+        expirationDate: paymentResponse.date_of_expiration,
+        transactionAmount: calculatedTotalAmount,
       }),
       {
         headers: {
@@ -264,7 +199,7 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Error creating MercadoPago checkout:", error);
+    console.error("Error creating MercadoPago PIX:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Error details:", errorMessage);
 
