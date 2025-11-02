@@ -549,7 +549,7 @@ export default function UserProfile({
             <User className="h-4 w-4 inline mr-2" />
             Perfil
           </button>
-          <button onClick={() => navigate("/my-events")} className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
+          <button onClick={() => navigate("/meus-eventos")} className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
             <Ticket className="h-4 w-4 inline mr-2" />
             Meus Eventos
           </button>
