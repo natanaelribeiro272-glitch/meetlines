@@ -133,7 +133,44 @@ export default function CreateEvent({
   const [bankAccount, setBankAccount] = useState("");
   const [bankAccountHolder, setBankAccountHolder] = useState("");
   const [bankDocument, setBankDocument] = useState("");
-  
+  const [hasFinancialData, setHasFinancialData] = useState(false);
+  const [financialDataLoading, setFinancialDataLoading] = useState(false);
+
+  // Load financial data from organizer profile
+  useEffect(() => {
+    const loadFinancialData = async () => {
+      if (!organizerData?.id) return;
+
+      setFinancialDataLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('organizer_financial_data')
+          .select('*')
+          .eq('organizer_id', organizerData.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setHasFinancialData(true);
+          // Optionally pre-fill fields (comment out if you want them empty)
+          // setBankName(data.bank_name || "");
+          // setBankAccountType(data.account_type || "corrente");
+          // setBankAgency(data.agency || "");
+          // setBankAccount(`${data.account_number}-${data.account_digit}` || "");
+          // setBankAccountHolder(data.legal_name || "");
+          // setBankDocument(data.document_number || "");
+        }
+      } catch (error) {
+        console.error('Error loading financial data:', error);
+      } finally {
+        setFinancialDataLoading(false);
+      }
+    };
+
+    loadFinancialData();
+  }, [organizerData?.id]);
+
   // Load event data if editing
   useEffect(() => {
     const loadEventData = async () => {
@@ -261,9 +298,9 @@ export default function CreateEvent({
         toast.error('Você precisa aceitar os termos e condições');
         return;
       }
-      // Validar dados de pagamento
-      if (!pixKey && (!bankName || !bankAgency || !bankAccount || !bankAccountHolder || !bankDocument)) {
-        toast.error('Preencha sua chave PIX ou dados bancários completos para receber os pagamentos');
+      // Validar dados de pagamento apenas se não tiver dados salvos
+      if (!hasFinancialData && !pixKey && (!bankName || !bankAgency || !bankAccount || !bankAccountHolder || !bankDocument)) {
+        toast.error('Preencha sua chave PIX ou dados bancários completos, ou configure seus dados financeiros no perfil');
         return;
       }
     }
@@ -727,7 +764,9 @@ export default function CreateEvent({
               <CardHeader>
                 <CardTitle className="text-sm">Dados para Recebimento</CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Informe seus dados para receber os valores das vendas
+                  {hasFinancialData
+                    ? "Você já possui dados de recebimento configurados"
+                    : "Informe seus dados para receber os valores das vendas"}
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -737,8 +776,61 @@ export default function CreateEvent({
                   </p>
                 </div>
 
+                {hasFinancialData ? (
+                  <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <DollarSign className="h-5 w-5 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-green-400">Dados Financeiros Configurados</p>
+                        <p className="text-xs text-muted-foreground">
+                          O recebimento será feito nos dados cadastrados no seu perfil
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/organizer/profile')}
+                      className="w-full"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Ver/Editar Dados Financeiros
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Ou preencha os campos abaixo para usar dados diferentes neste evento
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-3">
+                    <p className="text-sm text-yellow-400 font-medium">
+                      ⚠️ Você ainda não configurou seus dados financeiros
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Configure uma vez no seu perfil e não precise preencher novamente
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/organizer/profile')}
+                      className="w-full"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configurar Dados Financeiros
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Ou preencha os campos abaixo apenas para este evento
+                    </p>
+                  </div>
+                )}
+
+                <Separator />
+
                 <div>
-                  <Label htmlFor="pixKey">Chave PIX</Label>
+                  <Label htmlFor="pixKey">Chave PIX (Opcional)</Label>
                   <Input
                     id="pixKey"
                     placeholder="Digite sua chave PIX (CPF, CNPJ, email, telefone ou chave aleatória)"
@@ -751,11 +843,11 @@ export default function CreateEvent({
                 </div>
 
                 <Separator />
-                
-                <p className="text-sm font-medium">Ou informe seus dados bancários</p>
+
+                <p className="text-sm font-medium">Ou informe seus dados bancários (Opcional)</p>
 
                 <div>
-                  <Label htmlFor="bankName">Banco</Label>
+                  <Label htmlFor="bankName">Banco (Opcional)</Label>
                   <Input
                     id="bankName"
                     placeholder="Ex: Banco do Brasil, Nubank, Itaú..."
