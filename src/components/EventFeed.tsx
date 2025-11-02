@@ -41,7 +41,7 @@ interface EventFeedProps {
   refreshKey?: number;
 }
 
-export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests, filters, refreshKey = 0 }: EventFeedProps) {
+export function EventFeed({ onEventClick, onOrganizerClick: handleOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests, filters, refreshKey = 0 }: EventFeedProps) {
   const { events, loading, toggleLike, fetchEvents } = useEvents(categoryFilter, searchQuery, userInterests, filters);
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                   console.log('Organizador clicado:', event.organizer);
                   console.log('Username:', event.organizer?.username);
                   if (event.organizer?.username) {
-                    onOrganizerClick(event.organizer.username);
+                    handleOrganizerClick(event.organizer.username);
                   } else {
                     console.warn('Username não disponível para o organizador');
                   }
@@ -169,7 +169,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                   console.log('Organizador clicado:', event.organizer);
                   console.log('Username:', event.organizer?.username);
                   if (event.organizer?.username) {
-                    onOrganizerClick(event.organizer.username);
+                    handleOrganizerClick(event.organizer.username);
                   } else {
                     console.warn('Username não disponível para o organizador');
                   }
