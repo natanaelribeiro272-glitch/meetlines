@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Building2, CreditCard, MapPin, Phone, Mail, Shield, AlertCircle } from "lucide-react";
+import { Building2, CreditCard, MapPin, Phone, Mail, Shield, AlertCircle, Edit2, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FinancialData {
@@ -70,6 +70,7 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState<FinancialData>({
     document_type: 'cpf',
@@ -115,6 +116,9 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
       if (data) {
         setFormData(data);
         setHasData(true);
+        setIsEditing(false);
+      } else {
+        setIsEditing(true);
       }
     } catch (error: any) {
       console.error('Error loading financial data:', error);
@@ -228,6 +232,8 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
         title: "Dados salvos com sucesso!",
         description: "Suas informações financeiras foram atualizadas.",
       });
+
+      setIsEditing(false);
     } catch (error: any) {
       console.error('Error saving financial data:', error);
       toast({
@@ -244,6 +250,154 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
     return <div className="flex justify-center p-8">Carregando...</div>;
   }
 
+  // Card de visualização (quando tem dados e não está editando)
+  if (hasData && !isEditing) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  Dados Financeiros Configurados
+                </CardTitle>
+                <CardDescription>
+                  Suas informações de recebimento estão salvas
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditing(true)}
+              >
+                <Edit2 className="h-4 w-4 mr-2" />
+                Editar Dados
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Dados Fiscais */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Building2 className="h-4 w-4" />
+                Dados Fiscais
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 text-sm bg-muted/30 p-4 rounded-lg">
+                <div>
+                  <span className="text-muted-foreground">Documento:</span>
+                  <p className="font-medium">{formData.document_type.toUpperCase()} - {formData.document_number}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Razão Social:</span>
+                  <p className="font-medium">{formData.legal_name}</p>
+                </div>
+                {formData.trading_name && (
+                  <div className="md:col-span-2">
+                    <span className="text-muted-foreground">Nome Fantasia:</span>
+                    <p className="font-medium">{formData.trading_name}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Endereço */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <MapPin className="h-4 w-4" />
+                Endereço Fiscal
+              </div>
+              <div className="text-sm bg-muted/30 p-4 rounded-lg">
+                <p className="font-medium">
+                  {formData.street}, {formData.number}
+                  {formData.complement && ` - ${formData.complement}`}
+                </p>
+                <p className="text-muted-foreground">
+                  {formData.neighborhood} - {formData.city}/{formData.state}
+                </p>
+                <p className="text-muted-foreground">CEP: {formData.zip_code}</p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Dados Bancários */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CreditCard className="h-4 w-4" />
+                Dados Bancários
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 text-sm bg-muted/30 p-4 rounded-lg">
+                <div>
+                  <span className="text-muted-foreground">Banco:</span>
+                  <p className="font-medium">{formData.bank_name} ({formData.bank_code})</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Tipo de Conta:</span>
+                  <p className="font-medium capitalize">{formData.account_type}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Agência:</span>
+                  <p className="font-medium">
+                    {formData.agency}{formData.agency_digit && `-${formData.agency_digit}`}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Conta:</span>
+                  <p className="font-medium">{formData.account_number}-{formData.account_digit}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <span className="text-muted-foreground">Titular:</span>
+                  <p className="font-medium">{formData.legal_name}</p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Contato */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Phone className="h-4 w-4" />
+                Dados de Contato
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 text-sm bg-muted/30 p-4 rounded-lg">
+                <div>
+                  <span className="text-muted-foreground">Telefone:</span>
+                  <p className="font-medium">{formData.phone}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">E-mail:</span>
+                  <p className="font-medium">{formData.email}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status de Verificação */}
+            {formData.is_verified ? (
+              <Alert className="bg-green-500/10 border-green-500/20">
+                <Shield className="h-4 w-4 text-green-500" />
+                <AlertDescription className="text-green-500">
+                  ✓ Seus dados foram verificados e estão aprovados para receber pagamentos
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Seus dados estão em análise. Você será notificado quando forem aprovados.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Formulário de edição
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
@@ -591,6 +745,17 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
       </Card>
 
       <div className="flex justify-end gap-4">
+        {hasData && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={() => setIsEditing(false)}
+            disabled={saving}
+          >
+            Cancelar
+          </Button>
+        )}
         <Button type="submit" size="lg" disabled={saving}>
           {saving ? "Salvando..." : hasData ? "Atualizar Dados" : "Salvar Dados"}
         </Button>
