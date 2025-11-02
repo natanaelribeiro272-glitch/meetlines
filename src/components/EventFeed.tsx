@@ -120,12 +120,11 @@ export function EventFeed({ onEventClick, onOrganizerClick: handleOrganizerClick
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
-                  console.log('Organizador clicado:', event.organizer);
-                  console.log('Username:', event.organizer?.username);
+                  console.log('[FIXED v2] Organizador clicado:', event.organizer);
                   if (event.organizer?.username) {
                     handleOrganizerClick(event.organizer.username);
                   } else {
-                    console.warn('Username não disponível para o organizador');
+                    console.warn('[FIXED v2] Username não disponível');
                   }
                 }}
                 userType={userType}
@@ -166,12 +165,11 @@ export function EventFeed({ onEventClick, onOrganizerClick: handleOrganizerClick
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
-                  console.log('Organizador clicado:', event.organizer);
-                  console.log('Username:', event.organizer?.username);
+                  console.log('[FIXED v2] Organizador clicado:', event.organizer);
                   if (event.organizer?.username) {
                     handleOrganizerClick(event.organizer.username);
                   } else {
-                    console.warn('Username não disponível para o organizador');
+                    console.warn('[FIXED v2] Username não disponível');
                   }
                 }}
                 userType={userType}
