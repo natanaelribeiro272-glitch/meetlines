@@ -121,7 +121,12 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
                   console.log('Organizador clicado:', event.organizer);
-                  onOrganizerClick(event.organizer?.username || '');
+                  console.log('Username:', event.organizer?.username);
+                  if (event.organizer?.username) {
+                    onOrganizerClick(event.organizer.username);
+                  } else {
+                    console.warn('Username não disponível para o organizador');
+                  }
                 }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
@@ -162,7 +167,12 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
                   console.log('Organizador clicado:', event.organizer);
-                  onOrganizerClick(event.organizer?.username || '');
+                  console.log('Username:', event.organizer?.username);
+                  if (event.organizer?.username) {
+                    onOrganizerClick(event.organizer.username);
+                  } else {
+                    console.warn('Username não disponível para o organizador');
+                  }
                 }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
