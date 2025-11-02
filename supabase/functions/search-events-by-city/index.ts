@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-    const serperApiKey = Deno.env.get("SERPER_API_KEY");
+    const serpApiKey = Deno.env.get("SERPAPI_API_KEY");
 
     if (!openaiApiKey) {
       return new Response(
@@ -62,26 +62,29 @@ Deno.serve(async (req: Request) => {
 
     let searchResults: any;
 
-    if (serperApiKey) {
-      const serperResponse = await fetch("https://google.serper.dev/search", {
-        method: "POST",
+    if (serpApiKey) {
+      const serpApiUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(query)}&location=Brazil&hl=pt-br&gl=br&num=10&api_key=${serpApiKey}`;
+
+      const serpResponse = await fetch(serpApiUrl, {
+        method: "GET",
         headers: {
-          "X-API-KEY": serperApiKey,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          q: query,
-          gl: "br",
-          hl: "pt-br",
-          num: 10,
-        }),
       });
 
-      if (!serperResponse.ok) {
-        throw new Error(`Erro na busca do Google: ${serperResponse.statusText}`);
+      if (!serpResponse.ok) {
+        throw new Error(`Erro na SerpAPI: ${serpResponse.statusText}`);
       }
 
-      searchResults = await serperResponse.json();
+      const serpData = await serpResponse.json();
+
+      searchResults = {
+        organic: serpData.organic_results || [],
+        answerBox: serpData.answer_box,
+        knowledgeGraph: serpData.knowledge_graph,
+      };
+
+      console.log("Resultados da SerpAPI:", searchResults);
     } else {
       const encodedQuery = encodeURIComponent(`${query} brasil 2025`);
       const searchUrl = `https://www.google.com/search?q=${encodedQuery}&gl=br&hl=pt-br`;

@@ -199,7 +199,7 @@ export default function AdminAutoGenerateEvents() {
               Configure em: <strong>Supabase Dashboard → Edge Functions → Secrets</strong>
               <br />
               <span className="text-xs text-muted-foreground mt-1 block">
-                Opcionalmente, configure também SERPER_API_KEY para melhores resultados (https://serper.dev)
+                Opcionalmente, configure também <strong>SERPAPI_API_KEY</strong> para melhores resultados (https://serpapi.com)
               </span>
             </AlertDescription>
           </Alert>
