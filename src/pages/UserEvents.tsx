@@ -99,13 +99,14 @@ export default function UserEvents() {
           event_id,
           attendance_confirmed,
           created_at,
-          events!inner (
+          events (
             id,
             title,
             event_date,
             location,
             image_url,
-            organizers!inner (
+            organizer_id,
+            organizers (
               page_title
             )
           )
@@ -113,7 +114,12 @@ export default function UserEvents() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (regError) throw regError;
+      if (regError) {
+        console.error("Error fetching registrations:", regError);
+        throw regError;
+      }
+
+      console.log("Registrations data:", registrationsData);
 
       // Buscar ingressos comprados
       const { data: purchasesData, error: purchasesError } = await supabase
@@ -128,32 +134,38 @@ export default function UserEvents() {
           buyer_name,
           buyer_email,
           ticket_type_id,
-          ticket_types!inner (
+          ticket_types (
             name
           ),
-          events!inner (
+          events (
             id,
             title,
             event_date,
             location,
             image_url,
-            organizers!inner (
+            organizer_id,
+            organizers (
               page_title
             )
           )
         `)
         .eq("user_id", user.id)
-        .eq("payment_status", "completed")
+        .in("payment_status", ["completed", "paid", "approved"])
         .order("created_at", { ascending: false });
 
-      if (purchasesError) throw purchasesError;
+      if (purchasesError) {
+        console.error("Error fetching purchases:", purchasesError);
+        throw purchasesError;
+      }
+
+      console.log("Purchases data:", purchasesData);
 
       setRegistrations(
         (registrationsData || []).map((reg: any) => ({
           ...reg,
           event: {
             ...reg.events,
-            organizer: reg.events.organizers,
+            organizer: Array.isArray(reg.events?.organizers) ? reg.events.organizers[0] : reg.events?.organizers,
           },
         }))
       );
@@ -163,9 +175,9 @@ export default function UserEvents() {
           ...purchase,
           event: {
             ...purchase.events,
-            organizer: purchase.events.organizers,
+            organizer: Array.isArray(purchase.events?.organizers) ? purchase.events.organizers[0] : purchase.events?.organizers,
           },
-          ticket_type: purchase.ticket_types,
+          ticket_type: Array.isArray(purchase.ticket_types) ? purchase.ticket_types[0] : purchase.ticket_types,
         }))
       );
     } catch (error) {
@@ -182,7 +194,7 @@ export default function UserEvents() {
   const EventCard = ({ event, type, registration, purchase }: any) => (
     <Card
       className={type === "purchase" ? "" : "cursor-pointer hover:shadow-lg transition-shadow"}
-      onClick={type === "purchase" ? undefined : () => navigate(`/events/${event.id}`)}
+      onClick={type === "purchase" ? undefined : () => navigate(`/evento/${event.id}`)}
     >
       <div className="flex gap-4 p-4">
         {event.image_url && (
@@ -526,25 +538,8 @@ export default function UserEvents() {
                     onClick={async () => {
                       if (!selectedTicket) return;
                       
-                      // Buscar os dados do organizador para obter o username correto
-                      const { data: organizer } = await supabase
-                        .from('organizers')
-                        .select('username')
-                        .eq('id', (await supabase
-                          .from('events')
-                          .select('organizer_id')
-                          .eq('id', selectedTicket.event_id)
-                          .maybeSingle()
-                        ).data?.organizer_id)
-                        .maybeSingle();
-                      
-                      if (organizer?.username) {
-                        const eventSlug = slugify(selectedTicket.event.title);
-                        setSelectedTicket(null);
-                        navigate(`/${organizer.username}/${eventSlug}`);
-                      } else {
-                        toast.error('Erro ao abrir evento');
-                      }
+                      setSelectedTicket(null);
+                      navigate(`/evento/${selectedTicket.event_id}`);
                     }}
                   >
                     Ver Evento
