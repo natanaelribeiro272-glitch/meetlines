@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Edit3, Trash2, Upload, DollarSign, ShoppingCart, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,14 +23,10 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-interface OrdersManagementProps {
-  onBack: () => void;
-  userType?: "user" | "organizer";
-  isEventLive?: boolean;
-  ordersEnabled?: boolean;
-}
 
-export default function OrdersManagement({ onBack, userType = "organizer", isEventLive = true, ordersEnabled = true }: OrdersManagementProps) {
+
+export default function OrdersManagement() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([
     {
       id: "1",
@@ -204,7 +201,7 @@ export default function OrdersManagement({ onBack, userType = "organizer", isEve
         <div className="min-h-screen bg-background">
           <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-              <Button variant="ghost" size="icon" onClick={onBack}>
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <h1 className="text-lg font-semibold text-foreground">Cardápio</h1>
@@ -226,7 +223,7 @@ export default function OrdersManagement({ onBack, userType = "organizer", isEve
         <div className="min-h-screen bg-background">
           <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-              <Button variant="ghost" size="icon" onClick={onBack}>
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <h1 className="text-lg font-semibold text-foreground">Cardápio</h1>
@@ -248,7 +245,7 @@ export default function OrdersManagement({ onBack, userType = "organizer", isEve
         {/* Header */}
         <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-            <Button variant="ghost" size="icon" onClick={onBack}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-lg font-semibold text-foreground">Cardápio</h1>
@@ -367,7 +364,7 @@ export default function OrdersManagement({ onBack, userType = "organizer", isEve
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Área de Pedidos</h1>

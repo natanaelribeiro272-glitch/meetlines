@@ -3,12 +3,10 @@ import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/EventCard";
 import { useEvents } from "@/hooks/useEvents";
 
-interface LiveEventsProps {
-  onBack: () => void;
-  onEventClick: (eventId: string) => void;
-}
 
-export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
+
+export default function LiveEvents() {
+  const navigate = useNavigate();
   const { events, loading, toggleLike } = useEvents();
   
   // Filter only truly live events: started and not ended yet
@@ -24,7 +22,7 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -43,7 +41,7 @@ export default function LiveEvents({ onBack, onEventClick }: LiveEventsProps) {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, Calendar, MapPin, Settings, Plus, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,17 +52,10 @@ const mockOrganizerEvents = [
   }
 ];
 
-interface OrganizerEventsProps {
-  onBack: () => void;
-  onCreateEvent: () => void;
-  onManageRegistrations: (eventId: string) => void;
-}
 
-export default function OrganizerEvents({ 
-  onBack, 
-  onCreateEvent, 
-  onManageRegistrations 
-}: OrganizerEventsProps) {
+
+export default function OrganizerEvents() {
+  const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState("upcoming");
 
   const filteredEvents = mockOrganizerEvents.filter(event => 
@@ -93,7 +87,7 @@ export default function OrganizerEvents({
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Meus Eventos</h1>

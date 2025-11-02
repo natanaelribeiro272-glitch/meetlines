@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 // Componente auxiliar para fotos de evento
@@ -193,16 +194,8 @@ function EventPhotoGrid({
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
     </>;
 }
-interface OrganizerProfileProps {
-  onBack: () => void;
-  organizerId?: string;
-  onEventClick?: (eventId: string) => void;
-}
-export default function OrganizerProfile({
-  onBack,
-  organizerId,
-  onEventClick
-}: OrganizerProfileProps) {
+
+export default function OrganizerProfile() {
   const [activeTab, setActiveTab] = useState("eventos");
   const [allEvents, setAllEvents] = useState<OrganizerEvent[]>([]);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -394,7 +387,7 @@ export default function OrganizerProfile({
   if (loading) {
     return <div className="min-h-screen bg-background pb-20">
         <div className="flex items-center gap-4 p-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Organizador</h1>
@@ -416,7 +409,7 @@ export default function OrganizerProfile({
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Organizador não encontrado</p>
-          <Button variant="outline" onClick={onBack}>
+          <Button variant="outline" onClick={() => navigate(-1)}>
             Voltar
           </Button>
         </div>
@@ -464,7 +457,7 @@ export default function OrganizerProfile({
         <div className="flex items-center justify-between p-4 relative" style={{
         zIndex: 10
       }}>
-          <Button variant="ghost" size="icon" onClick={onBack} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="bg-black/20 hover:bg-black/40 backdrop-blur-sm">
             <ArrowLeft className="h-5 w-5 text-white" />
           </Button>
           

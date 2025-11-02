@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, Users, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,14 +10,9 @@ import { useOrganizersList } from "@/hooks/useOrganizersList";
 
 // Interface movida para o hook useOrganizersList
 
-interface OrganizersListProps {
-  onBack: () => void;
-  onOrganizerClick: (organizerId: string) => void;
-}
-export default function OrganizersList({
-  onBack,
-  onOrganizerClick
-}: OrganizersListProps) {
+
+export default function OrganizersList() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const {
@@ -44,7 +40,7 @@ export default function OrganizersList({
     return <div className="min-h-screen bg-background">
         <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-            <Button variant="ghost" size="icon" onClick={onBack}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-lg font-semibold text-foreground">Organizadores</h1>
@@ -69,7 +65,7 @@ export default function OrganizersList({
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Organizadores</h1>

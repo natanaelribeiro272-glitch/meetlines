@@ -3,13 +3,10 @@ import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/EventCard";
 import { useEvents } from "@/hooks/useEvents";
 
-interface WeekEventsProps {
-  onBack: () => void;
-  onEventClick: (eventId: string) => void;
-  onOrganizerClick?: (organizerId: string) => void;
-}
 
-export default function WeekEvents({ onBack, onEventClick, onOrganizerClick }: WeekEventsProps) {
+
+export default function WeekEvents() {
+  const navigate = useNavigate();
   const { events, loading, toggleLike } = useEvents();
 
   const now = new Date();
@@ -26,7 +23,7 @@ export default function WeekEvents({ onBack, onEventClick, onOrganizerClick }: W
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -44,7 +41,7 @@ export default function WeekEvents({ onBack, onEventClick, onOrganizerClick }: W
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -88,7 +85,7 @@ export default function WeekEvents({ onBack, onEventClick, onOrganizerClick }: W
                 isLive={event.is_live}
                 onClick={() => onEventClick(event.id)}
                 onLike={() => toggleLike(event.id, event.is_liked || false)}
-                onOrganizerClick={onOrganizerClick ? () => onOrganizerClick(event.organizer_id) : undefined}
+                onOrganizerClick={(organizerId) => navigate(`/organizador/${organizerId}/perfil`)}
                 isPlatformEvent={event.is_platform_event}
                 hasPaidTickets={event.has_paid_tickets}
               />

@@ -60,14 +60,8 @@ const EVENT_CATEGORIES = [
   { value: "jazz", label: "Jazz" },
   { value: "outros", label: "Outros" }
 ];
-interface CreateEventProps {
-  onBack: () => void;
-  eventId?: string; // Para edição futura
-}
-export default function CreateEvent({
-  onBack,
-  eventId
-}: CreateEventProps) {
+
+export default function CreateEvent() {
   const {
     createEvent,
     organizerData
@@ -497,9 +491,9 @@ export default function CreateEvent({
         }
       }
 
-      // Don't call onBack() anymore, let the dialog handle navigation
+      // Don't call navigate(-1) anymore, let the dialog handle navigation
       if (isEditMode) {
-        onBack();
+        navigate(-1);
       }
     } catch (error) {
       console.error('Error saving event:', error);
@@ -512,7 +506,7 @@ export default function CreateEvent({
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">
@@ -1007,7 +1001,7 @@ export default function CreateEvent({
                   Criando Evento...
                 </> : 'Criar Evento'}
             </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={onBack}>
+            <Button type="button" variant="outline" className="w-full" onClick={() => navigate(-1)}>
               Cancelar
             </Button>
           </div>
