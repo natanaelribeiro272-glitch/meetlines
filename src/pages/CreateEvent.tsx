@@ -793,7 +793,7 @@ export default function CreateEvent({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate('/organizer/profile')}
+                      onClick={() => navigate('/organizer-financial')}
                       className="w-full"
                     >
                       <Settings className="h-4 w-4 mr-2" />
@@ -815,7 +815,7 @@ export default function CreateEvent({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate('/organizer/profile')}
+                      onClick={() => navigate('/organizer-financial')}
                       className="w-full"
                     >
                       <Settings className="h-4 w-4 mr-2" />
