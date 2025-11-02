@@ -164,8 +164,8 @@ export default function Home() {
         {/* Event Feed */}
         {userInterests.length > 0 && selectedCategory === "todos"}
         <EventFeed
-          onEventClick={(eventId) => navigate(`/evento/${eventId}`)}
-          onOrganizerClick={(organizerId) => navigate(`/organizador/${organizerId}/perfil`)}
+          onEventClick={(eventId) => navigate(`/e/${eventId}`)}
+          onOrganizerClick={(organizerUsername) => navigate(`/${organizerUsername}`)}
           userType={userRole || "user"}
           categoryFilter={selectedCategory}
           searchQuery={searchQuery}

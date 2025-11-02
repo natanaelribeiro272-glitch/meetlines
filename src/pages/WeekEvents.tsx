@@ -90,9 +90,9 @@ export default function WeekEvents() {
                     viewsCount={event.registrations_count || 0}
                     isLiked={event.is_liked || false}
                     isLive={event.is_live}
-                    onClick={() => navigate(`/evento/${event.id}`)}
+                    onClick={() => navigate(`/e/${event.id}`)}
                     onLike={() => toggleLike(event.id, event.is_liked || false)}
-                    onOrganizerClick={(organizerId) => navigate(`/organizador/${organizerId}/perfil`)}
+                    onOrganizerClick={(organizerUsername) => navigate(`/${organizerUsername}`)}
                     isPlatformEvent={event.is_platform_event}
                     hasPaidTickets={event.has_paid_tickets}
                   />

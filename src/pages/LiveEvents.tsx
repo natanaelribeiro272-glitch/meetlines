@@ -79,7 +79,7 @@ export default function LiveEvents() {
                 isLiked={event.is_liked || false}
                  isLive={(() => { const start = new Date(event.event_date); const end = event.end_date ? new Date(event.end_date) : null; return start <= now && (!end || end > now); })()}
                  price={event.ticket_price || 0}
-                onClick={() => navigate(`/evento/${event.id}`)}
+                onClick={() => navigate(`/e/${event.id}`)}
                 onLike={() => toggleLike(event.id)}
                 showJoinButton={true}
                 isPlatformEvent={event.is_platform_event || false}

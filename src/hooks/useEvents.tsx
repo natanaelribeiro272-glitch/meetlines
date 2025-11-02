@@ -69,7 +69,8 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
               id,
               page_title,
               user_id,
-              avatar_url
+              avatar_url,
+              username
             )
           `)
           .eq('status', 'upcoming')
@@ -100,7 +101,8 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
               id,
               page_title,
               user_id,
-              avatar_url
+              avatar_url,
+              username
             )
           `)
           .eq('status', 'upcoming')

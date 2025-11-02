@@ -32,7 +32,7 @@ const formatEndDate = (dateString: string | null) => {
 
 interface EventFeedProps {
   onEventClick: (eventId: string) => void;
-  onOrganizerClick: (organizerId: string) => void;
+  onOrganizerClick: (organizerUsername: string) => void;
   userType?: "user" | "organizer";
   categoryFilter?: string;
   searchQuery?: string;
@@ -121,7 +121,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
                   console.log('Organizador clicado:', event.organizer);
-                  onOrganizerClick(event.organizer?.id || '');
+                  onOrganizerClick(event.organizer?.username || '');
                 }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
@@ -162,7 +162,7 @@ export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", c
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
                   console.log('Organizador clicado:', event.organizer);
-                  onOrganizerClick(event.organizer?.id || '');
+                  onOrganizerClick(event.organizer?.username || '');
                 }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}

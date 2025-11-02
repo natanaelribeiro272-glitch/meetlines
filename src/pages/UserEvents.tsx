@@ -194,7 +194,7 @@ export default function UserEvents() {
   const EventCard = ({ event, type, registration, purchase }: any) => (
     <Card
       className={type === "purchase" ? "" : "cursor-pointer hover:shadow-lg transition-shadow"}
-      onClick={type === "purchase" ? undefined : () => navigate(`/evento/${event.id}`)}
+      onClick={type === "purchase" ? undefined : () => navigate(`/e/${event.id}`)}
     >
       <div className="flex gap-4 p-4">
         {event.image_url && (
@@ -539,7 +539,7 @@ export default function UserEvents() {
                       if (!selectedTicket) return;
                       
                       setSelectedTicket(null);
-                      navigate(`/evento/${selectedTicket.event_id}`);
+                      navigate(`/e/${selectedTicket.event_id}`);
                     }}
                   >
                     Ver Evento
