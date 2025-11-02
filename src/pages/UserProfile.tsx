@@ -539,10 +539,13 @@ export default function UserProfile({
         </CardContent>
       </Card>
     </div>;
-  return <div className="min-h-screen bg-background">
-      <Header title="Meu Perfil" />
-      
-      <div className="p-4 pb-24">
+  return (
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
+          <Header title="Meu Perfil" />
+
+          <div className="p-4">
         {/* Navigation Tabs */}
         <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg">
           <button onClick={() => setActiveTab("profile")} className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "profile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
@@ -647,6 +650,8 @@ export default function UserProfile({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-    </div>;
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
+  );
 }
