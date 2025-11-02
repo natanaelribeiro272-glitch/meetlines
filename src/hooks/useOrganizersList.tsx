@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface OrganizerListData {
   id: string;
@@ -26,15 +27,35 @@ export interface OrganizerListData {
 }
 
 export function useOrganizersList() {
+  const { user } = useAuth();
   const [organizers, setOrganizers] = useState<OrganizerListData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userInterests, setUserInterests] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchUserInterests = async () => {
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('interests')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profile?.interests && Array.isArray(profile.interests)) {
+        setUserInterests(profile.interests);
+      }
+    };
+
+    fetchUserInterests();
+  }, [user]);
 
   const fetchOrganizers = async () => {
     try {
       setLoading(true);
-      
+
       // Buscar organizadores ativos
-      const { data: organizersData, error } = await supabase
+      let query = supabase
         .from('organizers')
         .select(`
           *,
@@ -43,8 +64,14 @@ export function useOrganizersList() {
             events_count
           )
         `)
-        .eq('is_page_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_page_active', true);
+
+      // Se o usuário tem interesses, filtrar organizadores por categoria
+      if (userInterests.length > 0) {
+        query = query.in('category', userInterests);
+      }
+
+      const { data: organizersData, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -76,7 +103,7 @@ export function useOrganizersList() {
             ...organizer,
             profile,
             verified: Math.random() > 0.5, // Mock - pode ser implementado depois
-            category: organizer.page_subtitle || "Entretenimento", // Mock - pode ser adicionado ao banco
+            category: organizer.category || "Outro",
             stats: {
               followers_count,
               events_count
@@ -94,8 +121,10 @@ export function useOrganizersList() {
   };
 
   useEffect(() => {
-    fetchOrganizers();
-  }, []);
+    if (user) {
+      fetchOrganizers();
+    }
+  }, [user, userInterests]);
 
   // Realtime updates to reflect profile/organizer changes instantly in the list
   useEffect(() => {
