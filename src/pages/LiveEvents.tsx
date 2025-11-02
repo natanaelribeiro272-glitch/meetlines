@@ -81,6 +81,7 @@ export default function LiveEvents() {
                  price={event.ticket_price || 0}
                 onClick={() => navigate(`/e/${event.id}`)}
                 onLike={() => toggleLike(event.id)}
+                onOrganizerClick={() => event.organizer?.username && navigate(`/${event.organizer.username}`)}
                 showJoinButton={true}
                 isPlatformEvent={event.is_platform_event || false}
               />

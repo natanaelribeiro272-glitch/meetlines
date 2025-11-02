@@ -819,21 +819,7 @@ export default function PublicOrganizerProfile() {
           <div className="space-y-4">
             {events.length > 0 ? (
               events.map((event) => {
-                // Create slugs for the event URL
-                const createSlug = (text: string) => {
-                  return text
-                    .toLowerCase()
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^\w\s-]/g, '')
-                    .replace(/\s+/g, '-')
-                    .replace(/-+/g, '-')
-                    .trim();
-                };
-
-                const organizerSlug = createSlug(organizer.username || organizer.page_title);
-                const eventSlug = createSlug(event.title);
-                const eventUrl = `/${organizerSlug}/${eventSlug}`;
+                const eventUrl = `/e/${event.id}`;
 
                 return (
                   <Card 
