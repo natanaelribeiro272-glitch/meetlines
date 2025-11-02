@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useDesktopOnlyPage } from "@/components/DesktopOnlyDialog";
 
 interface TicketSale {
   id: string;
@@ -41,6 +42,7 @@ interface EventDetails {
 export default function EventTicketSales() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
+  const { DesktopDialog } = useDesktopOnlyPage("Vendas de Ingressos", `/event/${eventId}/ticket-sales`);
   const [loading, setLoading] = useState(true);
   const [sales, setSales] = useState<TicketSale[]>([]);
   const [eventDetails, setEventDetails] = useState<EventDetails | null>(null);
@@ -163,9 +165,11 @@ export default function EventTicketSales() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <>
+      <DesktopDialog />
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-6xl mx-auto">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -301,6 +305,7 @@ export default function EventTicketSales() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

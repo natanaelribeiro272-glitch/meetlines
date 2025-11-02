@@ -7,12 +7,14 @@ import { usePlatformDetection } from "@/hooks/usePlatformDetection";
 import OrganizerFinancial from "@/components/OrganizerFinancial";
 import TicketSalesOverview from "@/components/TicketSalesOverview";
 import { Separator } from "@/components/ui/separator";
+import { useDesktopOnlyPage } from "@/components/DesktopOnlyDialog";
 
 export default function OrganizerFinancialPage() {
   const navigate = useNavigate();
   const { organizerData } = useOrganizer();
   const { isNativeApp } = usePlatformDetection();
   const [isMobile, setIsMobile] = useState(false);
+  const { DesktopDialog } = useDesktopOnlyPage("Gestão Financeira", "/organizer-financial");
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
@@ -29,8 +31,10 @@ export default function OrganizerFinancialPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
+    <>
+      <DesktopDialog />
+      <div className="min-h-screen bg-background pb-20">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
         <div className="mb-6 md:mb-8">
           <Button
             variant="ghost"
@@ -81,6 +85,7 @@ export default function OrganizerFinancialPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
