@@ -372,6 +372,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
       setEvents(filteredEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
