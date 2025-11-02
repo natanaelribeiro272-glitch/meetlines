@@ -1,9 +1,10 @@
 import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/EventCard";
 import { useEvents } from "@/hooks/useEvents";
-
-
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
 
 export default function LiveEvents() {
   const navigate = useNavigate();
@@ -20,7 +21,9 @@ export default function LiveEvents() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <ProtectedRoute requireAuth={true}>
+        <AppLayout>
+          <div className="pb-20">
         <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -30,15 +33,19 @@ export default function LiveEvents() {
             <p className="text-sm text-muted-foreground">Carregando...</p>
           </div>
         </div>
-        <div className="flex items-center justify-center p-8">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </div>
+            <div className="flex items-center justify-center p-8">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -72,7 +79,7 @@ export default function LiveEvents() {
                 isLiked={event.is_liked || false}
                  isLive={(() => { const start = new Date(event.event_date); const end = event.end_date ? new Date(event.end_date) : null; return start <= now && (!end || end > now); })()}
                  price={event.ticket_price || 0}
-                onClick={() => onEventClick(event.id)}
+                onClick={() => navigate(`/evento/${event.id}`)}
                 onLike={() => toggleLike(event.id)}
                 showJoinButton={true}
                 isPlatformEvent={event.is_platform_event || false}
@@ -86,6 +93,8 @@ export default function LiveEvents() {
           </div>
         )}
       </main>
-    </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

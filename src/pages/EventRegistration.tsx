@@ -10,13 +10,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
+import { useNavigate, useParams } from "react-router-dom";
 
-interface EventRegistrationProps {
-  onBack: () => void;
-  eventId?: string;
-}
-
-export default function EventRegistration({ onBack, eventId }: EventRegistrationProps) {
+export default function EventRegistration() {
+  const navigate = useNavigate();
+  const { eventId } = useParams<{ eventId: string }>();
   const { user } = useAuth();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -137,7 +137,7 @@ export default function EventRegistration({ onBack, eventId }: EventRegistration
         <Card className="w-full max-w-md mx-4">
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground">Evento não encontrado</p>
-            <Button onClick={onBack} className="mt-4">Voltar</Button>
+            <Button onClick={() => navigate(-1)} className="mt-4">Voltar</Button>
           </CardContent>
         </Card>
       </div>
@@ -156,7 +156,7 @@ export default function EventRegistration({ onBack, eventId }: EventRegistration
             <p className="text-muted-foreground">
               Seu cadastro foi enviado com sucesso. Você receberá um e-mail de confirmação em breve.
             </p>
-            <Button onClick={onBack} className="w-full">
+            <Button onClick={() => navigate(-1)} className="w-full">
               Voltar ao Evento
             </Button>
           </CardContent>
@@ -166,11 +166,13 @@ export default function EventRegistration({ onBack, eventId }: EventRegistration
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Cadastro no Evento</h1>
@@ -385,6 +387,8 @@ export default function EventRegistration({ onBack, eventId }: EventRegistration
           </div>
         </form>
       </div>
-    </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

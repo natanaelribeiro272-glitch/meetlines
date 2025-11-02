@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
+import { useNavigate } from "react-router-dom";
 
 interface AttendanceItem {
   id: string;
@@ -87,7 +90,9 @@ export default function EventAttendances({ onBack, eventId }: EventAttendancesPr
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
         <Button variant="ghost" size="icon" onClick={onBack}>
@@ -136,6 +141,8 @@ export default function EventAttendances({ onBack, eventId }: EventAttendancesPr
           </div>
         )}
       </div>
-    </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

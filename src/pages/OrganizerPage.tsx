@@ -23,6 +23,8 @@ import CreateEvent from "@/pages/CreateEvent";
 import EventRegistrations from "@/pages/EventRegistrations";
 import EventAttendances from "@/pages/EventAttendances";
 import { getPublicBaseUrl } from "@/config/site";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
 
 export default function OrganizerPage() {
   const navigate = useNavigate();

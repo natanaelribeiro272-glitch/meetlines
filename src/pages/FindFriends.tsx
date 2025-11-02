@@ -748,7 +748,9 @@ export default function FindFriends() {
   const displayedUsers = activeTab === 'nearby' ? attendees : friendsList;
 
   return (
-    <div className="min-h-screen bg-background">
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3 max-w-md mx-auto">
@@ -949,14 +951,16 @@ export default function FindFriends() {
 
       {/* Chat Dialog */}
       {selectedChat && (
-        <UserChatDialog 
-          open={chatOpen} 
-          onOpenChange={setChatOpen} 
-          recipientId={selectedChat.user_id} 
-          recipientName={selectedChat.name} 
-          recipientAvatar={selectedChat.avatar} 
+        <UserChatDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          recipientId={selectedChat.user_id}
+          recipientName={selectedChat.name}
+          recipientAvatar={selectedChat.avatar}
         />
       )}
-    </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

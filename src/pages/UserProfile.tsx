@@ -16,6 +16,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile, calculateAge } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
 interface UserProfileProps {
   userType: "user" | "organizer";
 }

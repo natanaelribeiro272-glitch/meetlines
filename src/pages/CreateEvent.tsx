@@ -22,6 +22,8 @@ import { usePlatformDetection } from "@/hooks/usePlatformDetection";
 import PlatformRestrictedFeatureAlert from "@/components/PlatformRestrictedFeatureAlert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
 const INTEREST_OPTIONS = [{
   value: "curtição",
   label: "🤙 Curtição",

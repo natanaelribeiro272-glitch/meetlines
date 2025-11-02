@@ -27,6 +27,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { supabase } from "@/integrations/supabase/client";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
 
 
 export default function EventDetails() {
