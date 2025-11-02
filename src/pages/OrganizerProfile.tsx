@@ -18,7 +18,6 @@ import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
@@ -387,7 +386,10 @@ export default function OrganizerProfile() {
     return `${dayName}, ${hours}:${minutes}`;
   };
   if (loading) {
-    return <div className="min-h-screen bg-background pb-20">
+    return (
+      <ProtectedRoute requireAuth={true}>
+        <AppLayout>
+          <div className="pb-20">
         <div className="flex items-center gap-4 p-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -405,17 +407,26 @@ export default function OrganizerProfile() {
               </div>)}
           </div>
         </div>
-      </div>;
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    );
   }
   if (!organizer) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+    return (
+      <ProtectedRoute requireAuth={true}>
+        <AppLayout>
+          <div className="pb-20 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Organizador não encontrado</p>
           <Button variant="outline" onClick={() => navigate(-1)}>
             Voltar
           </Button>
         </div>
-      </div>;
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    );
   }
   const isOwnProfile = user && organizer.user_id === user.id;
 
@@ -436,8 +447,11 @@ export default function OrganizerProfile() {
     label: "Financeiro",
     icon: DollarSign
   }] : [])];
-  return <div className="min-h-screen bg-background pb-20">
-      {/* Header com capa de fundo */}
+  return (
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
+          {/* Header com capa de fundo */}
       <div className="relative h-[200px] overflow-hidden" style={{
       backgroundImage: organizer.cover_image_url ? `url(${organizer.cover_image_url})` : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 25%, hsl(220 70% 50%) 50%, hsl(200 70% 50%) 75%, hsl(var(--primary) / 0.6) 100%)',
       backgroundSize: 'cover',
@@ -788,5 +802,8 @@ export default function OrganizerProfile() {
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} actionDescription={authModalAction} />
 
       {/* Image Crop Dialog */}
-    </div>;
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
+  );
 }

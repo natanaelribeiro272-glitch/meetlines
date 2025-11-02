@@ -336,7 +336,9 @@ export default function OrganizerPage() {
     </div>;
 
   return (
-    <div className="min-h-screen bg-background">
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
       <div className="max-w-md mx-auto bg-background">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -955,6 +957,8 @@ export default function OrganizerPage() {
           Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
         </p>
       </footer>
-    </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

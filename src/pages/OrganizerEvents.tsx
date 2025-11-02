@@ -85,7 +85,9 @@ export default function OrganizerEvents() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <ProtectedRoute requireAuth={true}>
+      <AppLayout>
+        <div className="pb-20">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
@@ -232,6 +234,8 @@ export default function OrganizerEvents() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }
