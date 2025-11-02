@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { LocationPermissionRequest } from "@/components/LocationPermissionRequest";
 import MainLayout from "./pages/MainLayout";
 import PublicOrganizerProfile from "./pages/PublicOrganizerProfile";
@@ -40,9 +41,15 @@ import TestMercadoPago from "./pages/TestMercadoPago";
 
 const queryClient = new QueryClient();
 
+const NavigationHandler = () => {
+  useAndroidBackButton();
+  return null;
+};
+
 const AppContent = () => {
   return (
     <BrowserRouter>
+      <NavigationHandler />
       <LocationPermissionRequest />
       <Routes>
         <Route path="/" element={<MainLayout />} />
