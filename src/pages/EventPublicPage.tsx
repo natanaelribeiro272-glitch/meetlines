@@ -225,22 +225,6 @@ export default function EventPublicPage() {
     );
   }
 
-  if (!eventId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Evento não encontrado</h2>
-          <p className="text-muted-foreground mb-4">
-            O evento que você está procurando não existe ou foi removido.
-          </p>
-          <Button variant="outline" onClick={() => navigate("/")} className="mt-4">
-            Voltar ao início
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <EventDetails
       onBack={() => navigate("/")}

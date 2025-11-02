@@ -23,15 +23,28 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEventPixels } from "@/hooks/useEventPixels";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getPublicBaseUrl } from "@/config/site";
 import { supabase } from "@/integrations/supabase/client";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
+interface EventDetailsProps {
+  onBack: () => void;
+  eventId: string | null;
+  onRegister?: () => void;
+  onFindFriends?: () => void;
+  onEdit?: (eventId: string) => void;
+  onManageRegistrations?: () => void;
+  onViewAttendances?: () => void;
+}
 
-
-export default function EventDetails() {
+export default function EventDetails({
+  onBack,
+  eventId,
+  onRegister,
+  onFindFriends,
+  onEdit,
+  onManageRegistrations,
+  onViewAttendances,
+}: EventDetailsProps) {
   const { event, loading, comments, toggleLike, addComment } = useEventDetails(eventId);
   const { user, userRole } = useAuth();
   const { trackEvent } = useEventPixels(eventId);
@@ -564,7 +577,7 @@ export default function EventDetails() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground">Evento não encontrado</p>
-          <Button variant="outline" onClick={() => navigate(-1)} className="mt-4">
+          <Button variant="outline" onClick={onBack} className="mt-4">
             Voltar
           </Button>
         </div>
@@ -589,7 +602,7 @@ export default function EventDetails() {
           variant="ghost"
           size="icon"
           className="absolute top-4 left-4 bg-surface/80 backdrop-blur-sm hover:bg-surface"
-          onClick={() => navigate(-1)}
+          onClick={onBack}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>

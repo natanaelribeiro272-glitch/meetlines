@@ -23,8 +23,6 @@ import CreateEvent from "@/pages/CreateEvent";
 import EventRegistrations from "@/pages/EventRegistrations";
 import EventAttendances from "@/pages/EventAttendances";
 import { getPublicBaseUrl } from "@/config/site";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
 
 export default function OrganizerPage() {
   const navigate = useNavigate();
@@ -336,9 +334,7 @@ export default function OrganizerPage() {
     </div>;
 
   return (
-    <ProtectedRoute requireAuth={true}>
-      <AppLayout>
-        <div className="pb-20">
+    <div className="min-h-screen bg-background">
       <div className="max-w-md mx-auto bg-background">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -957,8 +953,6 @@ export default function OrganizerPage() {
           Esse site foi desenvolvido pela <a href="https://flatgrowth.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Flat Company</a>
         </p>
       </footer>
-        </div>
-      </AppLayout>
-    </ProtectedRoute>
+    </div>
   );
 }

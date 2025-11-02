@@ -14,8 +14,6 @@ import { useFriendship } from "@/hooks/useFriendship";
 import StoriesBar from "@/components/StoriesBar";
 import StorySettingsDialog from "@/components/StorySettingsDialog";
 import { calculateDistance, formatDistance } from "@/lib/geolocation";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
 
 interface Attendee {
   id: string;
@@ -31,6 +29,10 @@ interface Attendee {
   relationship_status: string;
   unreadMessages?: number;
   isFriend?: boolean;
+}
+
+interface FindFriendsProps {
+  onBack: () => void;
 }
 
 // UserCard component with friendship button
@@ -223,8 +225,9 @@ const UserCard = ({ person, handleLike, handleMessage, likedUsers, unreadMessage
   );
 };
 
-export default function FindFriends() {
-  const navigate = useNavigate();
+export default function FindFriends({
+  onBack
+}: FindFriendsProps) {
   const [activeTab, setActiveTab] = useState<'nearby' | 'friends'>('nearby');
   const [isVisible, setIsVisible] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
@@ -240,6 +243,7 @@ export default function FindFriends() {
   const [currentNotes, setCurrentNotes] = useState<string>("");
   const [notesVisible, setNotesVisible] = useState<boolean>(true);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { position: geolocationPosition, error: geolocationError } = useGeolocation({
     watch: isVisible,
     enableHighAccuracy: true,
@@ -748,13 +752,11 @@ export default function FindFriends() {
   const displayedUsers = activeTab === 'nearby' ? attendees : friendsList;
 
   return (
-    <ProtectedRoute requireAuth={true}>
-      <AppLayout>
-        <div className="pb-20">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
@@ -951,16 +953,14 @@ export default function FindFriends() {
 
       {/* Chat Dialog */}
       {selectedChat && (
-        <UserChatDialog
-          open={chatOpen}
-          onOpenChange={setChatOpen}
-          recipientId={selectedChat.user_id}
-          recipientName={selectedChat.name}
-          recipientAvatar={selectedChat.avatar}
+        <UserChatDialog 
+          open={chatOpen} 
+          onOpenChange={setChatOpen} 
+          recipientId={selectedChat.user_id} 
+          recipientName={selectedChat.name} 
+          recipientAvatar={selectedChat.avatar} 
         />
       )}
-        </div>
-      </AppLayout>
-    </ProtectedRoute>
+    </div>
   );
 }

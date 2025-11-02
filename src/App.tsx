@@ -6,10 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { LocationPermissionRequest } from "@/components/LocationPermissionRequest";
-import Home from "./pages/Home";
+import MainLayout from "./pages/MainLayout";
 import PublicOrganizerProfile from "./pages/PublicOrganizerProfile";
 import EventPublicPage from "./pages/EventPublicPage";
-import EventDetails from "./pages/EventDetails";
 import AuthPage from "./pages/AuthPage";
 import OrganizerOnboarding from "./pages/OrganizerOnboarding";
 import UserOnboarding from "./pages/UserOnboarding";
@@ -38,15 +37,6 @@ import EventRegistrations from "./pages/EventRegistrations";
 import EventAttendances from "./pages/EventAttendances";
 import FindFriends from "./pages/FindFriends";
 import TestMercadoPago from "./pages/TestMercadoPago";
-import LiveEvents from "./pages/LiveEvents";
-import WeekEvents from "./pages/WeekEvents";
-import OrganizersList from "./pages/OrganizersList";
-import OrganizerProfile from "./pages/OrganizerProfile";
-import UserProfile from "./pages/UserProfile";
-import OrganizerPage from "./pages/OrganizerPage";
-import CreateEvent from "./pages/CreateEvent";
-import OrdersManagement from "./pages/OrdersManagement";
-import OrganizerEvents from "./pages/OrganizerEvents";
 
 const queryClient = new QueryClient();
 
@@ -55,37 +45,22 @@ const AppContent = () => {
     <BrowserRouter>
       <LocationPermissionRequest />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<MainLayout />} />
         <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />
         <Route path="/email-confirmation" element={<EmailConfirmation />} />
         <Route path="/confirm-email" element={<ConfirmEmail />} />
         <Route path="/organizer-onboarding" element={<OrganizerOnboarding />} />
         <Route path="/user-onboarding" element={<UserOnboarding />} />
-
-        <Route path="/eventos-ao-vivo" element={<LiveEvents />} />
-        <Route path="/eventos-da-semana" element={<WeekEvents />} />
-        <Route path="/organizadores" element={<OrganizersList />} />
-        <Route path="/organizador/:organizerId/perfil" element={<OrganizerProfile />} />
-        <Route path="/amigos" element={<FindFriends />} />
-        <Route path="/perfil" element={<UserProfile />} />
-        <Route path="/criar-evento" element={<CreateEvent />} />
-        <Route path="/editar-evento/:eventId" element={<CreateEvent />} />
-        <Route path="/meus-pedidos" element={<OrdersManagement />} />
-        <Route path="/organizador/perfil" element={<OrganizerPage />} />
-        <Route path="/organizador/eventos" element={<OrganizerEvents />} />
-        <Route path="/organizador/financeiro" element={<OrganizerFinancialPage />} />
-
-        <Route path="/evento/:eventId" element={<EventDetails />} />
-        <Route path="/evento/:eventId/vendas" element={<EventTicketSales />} />
-        <Route path="/evento/:eventId/registrar" element={<EventRegistration />} />
-        <Route path="/evento/:eventId/registros" element={<EventRegistrations />} />
-        <Route path="/evento/:eventId/presencas" element={<EventAttendances />} />
-        <Route path="/evento/:eventId/encontrar-amigos" element={<FindFriends />} />
-
-        <Route path="/notificacoes" element={<Notifications />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/ticket-success" element={<TicketPurchaseSuccess />} />
-        <Route path="/meus-eventos" element={<UserEvents />} />
+        <Route path="/my-events" element={<UserEvents />} />
+        <Route path="/organizer-financial" element={<OrganizerFinancialPage />} />
 
+        <Route path="/event/:eventId/sales" element={<EventTicketSales />} />
+        <Route path="/event/:eventId/register" element={<EventRegistration />} />
+        <Route path="/event/:eventId/registrations" element={<EventRegistrations />} />
+        <Route path="/event/:eventId/attendances" element={<EventAttendances />} />
+        <Route path="/event/:eventId/find-friends" element={<FindFriends />} />
         <Route path="/e/:eventId" element={<EventPublicPage />} />
 
         <Route path="/admin" element={<AdminDashboard />} />
@@ -97,7 +72,7 @@ const AppContent = () => {
         <Route path="/admin/support" element={<AdminSupport />} />
         <Route path="/admin/auto-generate-events" element={<AdminAutoGenerateEvents />} />
         <Route path="/admin/pending-events" element={<AdminPendingEvents />} />
-        <Route path="/admin/pending-events/:eventId/edit" element={<AdminEditPendingEvent />} />
+        <Route path="/admin/pending-event/:eventId/edit" element={<AdminEditPendingEvent />} />
         <Route path="/admin/organizer-payments" element={<AdminOrganizerPayments />} />
         <Route path="/admin/organizer-payments/:organizerId" element={<AdminOrganizerPaymentDetails />} />
 

@@ -53,11 +53,7 @@ export function useOrganizerStories() {
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
-      if (storiesError) {
-        console.error('Error fetching organizer stories:', storiesError);
-        setOrganizersWithStories([]);
-        return;
-      }
+      if (storiesError) throw storiesError;
 
       if (!stories || stories.length === 0) {
         setOrganizersWithStories([]);
@@ -134,7 +130,7 @@ export function useOrganizerStories() {
       setOrganizersWithStories(Array.from(organizersMap.values()));
     } catch (error) {
       console.error('Error fetching organizer stories:', error);
-      setOrganizersWithStories([]);
+      toast.error('Erro ao carregar stories');
     } finally {
       setLoading(false);
     }

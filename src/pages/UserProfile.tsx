@@ -16,8 +16,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile, calculateAge } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
 interface UserProfileProps {
   userType: "user" | "organizer";
 }
@@ -539,20 +537,17 @@ export default function UserProfile({
         </CardContent>
       </Card>
     </div>;
-  return (
-    <ProtectedRoute requireAuth={true}>
-      <AppLayout>
-        <div className="pb-20">
-          <Header title="Meu Perfil" />
-
-          <div className="p-4">
+  return <div className="min-h-screen bg-background">
+      <Header title="Meu Perfil" />
+      
+      <div className="p-4 pb-24">
         {/* Navigation Tabs */}
         <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg">
           <button onClick={() => setActiveTab("profile")} className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "profile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <User className="h-4 w-4 inline mr-2" />
             Perfil
           </button>
-          <button onClick={() => navigate("/meus-eventos")} className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
+          <button onClick={() => navigate("/my-events")} className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
             <Ticket className="h-4 w-4 inline mr-2" />
             Meus Eventos
           </button>
@@ -650,8 +645,6 @@ export default function UserProfile({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-        </div>
-      </AppLayout>
-    </ProtectedRoute>
-  );
+
+    </div>;
 }

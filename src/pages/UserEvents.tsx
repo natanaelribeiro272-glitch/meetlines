@@ -2,8 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, Ticket, CheckCircle, Loader2, MapPin, QrCode } from "lucide-react";
@@ -99,14 +97,13 @@ export default function UserEvents() {
           event_id,
           attendance_confirmed,
           created_at,
-          events (
+          events!inner (
             id,
             title,
             event_date,
             location,
             image_url,
-            organizer_id,
-            organizers (
+            organizers!inner (
               page_title
             )
           )
@@ -114,12 +111,7 @@ export default function UserEvents() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (regError) {
-        console.error("Error fetching registrations:", regError);
-        throw regError;
-      }
-
-      console.log("Registrations data:", registrationsData);
+      if (regError) throw regError;
 
       // Buscar ingressos comprados
       const { data: purchasesData, error: purchasesError } = await supabase
@@ -134,38 +126,32 @@ export default function UserEvents() {
           buyer_name,
           buyer_email,
           ticket_type_id,
-          ticket_types (
+          ticket_types!inner (
             name
           ),
-          events (
+          events!inner (
             id,
             title,
             event_date,
             location,
             image_url,
-            organizer_id,
-            organizers (
+            organizers!inner (
               page_title
             )
           )
         `)
         .eq("user_id", user.id)
-        .in("payment_status", ["completed", "paid", "approved"])
+        .eq("payment_status", "completed")
         .order("created_at", { ascending: false });
 
-      if (purchasesError) {
-        console.error("Error fetching purchases:", purchasesError);
-        throw purchasesError;
-      }
-
-      console.log("Purchases data:", purchasesData);
+      if (purchasesError) throw purchasesError;
 
       setRegistrations(
         (registrationsData || []).map((reg: any) => ({
           ...reg,
           event: {
             ...reg.events,
-            organizer: Array.isArray(reg.events?.organizers) ? reg.events.organizers[0] : reg.events?.organizers,
+            organizer: reg.events.organizers,
           },
         }))
       );
@@ -175,9 +161,9 @@ export default function UserEvents() {
           ...purchase,
           event: {
             ...purchase.events,
-            organizer: Array.isArray(purchase.events?.organizers) ? purchase.events.organizers[0] : purchase.events?.organizers,
+            organizer: purchase.events.organizers,
           },
-          ticket_type: Array.isArray(purchase.ticket_types) ? purchase.ticket_types[0] : purchase.ticket_types,
+          ticket_type: purchase.ticket_types,
         }))
       );
     } catch (error) {
@@ -194,7 +180,7 @@ export default function UserEvents() {
   const EventCard = ({ event, type, registration, purchase }: any) => (
     <Card
       className={type === "purchase" ? "" : "cursor-pointer hover:shadow-lg transition-shadow"}
-      onClick={type === "purchase" ? undefined : () => navigate(`/e/${event.id}`)}
+      onClick={type === "purchase" ? undefined : () => navigate(`/events/${event.id}`)}
     >
       <div className="flex gap-4 p-4">
         {event.image_url && (
@@ -247,25 +233,19 @@ export default function UserEvents() {
 
   if (loading) {
     return (
-      <ProtectedRoute requireAuth={true}>
-        <AppLayout>
-          <div className="pb-20 flex items-center justify-center min-h-screen">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </AppLayout>
-      </ProtectedRoute>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <ProtectedRoute requireAuth={true}>
-      <AppLayout>
-        <div className="pb-20">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/", { state: { initialTab: "profile" } })}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
@@ -538,8 +518,25 @@ export default function UserEvents() {
                     onClick={async () => {
                       if (!selectedTicket) return;
                       
-                      setSelectedTicket(null);
-                      navigate(`/e/${selectedTicket.event_id}`);
+                      // Buscar os dados do organizador para obter o username correto
+                      const { data: organizer } = await supabase
+                        .from('organizers')
+                        .select('username')
+                        .eq('id', (await supabase
+                          .from('events')
+                          .select('organizer_id')
+                          .eq('id', selectedTicket.event_id)
+                          .maybeSingle()
+                        ).data?.organizer_id)
+                        .maybeSingle();
+                      
+                      if (organizer?.username) {
+                        const eventSlug = slugify(selectedTicket.event.title);
+                        setSelectedTicket(null);
+                        navigate(`/${organizer.username}/${eventSlug}`);
+                      } else {
+                        toast.error('Erro ao abrir evento');
+                      }
                     }}
                   >
                     Ver Evento
@@ -550,8 +547,6 @@ export default function UserEvents() {
           )}
         </DialogContent>
       </Dialog>
-        </div>
-      </AppLayout>
-    </ProtectedRoute>
+    </div>
   );
 }

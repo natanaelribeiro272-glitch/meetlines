@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, Calendar, MapPin, Settings, Plus, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import event1 from "@/assets/event-1.jpg";
 import event2 from "@/assets/event-2.jpg";
 import event3 from "@/assets/event-3.jpg";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
 
 // Mock organizer events data
 const mockOrganizerEvents = [
@@ -54,10 +51,17 @@ const mockOrganizerEvents = [
   }
 ];
 
+interface OrganizerEventsProps {
+  onBack: () => void;
+  onCreateEvent: () => void;
+  onManageRegistrations: (eventId: string) => void;
+}
 
-
-export default function OrganizerEvents() {
-  const navigate = useNavigate();
+export default function OrganizerEvents({ 
+  onBack, 
+  onCreateEvent, 
+  onManageRegistrations 
+}: OrganizerEventsProps) {
   const [selectedTab, setSelectedTab] = useState("upcoming");
 
   const filteredEvents = mockOrganizerEvents.filter(event => 
@@ -85,13 +89,11 @@ export default function OrganizerEvents() {
   };
 
   return (
-    <ProtectedRoute requireAuth={true}>
-      <AppLayout>
-        <div className="pb-20">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">Meus Eventos</h1>
@@ -234,8 +236,6 @@ export default function OrganizerEvents() {
           </TabsContent>
         </Tabs>
       </div>
-        </div>
-      </AppLayout>
-    </ProtectedRoute>
+    </div>
   );
 }

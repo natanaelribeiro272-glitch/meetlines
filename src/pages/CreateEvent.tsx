@@ -22,8 +22,6 @@ import { usePlatformDetection } from "@/hooks/usePlatformDetection";
 import PlatformRestrictedFeatureAlert from "@/components/PlatformRestrictedFeatureAlert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
 const INTEREST_OPTIONS = [{
   value: "curtição",
   label: "🤙 Curtição",
@@ -62,8 +60,14 @@ const EVENT_CATEGORIES = [
   { value: "jazz", label: "Jazz" },
   { value: "outros", label: "Outros" }
 ];
-
-export default function CreateEvent() {
+interface CreateEventProps {
+  onBack: () => void;
+  eventId?: string; // Para edição futura
+}
+export default function CreateEvent({
+  onBack,
+  eventId
+}: CreateEventProps) {
   const {
     createEvent,
     organizerData
@@ -493,9 +497,9 @@ export default function CreateEvent() {
         }
       }
 
-      // Don't call navigate(-1) anymore, let the dialog handle navigation
+      // Don't call onBack() anymore, let the dialog handle navigation
       if (isEditMode) {
-        navigate(-1);
+        onBack();
       }
     } catch (error) {
       console.error('Error saving event:', error);
@@ -508,7 +512,7 @@ export default function CreateEvent() {
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">
@@ -1003,7 +1007,7 @@ export default function CreateEvent() {
                   Criando Evento...
                 </> : 'Criar Evento'}
             </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={() => navigate(-1)}>
+            <Button type="button" variant="outline" className="w-full" onClick={onBack}>
               Cancelar
             </Button>
           </div>

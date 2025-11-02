@@ -10,9 +10,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
-import { useNavigate } from "react-router-dom";
 
 interface Registration {
   id: string;
@@ -195,9 +192,7 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
   }
 
   return (
-    <ProtectedRoute requireAuth={true}>
-      <AppLayout>
-        <div className="pb-20">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
         <Button variant="ghost" size="icon" onClick={onBack}>
@@ -414,8 +409,6 @@ export default function EventRegistrations({ onBack, eventId }: EventRegistratio
            </AlertDialogFooter>
          </AlertDialogContent>
        </AlertDialog>
-        </div>
-      </AppLayout>
-    </ProtectedRoute>
+     </div>
    );
  }

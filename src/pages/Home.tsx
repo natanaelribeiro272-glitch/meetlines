@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, Crown, CalendarDays } from "lucide-react";
+import { Users, Search, Crown, CalendarDays } from "lucide-react";
 import { Header } from "@/components/Header";
 import { EventFeed } from "@/components/EventFeed";
 import { OrganizerStoriesBar } from "@/components/OrganizerStoriesBar";
@@ -8,16 +7,28 @@ import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { OrganizerStoryUploadDialog } from "@/components/OrganizerStoryUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useProfile } from "@/hooks/useProfile";
 import { useOrganizerStories, OrganizerWithStories } from "@/hooks/useOrganizerStories";
 import { useOrganizer } from "@/hooks/useOrganizer";
-import { useAuth } from "@/hooks/useAuth";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/AppLayout";
-
-export default function Home() {
-  const navigate = useNavigate();
-  const { userRole } = useAuth();
+interface HomeProps {
+  onEventClick: (eventId: string) => void;
+  onFindFriends: () => void;
+  onOrganizerClick: (organizerId: string) => void;
+  onShowOrganizers?: () => void;
+  onStoryClick: (userId: string) => void;
+  userType: "user" | "organizer";
+  refreshKey?: number;
+}
+export default function Home({
+  onEventClick,
+  onFindFriends,
+  onOrganizerClick,
+  onShowOrganizers,
+  onStoryClick,
+  userType,
+  refreshKey = 0
+}: HomeProps) {
   const {
     profile
   } = useProfile();
@@ -71,6 +82,12 @@ export default function Home() {
   }, [profile]);
 
 
+  // Scroll to top when refreshKey changes
+  useEffect(() => {
+    if (refreshKey > 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [refreshKey]);
   const categories = [{
     id: "todos",
     label: "Todos"
@@ -102,10 +119,8 @@ export default function Home() {
     id: "encontros",
     label: "Encontros"
   }];
-  return <ProtectedRoute requireAuth={true}>
-    <AppLayout>
-      <div className="pb-20">
-        <Header title="Eventos" userType={userRole || "user"} showNotifications={true} showLocation={true} />
+  return <div className="min-h-screen bg-background pb-20">
+      <Header title="Eventos" userType={userType} showNotifications={true} showLocation={true} />
       
       {/* Organizer Stories Bar */}
       <OrganizerStoriesBar organizersWithStories={organizersWithStories} onOrganizerClick={handleOrganizerStoryClick} onCreateStory={organizerData ? handleCreateStory : undefined} uploadingStory={uploadingStory} />
@@ -128,21 +143,21 @@ export default function Home() {
           </div>
         </div>
         {/* Organizers Button */}
-        <div className="mb-4">
-          <Button onClick={() => navigate("/organizadores")} variant="outline" className="w-full justify-start gap-2 h-12">
-            <Crown className="h-5 w-5 text-primary" />
-            <div className="text-left">
-              <p className="text-sm font-medium">Ver Organizadores</p>
-              <p className="text-xs text-muted-foreground">Descubra os melhores da cidade</p>
-            </div>
-          </Button>
-        </div>
+        {onShowOrganizers && <div className="mb-4">
+            <Button onClick={onShowOrganizers} variant="outline" className="w-full justify-start gap-2 h-12">
+              <Crown className="h-5 w-5 text-primary" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Ver Organizadores</p>
+                <p className="text-xs text-muted-foreground">Descubra os melhores da cidade</p>
+              </div>
+            </Button>
+          </div>}
 
         {/* Quick Event Navigation */}
         <div className="mb-6 flex gap-3">
           {hasLiveEvent && (
             <button
-              onClick={() => navigate("/eventos-ao-vivo")}
+              onClick={() => onEventClick("live-events")}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-surface rounded-lg border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-surface/80 hover:border-primary/40"
             >
               <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
@@ -152,7 +167,7 @@ export default function Home() {
 
           {hasWeekEvents && (
             <button
-              onClick={() => navigate("/eventos-da-semana")}
+              onClick={() => onEventClick("week-events")}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-surface rounded-lg border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-surface/80 hover:border-primary/40"
             >
               <CalendarDays className="h-4 w-4 text-primary" />
@@ -164,12 +179,13 @@ export default function Home() {
         {/* Event Feed */}
         {userInterests.length > 0 && selectedCategory === "todos"}
         <EventFeed
-          onEventClick={(eventId) => navigate(`/e/${eventId}`)}
-          onOrganizerClick={(organizerUsername) => navigate(`/${organizerUsername}`)}
-          userType={userRole || "user"}
+          onEventClick={onEventClick}
+          onOrganizerClick={onOrganizerClick}
+          userType={userType}
           categoryFilter={selectedCategory}
           searchQuery={searchQuery}
           userInterests={selectedCategory === "todos" ? userInterests : undefined}
+          refreshKey={refreshKey}
         />
       </main>
 
@@ -178,7 +194,5 @@ export default function Home() {
 
       {/* Upload Dialog */}
       {organizerData && <OrganizerStoryUploadDialog open={uploadDialogOpen} onClose={() => setUploadDialogOpen(false)} onUpload={handleUploadStory} />}
-    </div>
-    </AppLayout>
-  </ProtectedRoute>;
+    </div>;
 }

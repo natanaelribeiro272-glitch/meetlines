@@ -32,7 +32,7 @@ const formatEndDate = (dateString: string | null) => {
 
 interface EventFeedProps {
   onEventClick: (eventId: string) => void;
-  onOrganizerClick: (organizerUsername: string) => void;
+  onOrganizerClick: (organizerId: string) => void;
   userType?: "user" | "organizer";
   categoryFilter?: string;
   searchQuery?: string;
@@ -41,7 +41,7 @@ interface EventFeedProps {
   refreshKey?: number;
 }
 
-export function EventFeed({ onEventClick, onOrganizerClick: handleOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests, filters, refreshKey = 0 }: EventFeedProps) {
+export function EventFeed({ onEventClick, onOrganizerClick, userType = "user", categoryFilter, searchQuery, userInterests, filters, refreshKey = 0 }: EventFeedProps) {
   const { events, loading, toggleLike, fetchEvents } = useEvents(categoryFilter, searchQuery, userInterests, filters);
 
   useEffect(() => {
@@ -120,12 +120,8 @@ export function EventFeed({ onEventClick, onOrganizerClick: handleOrganizerClick
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
-                  console.log('[FIXED v2] Organizador clicado:', event.organizer);
-                  if (event.organizer?.username) {
-                    handleOrganizerClick(event.organizer.username);
-                  } else {
-                    console.warn('[FIXED v2] Username não disponível');
-                  }
+                  console.log('Organizador clicado:', event.organizer);
+                  onOrganizerClick(event.organizer?.id || '');
                 }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}
@@ -165,12 +161,8 @@ export function EventFeed({ onEventClick, onOrganizerClick: handleOrganizerClick
                 onClick={() => handleEventClick(event.id)}
                 onLike={() => toggleLike(event.id)}
                 onOrganizerClick={() => {
-                  console.log('[FIXED v2] Organizador clicado:', event.organizer);
-                  if (event.organizer?.username) {
-                    handleOrganizerClick(event.organizer.username);
-                  } else {
-                    console.warn('[FIXED v2] Username não disponível');
-                  }
+                  console.log('Organizador clicado:', event.organizer);
+                  onOrganizerClick(event.organizer?.id || '');
                 }}
                 userType={userType}
                 onRegister={() => onEventClick("register")}

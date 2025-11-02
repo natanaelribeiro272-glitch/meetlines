@@ -69,8 +69,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
               id,
               page_title,
               user_id,
-              avatar_url,
-              username
+              avatar_url
             )
           `)
           .eq('status', 'upcoming')
@@ -101,8 +100,7 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
               id,
               page_title,
               user_id,
-              avatar_url,
-              username
+              avatar_url
             )
           `)
           .eq('status', 'upcoming')
@@ -372,7 +370,6 @@ export function useEvents(categoryFilter?: string, searchQuery?: string, userInt
       setEvents(filteredEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
-      setEvents([]);
     } finally {
       setLoading(false);
     }
