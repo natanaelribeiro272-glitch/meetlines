@@ -10,7 +10,8 @@ export type CategoryValue =
   | 'bares'
   | 'boates'
   | 'esportes'
-  | 'encontros';
+  | 'encontros'
+  | 'outros';
 
 export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: 'festas', label: 'Festas' },
@@ -22,6 +23,7 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: 'boates', label: 'Boates' },
   { value: 'esportes', label: 'Esportes' },
   { value: 'encontros', label: 'Encontros' },
+  { value: 'outros', label: 'Outros' },
 ];
 
 // Optional normalization for legacy category values used elsewhere

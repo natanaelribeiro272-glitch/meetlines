@@ -68,7 +68,12 @@ export function useOrganizersList() {
 
       // Se o usuário tem interesses, filtrar organizadores por categoria
       if (userInterests.length > 0) {
-        query = query.in('category', userInterests);
+        // Se o usuário tem interesse em "outros", também incluir NULL
+        if (userInterests.includes('outros')) {
+          query = query.or(`category.in.(${userInterests.join(',')}),category.is.null`);
+        } else {
+          query = query.in('category', userInterests);
+        }
       }
 
       const { data: organizersData, error } = await query.order('created_at', { ascending: false });
@@ -103,7 +108,7 @@ export function useOrganizersList() {
             ...organizer,
             profile,
             verified: Math.random() > 0.5, // Mock - pode ser implementado depois
-            category: organizer.category || "Outro",
+            category: organizer.category || "outros",
             stats: {
               followers_count,
               events_count
