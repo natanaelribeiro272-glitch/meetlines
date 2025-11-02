@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -355,9 +354,6 @@ export default function UserProfile({
       </Card>
     </div>;
   const renderSettingsTab = () => <div className="space-y-6">
-      {/* Push Notifications Settings */}
-      <PushNotificationSettings />
-
       {/* Account Settings */}
       <Card>
         <CardHeader>

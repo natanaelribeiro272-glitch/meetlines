@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { LocationPermissionRequest } from "@/components/LocationPermissionRequest";
-import { PushNotificationInitializer } from "@/components/PushNotificationInitializer";
 import MainLayout from "./pages/MainLayout";
 import PublicOrganizerProfile from "./pages/PublicOrganizerProfile";
 import EventPublicPage from "./pages/EventPublicPage";
@@ -45,7 +44,6 @@ const AppContent = () => {
   return (
     <BrowserRouter>
       <LocationPermissionRequest />
-      <PushNotificationInitializer />
       <Routes>
         <Route path="/" element={<MainLayout />} />
         <Route path="/auth" element={<AuthPage onLogin={() => {}} />} />

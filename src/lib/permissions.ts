@@ -1,28 +1,5 @@
-import { PushNotifications } from '@capacitor/push-notifications';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera } from '@capacitor/camera';
-
-export const requestNotificationPermission = async (): Promise<boolean> => {
-  try {
-    let permStatus = await PushNotifications.checkPermissions();
-
-    if (permStatus.receive === 'prompt') {
-      permStatus = await PushNotifications.requestPermissions();
-    }
-
-    if (permStatus.receive !== 'granted') {
-      console.error('Permissão de notificação não foi concedida pelo usuário.');
-      return false;
-    }
-
-    console.log('Permissão de notificação concedida. Registrando o dispositivo...');
-    await PushNotifications.register();
-    return true;
-  } catch (error) {
-    console.error('Erro ao solicitar permissão de notificação:', error);
-    return false;
-  }
-};
 
 export const requestLocationPermission = async (): Promise<boolean> => {
   try {
@@ -84,16 +61,6 @@ export const requestCameraPermission = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Erro ao gerenciar permissão de câmera:', error);
-    return false;
-  }
-};
-
-export const checkNotificationPermission = async (): Promise<boolean> => {
-  try {
-    const permStatus = await PushNotifications.checkPermissions();
-    return permStatus.receive === 'granted';
-  } catch (error) {
-    console.error('Erro ao verificar permissão de notificação:', error);
     return false;
   }
 };
