@@ -70,7 +70,8 @@ export function MercadoPagoPayment({
 
       if (data?.error) {
         console.error("[MercadoPago Payment] Error in response data:", data.error);
-        toast.error(data.error, {
+        const errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+        toast.error(errorMsg, {
           duration: 5000,
         });
         return;

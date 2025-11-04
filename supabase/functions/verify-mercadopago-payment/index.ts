@@ -84,7 +84,13 @@ Deno.serve(async (req: Request) => {
       .eq("id", saleId)
       .single();
 
-    if (saleError || !sale) {
+    if (saleError) {
+      console.error("[Verify MercadoPago Payment] Error fetching sale:", saleError);
+      throw new Error(`Erro ao buscar venda: ${saleError.message}`);
+    }
+
+    if (!sale) {
+      console.error("[Verify MercadoPago Payment] Sale not found for ID:", saleId);
       throw new Error("Venda não encontrada");
     }
 
