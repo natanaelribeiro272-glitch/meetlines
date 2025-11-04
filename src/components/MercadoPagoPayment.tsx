@@ -1,22 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "react-qr-code";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MercadoPagoPaymentProps {
   qrCode: string;
   qrCodeBase64?: string;
   expirationDate?: string;
+  paymentId: string;
+  ticketSaleId?: string;
+  onPaymentVerified?: () => void;
 }
 
 export function MercadoPagoPayment({
   qrCode,
   qrCodeBase64,
   expirationDate,
+  paymentId,
+  ticketSaleId,
+  onPaymentVerified,
 }: MercadoPagoPaymentProps) {
   const [copiedPix, setCopiedPix] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const copyPixCode = async () => {
     if (!qrCode) return;
@@ -28,6 +36,45 @@ export function MercadoPagoPayment({
       setTimeout(() => setCopiedPix(false), 3000);
     } catch (error) {
       toast.error("Erro ao copiar código PIX");
+    }
+  };
+
+  const verifyPayment = async () => {
+    if (!paymentId) {
+      toast.error("ID de pagamento não encontrado");
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "verify-mercadopago-payment",
+        {
+          body: { paymentId, ticketSaleId },
+        }
+      );
+
+      if (error) {
+        console.error("Error verifying payment:", error);
+        toast.error("Erro ao verificar pagamento");
+        return;
+      }
+
+      if (data?.payment_status === "approved" || data?.payment_status === "completed") {
+        toast.success("Pagamento confirmado! Seus ingressos foram gerados.");
+        if (onPaymentVerified) {
+          onPaymentVerified();
+        }
+      } else if (data?.payment_status === "pending") {
+        toast.info("Pagamento ainda pendente. Aguarde alguns instantes e tente novamente.");
+      } else {
+        toast.warning("Pagamento não identificado ainda. Tente novamente em alguns segundos.");
+      }
+    } catch (error) {
+      console.error("Error verifying payment:", error);
+      toast.error("Erro ao verificar pagamento");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -80,8 +127,18 @@ export function MercadoPagoPayment({
             </p>
           )}
 
-          <p className="text-xs text-center text-muted-foreground">
-            Após o pagamento, você receberá seus ingressos por e-mail
+          <Button
+            onClick={verifyPayment}
+            disabled={verifying}
+            className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
+            size="lg"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${verifying ? 'animate-spin' : ''}`} />
+            {verifying ? "Verificando..." : "Já Fiz o Pagamento - Verificar"}
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground mt-2">
+            Após confirmar o pagamento, clique no botão acima para verificar
           </p>
         </div>
       </div>

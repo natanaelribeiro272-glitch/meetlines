@@ -56,6 +56,7 @@ export function TicketPurchaseDialog({
     qrCodeBase64?: string;
     paymentId: string;
     expirationDate?: string;
+    ticketSaleId?: string;
   } | null>(null);
 
   const updateQuantity = (ticketId: string, change: number) => {
@@ -300,6 +301,7 @@ export function TicketPurchaseDialog({
           qrCodeBase64: data.qrCodeBase64,
           paymentId: data.paymentId,
           expirationDate: data.expirationDate,
+          ticketSaleId: data.ticketSaleId,
         });
         toast.success("QR Code PIX gerado!");
       } else if (data?.url) {
@@ -353,6 +355,15 @@ export function TicketPurchaseDialog({
               qrCode={pixData.qrCode}
               qrCodeBase64={pixData.qrCodeBase64}
               expirationDate={pixData.expirationDate}
+              paymentId={pixData.paymentId}
+              ticketSaleId={pixData.ticketSaleId}
+              onPaymentVerified={() => {
+                toast.success("Pagamento confirmado! Redirecionando...");
+                setTimeout(() => {
+                  handleDialogClose(false);
+                  window.location.reload();
+                }, 1500);
+              }}
             />
             <Button
               onClick={() => handleDialogClose(false)}

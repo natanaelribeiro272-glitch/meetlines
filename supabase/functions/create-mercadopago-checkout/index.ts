@@ -241,6 +241,7 @@ Deno.serve(async (req: Request) => {
         ticketUrl: ticketUrl,
         expirationDate: paymentResponse.date_of_expiration,
         transactionAmount: roundedTotalAmount,
+        ticketSaleId: ticketSale.data.id,
       }),
       {
         headers: {
