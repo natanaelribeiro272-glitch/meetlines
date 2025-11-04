@@ -250,10 +250,11 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         error: errorMessage,
+        payment_status: "error",
         details: error instanceof Error ? error.stack : undefined,
       }),
       {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

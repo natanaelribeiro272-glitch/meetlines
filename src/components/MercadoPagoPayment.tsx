@@ -47,6 +47,8 @@ export function MercadoPagoPayment({
 
     setVerifying(true);
     try {
+      console.log("[MercadoPago Payment] Verifying payment:", { paymentId, ticketSaleId });
+
       const { data, error } = await supabase.functions.invoke(
         "verify-mercadopago-payment",
         {
@@ -54,9 +56,23 @@ export function MercadoPagoPayment({
         }
       );
 
+      console.log("[MercadoPago Payment] Response:", { data, error });
+
       if (error) {
-        console.error("Error verifying payment:", error);
-        toast.error("Erro ao verificar pagamento");
+        console.error("[MercadoPago Payment] Error from function:", error);
+        const errorMessage = error.message || "Erro desconhecido ao verificar pagamento";
+        toast.error(errorMessage, {
+          description: "Tente novamente em alguns segundos",
+          duration: 5000,
+        });
+        return;
+      }
+
+      if (data?.error) {
+        console.error("[MercadoPago Payment] Error in response data:", data.error);
+        toast.error(data.error, {
+          duration: 5000,
+        });
         return;
       }
 
@@ -71,8 +87,12 @@ export function MercadoPagoPayment({
         toast.warning("Pagamento não identificado ainda. Tente novamente em alguns segundos.");
       }
     } catch (error) {
-      console.error("Error verifying payment:", error);
-      toast.error("Erro ao verificar pagamento");
+      console.error("[MercadoPago Payment] Exception:", error);
+      const errorMsg = error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error("Erro ao verificar pagamento", {
+        description: errorMsg,
+        duration: 5000,
+      });
     } finally {
       setVerifying(false);
     }
