@@ -345,8 +345,9 @@ export function TicketPurchaseDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <>
+      <Dialog open={open} onOpenChange={handleDialogClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">
             {pixData ? "Pagar com PIX" : "Comprar Ingressos"}
@@ -363,11 +364,18 @@ export function TicketPurchaseDialog({
               paymentId={pixData.paymentId}
               ticketSaleId={pixData.ticketSaleId}
               onPaymentVerified={() => {
+                console.log("[TicketPurchase] Payment verified callback triggered");
                 const totalQuantity = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
+                console.log("[TicketPurchase] Total quantity:", totalQuantity);
+                console.log("[TicketPurchase] Current selectedTickets:", selectedTickets);
                 setPurchasedQuantity(totalQuantity);
+                console.log("[TicketPurchase] Closing PIX dialog and opening success dialog");
                 setPixData(null);
                 onOpenChange(false);
-                setShowSuccessDialog(true);
+                setTimeout(() => {
+                  console.log("[TicketPurchase] Opening success dialog after timeout");
+                  setShowSuccessDialog(true);
+                }, 300);
               }}
             />
             <Button
@@ -590,7 +598,8 @@ export function TicketPurchaseDialog({
           )}
           </div>
         )}
-      </DialogContent>
+        </DialogContent>
+      </Dialog>
 
       <PaymentSuccessDialog
         open={showSuccessDialog}
@@ -598,6 +607,6 @@ export function TicketPurchaseDialog({
         eventTitle={eventTitle}
         ticketQuantity={purchasedQuantity}
       />
-    </Dialog>
+    </>
   );
 }

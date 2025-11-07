@@ -98,14 +98,22 @@ export function MercadoPagoPayment({
         return;
       }
 
+      console.log("[MercadoPago Payment] Payment status check:", data?.payment_status);
+
       if (data?.payment_status === "approved" || data?.payment_status === "completed") {
+        console.log("[MercadoPago Payment] Payment approved! Calling onPaymentVerified callback");
         toast.success("Pagamento confirmado! Seus ingressos foram gerados.");
         if (onPaymentVerified) {
+          console.log("[MercadoPago Payment] Executing onPaymentVerified callback");
           onPaymentVerified();
+        } else {
+          console.warn("[MercadoPago Payment] No onPaymentVerified callback provided");
         }
       } else if (data?.payment_status === "pending") {
+        console.log("[MercadoPago Payment] Payment still pending");
         toast.info("Pagamento ainda pendente. Aguarde alguns instantes e tente novamente.");
       } else {
+        console.log("[MercadoPago Payment] Unknown payment status:", data?.payment_status);
         toast.warning("Pagamento não identificado ainda. Tente novamente em alguns segundos.");
       }
     } catch (error) {

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,12 @@ export function PaymentSuccessDialog({
 }: PaymentSuccessDialogProps) {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    console.log("[PaymentSuccessDialog] State changed:", { open, eventTitle, ticketQuantity });
+  }, [open, eventTitle, ticketQuantity]);
+
   const handleGoToTickets = () => {
+    console.log("[PaymentSuccessDialog] Navigating to /user-events");
     onOpenChange(false);
     setTimeout(() => {
       navigate("/user-events");
