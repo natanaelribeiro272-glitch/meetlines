@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
 
         const { data: sale, error: fetchError } = await supabaseService
           .from("ticket_sales")
-          .select("id, payment_status, quantity, ticket_type_id, promo_code_id, promo_discount, user_id")
+          .select("id, payment_status, quantity, ticket_type_id, promo_code_id, promo_discount, user_id, event_id")
           .eq("id", ticketSaleId)
           .single();
 
@@ -157,6 +157,31 @@ Deno.serve(async (req: Request) => {
                   });
                 }
               }
+            }
+
+            logStep("Generating individual tickets", { quantity: sale.quantity });
+            const tickets = [];
+            for (let i = 0; i < sale.quantity; i++) {
+              tickets.push({
+                ticket_sale_id: sale.id,
+                event_id: sale.event_id,
+                user_id: sale.user_id,
+                ticket_type_id: sale.ticket_type_id,
+                status: "valid",
+              });
+            }
+
+            const { error: ticketsError } = await supabaseService
+              .from("tickets")
+              .insert(tickets);
+
+            if (ticketsError) {
+              logStep("Error generating tickets", { error: ticketsError });
+            } else {
+              logStep("Tickets generated successfully", {
+                quantity: sale.quantity,
+                ticketSaleId: sale.id
+              });
             }
 
             const { data: fullSale, error: fullSaleError } = await supabaseService
@@ -292,6 +317,17 @@ Deno.serve(async (req: Request) => {
         const charge = event.data.object as Stripe.Charge;
         logStep("Processing charge.refunded", { chargeId: charge.id });
 
+        const { data: sale, error: saleError } = await supabaseService
+          .from("ticket_sales")
+          .select("id")
+          .eq("stripe_payment_intent_id", charge.payment_intent)
+          .single();
+
+        if (saleError || !sale) {
+          logStep("Sale not found for refund", { paymentIntentId: charge.payment_intent });
+          break;
+        }
+
         const { error: updateError } = await supabaseService
           .from("ticket_sales")
           .update({
@@ -304,6 +340,21 @@ Deno.serve(async (req: Request) => {
           logStep("Error updating refunded sale", { error: updateError });
         } else {
           logStep("Sale marked as refunded");
+
+          const { error: ticketsError } = await supabaseService
+            .from("tickets")
+            .update({
+              status: "refunded",
+              updated_at: new Date().toISOString()
+            })
+            .eq("ticket_sale_id", sale.id)
+            .eq("status", "valid");
+
+          if (ticketsError) {
+            logStep("Error invalidating tickets", { error: ticketsError });
+          } else {
+            logStep("Tickets invalidated due to refund", { ticketSaleId: sale.id });
+          }
         }
         break;
       }
