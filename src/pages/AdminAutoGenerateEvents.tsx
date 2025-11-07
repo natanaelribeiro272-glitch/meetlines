@@ -7,17 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Sparkles, Loader2, Upload, Image as ImageIcon, MapPin, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AdminAutoGenerateEvents() {
   const navigate = useNavigate();
   const { isAdmin, loading: adminLoading } = useAdmin();
-  const [apiEndpoint, setApiEndpoint] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [cityName, setCityName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -29,87 +25,6 @@ export default function AdminAutoGenerateEvents() {
     navigate('/');
     return null;
   }
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleExtractFromImage = async () => {
-    if (!selectedImage) {
-      toast.error('Por favor, selecione uma imagem');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Image = reader.result as string;
-
-        const { data, error } = await supabase.functions.invoke('extract-event-from-image', {
-          body: { image: base64Image }
-        });
-
-        if (error) throw error;
-
-        if (data?.success) {
-          const message = data.message || 'Evento extraído da imagem com sucesso!';
-          toast.success(message + ' Verifique e complete os campos necessários na revisão.');
-          navigate('/admin/pending-events');
-        } else {
-          throw new Error(data?.error || 'Erro ao extrair evento da imagem');
-        }
-      };
-      reader.readAsDataURL(selectedImage);
-    } catch (error) {
-      console.error('Error extracting from image:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar imagem';
-      toast.error(errorMessage);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleExtractEvents = async () => {
-    if (!apiEndpoint.trim()) {
-      toast.error('Por favor, insira um endpoint de API');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('extract-events', {
-        body: {
-          apiEndpoint: apiEndpoint.trim(),
-          apiKey: apiKey.trim() || undefined
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast.success(data.message || 'Eventos extraídos com sucesso!');
-        navigate('/admin/pending-events');
-      } else {
-        throw new Error(data?.error || 'Erro ao extrair eventos');
-      }
-    } catch (error) {
-      console.error('Error extracting events:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao processar dados');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleSearchByCity = async () => {
     if (!cityName.trim()) {
@@ -137,16 +52,27 @@ export default function AdminAutoGenerateEvents() {
       if (data?.success) {
         const count = data.eventsCreated || 0;
         toast.success(`${count} evento(s) encontrado(s) e criado(s) com sucesso!`);
-        navigate('/admin/pending-events');
+
+        setTimeout(() => {
+          navigate('/admin/pending-events');
+        }, 1500);
       } else {
         const errorMsg = data?.error || 'Erro ao buscar eventos';
 
         if (errorMsg.includes('OPENAI_API_KEY')) {
-          toast.error('Configuração necessária: OPENAI_API_KEY não está configurada no Supabase. Configure em: Dashboard → Project Settings → Edge Functions → Secrets');
+          toast.error('Configuração necessária: OPENAI_API_KEY não está configurada no Supabase', {
+            description: 'Configure em: Dashboard → Edge Functions → Secrets',
+            duration: 8000
+          });
         } else if (errorMsg.includes('Nenhum evento encontrado')) {
-          toast.error(`Nenhum evento encontrado para "${cityName}". Tente outra cidade ou termo de busca.`);
+          toast.error(`Nenhum evento encontrado para "${cityName}"`, {
+            description: 'Tente outra cidade ou termo de busca diferente.',
+            duration: 5000
+          });
         } else {
-          toast.error(errorMsg);
+          toast.error(errorMsg, {
+            duration: 5000
+          });
         }
         return;
       }
@@ -155,11 +81,14 @@ export default function AdminAutoGenerateEvents() {
       const errorMsg = error instanceof Error ? error.message : 'Erro ao processar busca';
 
       if (errorMsg.includes('OPENAI_API_KEY') || errorMsg.includes('não configurada')) {
-        toast.error('Configure OPENAI_API_KEY no Supabase Dashboard → Edge Functions → Secrets', {
-          duration: 6000
+        toast.error('Configure OPENAI_API_KEY no Supabase Dashboard', {
+          description: 'Acesse: Dashboard → Edge Functions → Secrets',
+          duration: 8000
         });
       } else {
-        toast.error(`Erro: ${errorMsg}`);
+        toast.error(`Erro: ${errorMsg}`, {
+          duration: 5000
+        });
       }
     } finally {
       setIsProcessing(false);
@@ -167,69 +96,88 @@ export default function AdminAutoGenerateEvents() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-2xl">
+    <div className="container mx-auto p-6 space-y-6 max-w-3xl">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
           <h1 className="text-3xl font-bold">Gerar Eventos Automaticamente</h1>
-          <p className="text-muted-foreground">Use IA para extrair eventos de APIs externas</p>
+          <p className="text-muted-foreground">Busque eventos por cidade usando IA</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
+      <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+        <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <AlertTitle className="text-blue-900 dark:text-blue-100">Configuração Necessária</AlertTitle>
+        <AlertDescription className="text-blue-800 dark:text-blue-200">
+          Esta funcionalidade requer que a <strong>OPENAI_API_KEY</strong> esteja configurada no Supabase.
+          <br />
+          <span className="text-sm">
+            Configure em: <strong>Supabase Dashboard → Edge Functions → Secrets</strong>
+          </span>
+          <br />
+          <span className="text-xs text-blue-600 dark:text-blue-400 mt-1 block">
+            Opcional: Configure <strong>SERPAPI_API_KEY</strong> para resultados mais precisos (https://serpapi.com)
+          </span>
+        </AlertDescription>
+      </Alert>
+
+      <Card className="border-2">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardTitle className="flex items-center gap-2 text-2xl">
+            <MapPin className="h-6 w-6" />
             Buscar Eventos por Cidade
           </CardTitle>
-          <CardDescription>
-            Informe o nome da cidade e nossa IA irá buscar eventos automaticamente no Google, processar os resultados
-            e criar eventos com base nas informações encontradas. Os eventos serão salvos como "pendentes" para revisão.
+          <CardDescription className="text-base">
+            Nossa IA irá buscar eventos no Google para a cidade especificada, analisar os resultados
+            e criar eventos automaticamente como "pendentes" para sua revisão e aprovação.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Configuração Necessária</AlertTitle>
-            <AlertDescription>
-              Esta funcionalidade requer que a <strong>OPENAI_API_KEY</strong> esteja configurada no Supabase.
-              <br />
-              Configure em: <strong>Supabase Dashboard → Edge Functions → Secrets</strong>
-              <br />
-              <span className="text-xs text-muted-foreground mt-1 block">
-                Opcionalmente, configure também <strong>SERPAPI_API_KEY</strong> para melhores resultados (https://serpapi.com)
-              </span>
-            </AlertDescription>
-          </Alert>
+        <CardContent className="space-y-6 pt-6">
           <div className="space-y-2">
-            <Label htmlFor="cityName">Nome da Cidade *</Label>
+            <Label htmlFor="cityName" className="text-base font-semibold">
+              Nome da Cidade *
+            </Label>
             <Input
               id="cityName"
               type="text"
-              placeholder="Ex: São Paulo, Rio de Janeiro, Belo Horizonte"
+              placeholder="Ex: São Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre"
               value={cityName}
               onChange={(e) => setCityName(e.target.value)}
               disabled={isProcessing}
+              className="text-base h-12"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && cityName.trim()) {
+                  handleSearchByCity();
+                }
+              }}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Digite o nome da cidade onde deseja buscar eventos
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="searchQuery">Termo de Busca (opcional)</Label>
+            <Label htmlFor="searchQuery" className="text-base font-semibold">
+              Termo de Busca (opcional)
+            </Label>
             <Input
               id="searchQuery"
               type="text"
-              placeholder="Ex: shows, festas, teatro, exposições"
+              placeholder="Ex: shows, festas, teatro, exposições, baladas, música ao vivo"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isProcessing}
+              className="text-base h-12"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && cityName.trim()) {
+                  handleSearchByCity();
+                }
+              }}
             />
-            <p className="text-xs text-muted-foreground">
-              Deixe em branco para buscar todos os tipos de eventos
+            <p className="text-sm text-muted-foreground">
+              Deixe em branco para buscar todos os tipos de eventos, ou especifique um tipo
             </p>
           </div>
 
@@ -237,178 +185,124 @@ export default function AdminAutoGenerateEvents() {
             <Button
               onClick={handleSearchByCity}
               disabled={isProcessing || !cityName.trim()}
-              className="w-full"
+              className="w-full h-14 text-lg"
               size="lg"
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Buscando e criando eventos...
                 </>
               ) : (
                 <>
-                  <Sparkles className="mr-2 h-4 w-4" />
+                  <Sparkles className="mr-2 h-5 w-5" />
                   Buscar e Criar Eventos
                 </>
               )}
             </Button>
           </div>
 
-          <div className="pt-4 border-t space-y-2">
-            <h3 className="font-semibold text-sm">Como funciona:</h3>
-            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-              <li>A IA busca eventos no Google para a cidade especificada</li>
-              <li>Analisa os resultados e extrai informações dos eventos</li>
-              <li>Cria eventos automaticamente como "pendentes"</li>
-              <li>Você revisa, edita e aprova os eventos antes de publicá-los</li>
+          <div className="pt-6 border-t space-y-4">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Como funciona:
+            </h3>
+            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside pl-2">
+              <li className="pl-2">
+                <strong>Busca Inteligente:</strong> A IA realiza uma busca no Google pelos eventos na cidade especificada
+              </li>
+              <li className="pl-2">
+                <strong>Análise Automática:</strong> Os resultados são analisados e as informações dos eventos são extraídas (título, data, local, preço, categoria, etc)
+              </li>
+              <li className="pl-2">
+                <strong>Criação Automática:</strong> Os eventos são criados automaticamente no sistema com status "pendente"
+              </li>
+              <li className="pl-2">
+                <strong>Revisão:</strong> Você pode revisar, editar e aprovar cada evento antes de publicá-lo na plataforma
+              </li>
+              <li className="pl-2">
+                <strong>Publicação:</strong> Após aprovação, os eventos ficam visíveis para todos os usuários
+              </li>
             </ol>
           </div>
+
+          <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="text-amber-900 dark:text-amber-100">Dica</AlertTitle>
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              <ul className="list-disc list-inside space-y-1 text-sm mt-2">
+                <li>Seja específico no termo de busca para obter melhores resultados</li>
+                <li>A IA retorna até 5 eventos por busca</li>
+                <li>Eventos com datas passadas são automaticamente filtrados</li>
+                <li>Todos os eventos criados precisam ser revisados antes da publicação</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-muted/30">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5" />
-            Extrair de Imagem
-          </CardTitle>
-          <CardDescription>
-            Faça upload de uma imagem de evento (flyer, cartaz, banner promocional) e nossa IA irá extrair todas as informações 
-            disponíveis automaticamente. Não precisa ter todos os dados - você pode completar manualmente os campos que 
-            faltarem. O evento será salvo como "pendente" para revisão e edição antes da publicação.
-          </CardDescription>
+          <CardTitle className="text-lg">Exemplos de Buscas</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="image">Upload de Imagem *</Label>
-            <div className="flex flex-col gap-4">
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                disabled={isProcessing}
-                className="cursor-pointer"
-              />
-              {imagePreview && (
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-full h-full object-contain bg-muted"
-                  />
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Formatos aceitos: JPG, PNG, WEBP
-            </p>
-          </div>
-
-          <div className="pt-4">
-            <Button 
-              onClick={handleExtractFromImage} 
-              disabled={isProcessing || !selectedImage}
-              className="w-full"
-              size="lg"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analisando imagem...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Extrair Evento da Imagem
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="pt-4 border-t space-y-2">
-            <h3 className="font-semibold text-sm">Como funciona:</h3>
-            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-              <li>A IA analisa a imagem e identifica informações do evento</li>
-              <li>Extrai título, data, local, preço e outras informações disponíveis</li>
-              <li>Cria o evento como "pendente" mesmo com dados incompletos</li>
-              <li>Você completa os campos faltantes e aprova antes de publicar</li>
-            </ol>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Extração de API Externa
-          </CardTitle>
-          <CardDescription>
-            Forneça um endpoint de API que retorne dados de eventos. Nossa IA irá analisar os dados e extrair 
-            automaticamente as informações dos eventos. Os eventos serão salvos como "pendentes" para sua aprovação.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="endpoint">Endpoint da API *</Label>
-            <Input
-              id="endpoint"
-              type="url"
-              placeholder="https://api.exemplo.com/eventos"
-              value={apiEndpoint}
-              onChange={(e) => setApiEndpoint(e.target.value)}
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4 text-left"
+              onClick={() => {
+                setCityName('São Paulo');
+                setSearchQuery('shows de rock');
+              }}
               disabled={isProcessing}
-            />
-            <p className="text-xs text-muted-foreground">
-              URL completa do endpoint que retorna dados de eventos (JSON ou HTML)
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">Chave API (opcional)</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder="Bearer token ou API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              disabled={isProcessing}
-            />
-            <p className="text-xs text-muted-foreground">
-              Se a API requer autenticação, insira a chave aqui
-            </p>
-          </div>
-
-          <div className="pt-4">
-            <Button 
-              onClick={handleExtractEvents} 
-              disabled={isProcessing || !apiEndpoint.trim()}
-              className="w-full"
-              size="lg"
             >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Extrair Eventos com IA
-                </>
-              )}
+              <div className="flex flex-col items-start gap-1">
+                <span className="font-semibold">Shows de Rock</span>
+                <span className="text-xs text-muted-foreground">em São Paulo</span>
+              </div>
             </Button>
-          </div>
-
-          <div className="pt-4 border-t space-y-2">
-            <h3 className="font-semibold text-sm">Como funciona:</h3>
-            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-              <li>A IA busca dados do endpoint fornecido</li>
-              <li>Analisa e extrai informações de eventos automaticamente</li>
-              <li>Cria eventos como "pendentes" para revisão</li>
-              <li>Você revisa e aprova os eventos antes de publicá-los</li>
-            </ol>
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4 text-left"
+              onClick={() => {
+                setCityName('Rio de Janeiro');
+                setSearchQuery('festas');
+              }}
+              disabled={isProcessing}
+            >
+              <div className="flex flex-col items-start gap-1">
+                <span className="font-semibold">Festas</span>
+                <span className="text-xs text-muted-foreground">no Rio de Janeiro</span>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4 text-left"
+              onClick={() => {
+                setCityName('Belo Horizonte');
+                setSearchQuery('teatro');
+              }}
+              disabled={isProcessing}
+            >
+              <div className="flex flex-col items-start gap-1">
+                <span className="font-semibold">Teatro</span>
+                <span className="text-xs text-muted-foreground">em Belo Horizonte</span>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4 text-left"
+              onClick={() => {
+                setCityName('Porto Alegre');
+                setSearchQuery('');
+              }}
+              disabled={isProcessing}
+            >
+              <div className="flex flex-col items-start gap-1">
+                <span className="font-semibold">Todos os Eventos</span>
+                <span className="text-xs text-muted-foreground">em Porto Alegre</span>
+              </div>
+            </Button>
           </div>
         </CardContent>
       </Card>
