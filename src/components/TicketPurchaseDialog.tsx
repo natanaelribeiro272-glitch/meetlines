@@ -9,6 +9,7 @@ import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MercadoPagoPayment } from "./MercadoPagoPayment";
+import { PaymentSuccessDialog } from "./PaymentSuccessDialog";
 
 interface TicketType {
   id: string;
@@ -58,6 +59,8 @@ export function TicketPurchaseDialog({
     expirationDate?: string;
     ticketSaleId?: string;
   } | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [purchasedQuantity, setPurchasedQuantity] = useState(0);
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -360,11 +363,11 @@ export function TicketPurchaseDialog({
               paymentId={pixData.paymentId}
               ticketSaleId={pixData.ticketSaleId}
               onPaymentVerified={() => {
-                toast.success("Pagamento confirmado! Redirecionando...");
-                setTimeout(() => {
-                  handleDialogClose(false);
-                  window.location.reload();
-                }, 1500);
+                const totalQuantity = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
+                setPurchasedQuantity(totalQuantity);
+                setPixData(null);
+                onOpenChange(false);
+                setShowSuccessDialog(true);
               }}
             />
             <Button
@@ -588,6 +591,13 @@ export function TicketPurchaseDialog({
           </div>
         )}
       </DialogContent>
+
+      <PaymentSuccessDialog
+        open={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        eventTitle={eventTitle}
+        ticketQuantity={purchasedQuantity}
+      />
     </Dialog>
   );
 }
