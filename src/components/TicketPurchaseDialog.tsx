@@ -344,6 +344,14 @@ export function TicketPurchaseDialog({
     onOpenChange(open);
   };
 
+  const handleSuccessDialogClose = (open: boolean) => {
+    console.log("[TicketPurchase] Success dialog close requested:", open);
+    setShowSuccessDialog(open);
+    if (!open) {
+      setPurchasedQuantity(0);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -369,13 +377,13 @@ export function TicketPurchaseDialog({
                 console.log("[TicketPurchase] Total quantity:", totalQuantity);
                 console.log("[TicketPurchase] Current selectedTickets:", selectedTickets);
                 setPurchasedQuantity(totalQuantity);
-                console.log("[TicketPurchase] Opening success dialog FIRST");
-                setShowSuccessDialog(true);
-                console.log("[TicketPurchase] Now closing PIX dialog");
+                setPixData(null);
+                console.log("[TicketPurchase] Closing purchase dialog");
+                onOpenChange(false);
+                console.log("[TicketPurchase] Opening success dialog after delay");
                 setTimeout(() => {
-                  setPixData(null);
-                  onOpenChange(false);
-                }, 100);
+                  setShowSuccessDialog(true);
+                }, 500);
               }}
             />
             <Button
@@ -603,7 +611,7 @@ export function TicketPurchaseDialog({
 
       <PaymentSuccessDialog
         open={showSuccessDialog}
-        onOpenChange={setShowSuccessDialog}
+        onOpenChange={handleSuccessDialogClose}
         eventTitle={eventTitle}
         ticketQuantity={purchasedQuantity}
       />
