@@ -20,9 +20,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log("=== Iniciando busca de eventos por cidade ===");
+
     const { city, searchQuery }: SearchRequest = await req.json();
+    console.log("Cidade:", city);
+    console.log("Query:", searchQuery);
 
     if (!city) {
+      console.error("Erro: cidade não fornecida");
       return new Response(
         JSON.stringify({
           success: false,
@@ -38,14 +43,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log("Verificando variáveis de ambiente...");
     const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
     const serpApiKey = Deno.env.get("SERPAPI_API_KEY");
 
+    console.log("OPENAI_API_KEY presente:", !!openaiApiKey);
+    console.log("SERPAPI_API_KEY presente:", !!serpApiKey);
+
     if (!openaiApiKey) {
+      console.error("ERRO: OPENAI_API_KEY não está configurada!");
+      console.error("Configure em: Supabase Dashboard → Edge Functions → Secrets");
       return new Response(
         JSON.stringify({
           success: false,
-          error: "OPENAI_API_KEY não configurada",
+          error: "OPENAI_API_KEY não configurada. Configure em: Supabase Dashboard → Edge Functions → Secrets",
         }),
         {
           status: 500,
@@ -237,11 +248,21 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Erro ao buscar eventos:", error);
+    console.error("=== ERRO AO BUSCAR EVENTOS ===");
+    console.error("Tipo do erro:", error?.constructor?.name);
+    console.error("Mensagem:", error instanceof Error ? error.message : String(error));
+    console.error("Stack:", error instanceof Error ? error.stack : "N/A");
+
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : "Erro desconhecido",
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? {
+          type: error?.constructor?.name,
+          stack: error instanceof Error ? error.stack : undefined
+        } : undefined
       }),
       {
         status: 500,
