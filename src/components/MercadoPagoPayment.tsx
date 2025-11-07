@@ -57,21 +57,33 @@ export function MercadoPagoPayment({
       );
 
       console.log("[MercadoPago Payment] Response:", { data, error });
+      console.log("[MercadoPago Payment] Data type:", typeof data);
+      console.log("[MercadoPago Payment] Data keys:", data ? Object.keys(data) : 'null');
+
+      if (data?.error) {
+        console.error("[MercadoPago Payment] Error in response data:", data.error);
+        console.error("[MercadoPago Payment] Error type:", typeof data.error);
+        console.error("[MercadoPago Payment] Error stringified:", JSON.stringify(data.error, null, 2));
+
+        let errorMsg = "Erro ao verificar pagamento";
+        if (typeof data.error === 'string') {
+          errorMsg = data.error;
+        } else if (data.error && typeof data.error === 'object') {
+          errorMsg = data.error.message || data.error.error || JSON.stringify(data.error);
+        }
+
+        toast.error(errorMsg, {
+          description: data.details || "Tente novamente em alguns segundos",
+          duration: 5000,
+        });
+        return;
+      }
 
       if (error) {
         console.error("[MercadoPago Payment] Error from function:", error);
         const errorMessage = error.message || "Erro desconhecido ao verificar pagamento";
         toast.error(errorMessage, {
           description: "Tente novamente em alguns segundos",
-          duration: 5000,
-        });
-        return;
-      }
-
-      if (data?.error) {
-        console.error("[MercadoPago Payment] Error in response data:", data.error);
-        const errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
-        toast.error(errorMsg, {
           duration: 5000,
         });
         return;
