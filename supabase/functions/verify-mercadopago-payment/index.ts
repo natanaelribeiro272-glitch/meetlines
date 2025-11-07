@@ -71,10 +71,20 @@ Deno.serve(async (req: Request) => {
     }
 
     const payment = await paymentResponse.json();
-    console.log("[Verify MercadoPago Payment] Payment status:", payment.status);
+    console.log("[Verify MercadoPago Payment] Payment data:", JSON.stringify({
+      id: payment.id,
+      status: payment.status,
+      external_reference: payment.external_reference,
+      metadata: payment.metadata,
+    }, null, 2));
 
     const saleId = ticketSaleId || payment.external_reference;
+    console.log("[Verify MercadoPago Payment] Determined sale ID:", saleId);
+    console.log("[Verify MercadoPago Payment] ticketSaleId param:", ticketSaleId);
+    console.log("[Verify MercadoPago Payment] payment.external_reference:", payment.external_reference);
+
     if (!saleId) {
+      console.error("[Verify MercadoPago Payment] No sale ID found");
       throw new Error("Não foi possível identificar a venda");
     }
 

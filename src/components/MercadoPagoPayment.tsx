@@ -59,18 +59,27 @@ export function MercadoPagoPayment({
       console.log("[MercadoPago Payment] Response:", { data, error });
       console.log("[MercadoPago Payment] Data type:", typeof data);
       console.log("[MercadoPago Payment] Data keys:", data ? Object.keys(data) : 'null');
+      console.log("[MercadoPago Payment] Full data object:", data);
 
       if (data?.error) {
         console.error("[MercadoPago Payment] Error in response data:", data.error);
         console.error("[MercadoPago Payment] Error type:", typeof data.error);
-        console.error("[MercadoPago Payment] Error stringified:", JSON.stringify(data.error, null, 2));
+
+        if (typeof data.error === 'object' && data.error !== null) {
+          console.error("[MercadoPago Payment] Error keys:", Object.keys(data.error));
+          for (const key in data.error) {
+            console.error(`[MercadoPago Payment] Error.${key}:`, data.error[key]);
+          }
+        }
 
         let errorMsg = "Erro ao verificar pagamento";
         if (typeof data.error === 'string') {
           errorMsg = data.error;
         } else if (data.error && typeof data.error === 'object') {
-          errorMsg = data.error.message || data.error.error || JSON.stringify(data.error);
+          errorMsg = data.error.message || data.error.msg || data.error.error || String(data.error);
         }
+
+        console.error("[MercadoPago Payment] Final error message:", errorMsg);
 
         toast.error(errorMsg, {
           description: data.details || "Tente novamente em alguns segundos",
