@@ -134,7 +134,6 @@ Deno.serve(async (req: Request) => {
       .from("ticket_sales")
       .update({
         payment_status: paymentStatus,
-        payment_intent_id: payment.id.toString(),
         paid_at: paymentStatus === "completed" ? new Date().toISOString() : null,
         mercadopago_payment_id: payment.id.toString(),
       })
@@ -142,8 +141,11 @@ Deno.serve(async (req: Request) => {
 
     if (updateError) {
       console.error("[Verify MercadoPago Payment] Error updating sale:", updateError);
+      console.error("[Verify MercadoPago Payment] Update error details:", JSON.stringify(updateError, null, 2));
       throw updateError;
     }
+
+    console.log("[Verify MercadoPago Payment] Ticket sale updated successfully");
 
     if (paymentStatus === "completed") {
       console.log("[Verify MercadoPago Payment] Payment completed, processing tickets");

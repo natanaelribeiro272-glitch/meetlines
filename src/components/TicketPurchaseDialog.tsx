@@ -296,6 +296,8 @@ export function TicketPurchaseDialog({
 
       if (paymentMethod === "pix" && data?.qrCode) {
         console.log('[TicketPurchase] PIX QR Code received');
+        console.log('[TicketPurchase] Payment ID:', data.paymentId);
+        console.log('[TicketPurchase] Ticket Sale ID:', data.ticketSaleId);
         setPixData({
           qrCode: data.qrCode,
           qrCodeBase64: data.qrCodeBase64,
