@@ -9,7 +9,6 @@ import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MercadoPagoPayment } from "./MercadoPagoPayment";
-import { PaymentSuccessDialog } from "./PaymentSuccessDialog";
 
 interface TicketType {
   id: string;
@@ -59,8 +58,6 @@ export function TicketPurchaseDialog({
     expirationDate?: string;
     ticketSaleId?: string;
   } | null>(null);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [purchasedQuantity, setPurchasedQuantity] = useState(0);
 
   const updateQuantity = (ticketId: string, change: number) => {
     const ticket = ticketTypes.find(t => t.id === ticketId);
@@ -344,14 +341,6 @@ export function TicketPurchaseDialog({
     onOpenChange(open);
   };
 
-  const handleSuccessDialogClose = (open: boolean) => {
-    console.log("[TicketPurchase] Success dialog close requested:", open);
-    setShowSuccessDialog(open);
-    if (!open) {
-      setPurchasedQuantity(0);
-    }
-  };
-
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -371,20 +360,6 @@ export function TicketPurchaseDialog({
               expirationDate={pixData.expirationDate}
               paymentId={pixData.paymentId}
               ticketSaleId={pixData.ticketSaleId}
-              onPaymentVerified={() => {
-                console.log("[TicketPurchase] Payment verified callback triggered");
-                const totalQuantity = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
-                console.log("[TicketPurchase] Total quantity:", totalQuantity);
-                console.log("[TicketPurchase] Current selectedTickets:", selectedTickets);
-                setPurchasedQuantity(totalQuantity);
-                setPixData(null);
-                console.log("[TicketPurchase] Closing purchase dialog");
-                onOpenChange(false);
-                console.log("[TicketPurchase] Opening success dialog after delay");
-                setTimeout(() => {
-                  setShowSuccessDialog(true);
-                }, 500);
-              }}
             />
             <Button
               onClick={() => handleDialogClose(false)}
@@ -608,13 +583,6 @@ export function TicketPurchaseDialog({
         )}
         </DialogContent>
       </Dialog>
-
-      <PaymentSuccessDialog
-        open={showSuccessDialog}
-        onOpenChange={handleSuccessDialogClose}
-        eventTitle={eventTitle}
-        ticketQuantity={purchasedQuantity}
-      />
     </>
   );
 }

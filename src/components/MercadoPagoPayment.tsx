@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import QRCode from "react-qr-code";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface MercadoPagoPaymentProps {
   qrCode: string;
@@ -23,6 +24,7 @@ export function MercadoPagoPayment({
   ticketSaleId,
   onPaymentVerified,
 }: MercadoPagoPaymentProps) {
+  const navigate = useNavigate();
   const [copiedPix, setCopiedPix] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
@@ -101,14 +103,12 @@ export function MercadoPagoPayment({
       console.log("[MercadoPago Payment] Payment status check:", data?.payment_status);
 
       if (data?.payment_status === "approved" || data?.payment_status === "completed") {
-        console.log("[MercadoPago Payment] Payment approved! Calling onPaymentVerified callback");
-        toast.success("Pagamento confirmado! Seus ingressos foram gerados.");
-        if (onPaymentVerified) {
-          console.log("[MercadoPago Payment] Executing onPaymentVerified callback");
-          onPaymentVerified();
-        } else {
-          console.warn("[MercadoPago Payment] No onPaymentVerified callback provided");
-        }
+        console.log("[MercadoPago Payment] Payment approved! Redirecting to success page");
+        toast.success("Pagamento confirmado! Redirecionando...");
+
+        setTimeout(() => {
+          navigate(`/ticket-success?sale_id=${ticketSaleId}`);
+        }, 1000);
       } else if (data?.payment_status === "pending") {
         console.log("[MercadoPago Payment] Payment still pending");
         toast.info("Pagamento ainda pendente. Aguarde alguns instantes e tente novamente.");

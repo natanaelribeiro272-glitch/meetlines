@@ -32,11 +32,12 @@ export default function TicketPurchaseSuccess() {
   const [ticketData, setTicketData] = useState<TicketSaleDetails | null>(null);
 
   const sessionId = searchParams.get("session_id");
+  const saleId = searchParams.get("sale_id");
 
   useEffect(() => {
     const fetchTicketDetails = async () => {
-      if (!sessionId) {
-        toast.error("ID da sessão não encontrado");
+      if (!sessionId && !saleId) {
+        toast.error("ID da compra não encontrado");
         navigate("/");
         return;
       }
@@ -45,9 +46,9 @@ export default function TicketPurchaseSuccess() {
         // More robust retry logic to handle possible delays
         let retries = 5;
         let baseSale: any = null;
-        
+
         while (retries > 0 && !baseSale) {
-          const { data: saleData, error } = await supabase
+          let query = supabase
             .from("ticket_sales")
             .select(`
               id,
@@ -57,9 +58,15 @@ export default function TicketPurchaseSuccess() {
               payment_status,
               event_id,
               ticket_type_id
-            `)
-            .eq("stripe_checkout_session_id", sessionId)
-            .maybeSingle();
+            `);
+
+          if (saleId) {
+            query = query.eq("id", saleId);
+          } else if (sessionId) {
+            query = query.eq("stripe_checkout_session_id", sessionId);
+          }
+
+          const { data: saleData, error } = await query.maybeSingle();
 
           if (saleData) {
             baseSale = saleData;
@@ -113,9 +120,9 @@ export default function TicketPurchaseSuccess() {
         };
 
         setTicketData(fullData);
-        
-        // Verify and complete payment status via Edge Function (bypasses RLS)
-        if (baseSale.payment_status === "pending") {
+
+        // Verify and complete payment status via Edge Function (bypasses RLS) - only for Stripe
+        if (baseSale.payment_status === "pending" && sessionId) {
           try {
             const { data: verifyData, error: verifyError } = await supabase.functions.invoke("verify-ticket-payment", {
               body: { sessionId },
@@ -139,7 +146,7 @@ export default function TicketPurchaseSuccess() {
     };
 
     fetchTicketDetails();
-  }, [sessionId, navigate]);
+  }, [sessionId, saleId, navigate]);
 
   if (loading) {
     return (
