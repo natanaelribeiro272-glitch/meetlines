@@ -369,13 +369,13 @@ export function TicketPurchaseDialog({
                 console.log("[TicketPurchase] Total quantity:", totalQuantity);
                 console.log("[TicketPurchase] Current selectedTickets:", selectedTickets);
                 setPurchasedQuantity(totalQuantity);
-                console.log("[TicketPurchase] Closing PIX dialog and opening success dialog");
-                setPixData(null);
-                onOpenChange(false);
+                console.log("[TicketPurchase] Opening success dialog FIRST");
+                setShowSuccessDialog(true);
+                console.log("[TicketPurchase] Now closing PIX dialog");
                 setTimeout(() => {
-                  console.log("[TicketPurchase] Opening success dialog after timeout");
-                  setShowSuccessDialog(true);
-                }, 300);
+                  setPixData(null);
+                  onOpenChange(false);
+                }, 100);
               }}
             />
             <Button
