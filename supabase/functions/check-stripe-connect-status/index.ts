@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    const account = await stripe.accounts.retrieve(organizer.stripe_account_id);
+    const account = await stripe.accounts.retrieve(organizer.stripe_connect_account_id);
     logStep("Stripe account retrieved", {
       accountId: account.id,
       charges_enabled: account.charges_enabled,
