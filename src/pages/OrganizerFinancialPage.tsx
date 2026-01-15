@@ -6,6 +6,7 @@ import { useOrganizer } from "@/hooks/useOrganizer";
 import { usePlatformDetection } from "@/hooks/usePlatformDetection";
 import OrganizerFinancial from "@/components/OrganizerFinancial";
 import TicketSalesOverview from "@/components/TicketSalesOverview";
+import StripeConnectSetup from "@/components/StripeConnectSetup";
 import { Separator } from "@/components/ui/separator";
 import { useDesktopOnlyPage } from "@/components/DesktopOnlyDialog";
 
@@ -69,6 +70,10 @@ export default function OrganizerFinancialPage() {
                 </p>
               </div>
               <OrganizerFinancial organizerId={organizerData.id} />
+            </div>
+
+            <div className="bg-card rounded-xl border p-4 md:p-6">
+              <StripeConnectSetup organizerId={organizerData.id} />
             </div>
           </div>
 

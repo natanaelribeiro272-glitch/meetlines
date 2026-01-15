@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, Heart, Eye, Settings } from "lucide-react";
+import { ArrowLeft, Upload, MapPin, Calendar, Clock, Users, DollarSign, FileText, Heart, Eye, Settings, Zap, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import RegistrationFormDialog from "@/components/RegistrationFormDialog";
 import TicketConfiguration from "@/components/TicketConfiguration";
 import EventCreatedDialog from "@/components/EventCreatedDialog";
@@ -124,7 +125,13 @@ export default function CreateEvent({
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPlatformAlert, setShowPlatformAlert] = useState(false);
-  
+
+  // Stripe Connect states
+  const [hasStripeConnect, setHasStripeConnect] = useState(false);
+  const [stripeConnectEnabled, setStripeConnectEnabled] = useState(false);
+  const [paymentPreference, setPaymentPreference] = useState<'stripe_direct' | 'platform_transfer'>('platform_transfer');
+  const [checkingStripe, setCheckingStripe] = useState(true);
+
   // Payment data states
   const [pixKey, setPixKey] = useState("");
   const [bankName, setBankName] = useState("");
@@ -169,6 +176,42 @@ export default function CreateEvent({
     };
 
     loadFinancialData();
+  }, [organizerData?.id]);
+
+  // Check Stripe Connect status
+  useEffect(() => {
+    const checkStripeConnect = async () => {
+      if (!organizerData?.id) return;
+
+      try {
+        const { data: organizer, error } = await supabase
+          .from('organizers')
+          .select('stripe_connect_account_id, stripe_connect_onboarding_complete, stripe_connect_charges_enabled, payment_preference')
+          .eq('id', organizerData.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (organizer) {
+          const isEnabled = !!(
+            organizer.stripe_connect_account_id &&
+            organizer.stripe_connect_onboarding_complete &&
+            organizer.stripe_connect_charges_enabled
+          );
+          setHasStripeConnect(isEnabled);
+          setStripeConnectEnabled(isEnabled);
+          if (organizer.payment_preference) {
+            setPaymentPreference(organizer.payment_preference as 'stripe_direct' | 'platform_transfer');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Stripe Connect:', error);
+      } finally {
+        setCheckingStripe(false);
+      }
+    };
+
+    checkStripeConnect();
   }, [organizerData?.id]);
 
   // Load event data if editing
@@ -764,28 +807,19 @@ export default function CreateEvent({
               <CardHeader>
                 <CardTitle className="text-sm">Dados para Recebimento</CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {hasFinancialData
-                    ? "Você já possui dados de recebimento configurados"
-                    : "Informe seus dados para receber os valores das vendas"}
+                  Escolha como deseja receber o pagamento das vendas de ingressos
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <p className="text-xs text-blue-400 font-medium">
-                    💰 Os valores serão transferidos em até 3 dias úteis após a finalização do evento
-                  </p>
-                </div>
-
-                {hasFinancialData ? (
+                {/* Stripe Connect Status */}
+                {hasStripeConnect ? (
                   <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <DollarSign className="h-5 w-5 text-green-400" />
-                      </div>
+                      <CheckCircle2 className="h-5 w-5 text-green-400" />
                       <div>
-                        <p className="text-sm font-medium text-green-400">Dados Financeiros Configurados</p>
+                        <p className="text-sm font-medium text-green-400">Stripe Connect Configurado</p>
                         <p className="text-xs text-muted-foreground">
-                          O recebimento será feito nos dados cadastrados no seu perfil
+                          Você pode receber os pagamentos diretamente na sua conta Stripe
                         </p>
                       </div>
                     </div>
@@ -797,20 +831,20 @@ export default function CreateEvent({
                       className="w-full"
                     >
                       <Settings className="h-4 w-4 mr-2" />
-                      Ver/Editar Dados Financeiros
+                      Gerenciar Configurações Financeiras
                     </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Ou preencha os campos abaixo para usar dados diferentes neste evento
-                    </p>
                   </div>
                 ) : (
-                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-3">
-                    <p className="text-sm text-yellow-400 font-medium">
-                      ⚠️ Você ainda não configurou seus dados financeiros
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Configure uma vez no seu perfil e não precise preencher novamente
-                    </p>
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-blue-400" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-400">Configure o Stripe Connect</p>
+                        <p className="text-xs text-muted-foreground">
+                          Receba pagamentos automaticamente na sua conta bancária
+                        </p>
+                      </div>
+                    </div>
                     <Button
                       type="button"
                       variant="outline"
@@ -819,104 +853,208 @@ export default function CreateEvent({
                       className="w-full"
                     >
                       <Settings className="h-4 w-4 mr-2" />
-                      Configurar Dados Financeiros
+                      Ir para Gestão Financeira
                     </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Ou preencha os campos abaixo apenas para este evento
-                    </p>
                   </div>
                 )}
 
                 <Separator />
 
-                <div>
-                  <Label htmlFor="pixKey">Chave PIX (Opcional)</Label>
-                  <Input
-                    id="pixKey"
-                    placeholder="Digite sua chave PIX (CPF, CNPJ, email, telefone ou chave aleatória)"
-                    value={pixKey}
-                    onChange={(e) => setPixKey(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Recomendado: mais rápido e prático
-                  </p>
-                </div>
-
-                <Separator />
-
-                <p className="text-sm font-medium">Ou informe seus dados bancários (Opcional)</p>
-
-                <div>
-                  <Label htmlFor="bankName">Banco (Opcional)</Label>
-                  <Input
-                    id="bankName"
-                    placeholder="Ex: Banco do Brasil, Nubank, Itaú..."
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <Label>Tipo de Conta</Label>
+                {/* Payment Method Selection */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Método de Recebimento</Label>
                   <RadioGroup
-                    value={bankAccountType}
-                    onValueChange={(value: "corrente" | "poupanca") => setBankAccountType(value)}
+                    value={hasStripeConnect && paymentPreference === 'stripe_direct' ? 'stripe_direct' : 'platform_transfer'}
+                    onValueChange={(value) => {
+                      if (value === 'stripe_direct' && !hasStripeConnect) {
+                        toast.error('Configure o Stripe Connect primeiro na Gestão Financeira');
+                        return;
+                      }
+                      setPaymentPreference(value as 'stripe_direct' | 'platform_transfer');
+                    }}
+                    className="space-y-3"
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="corrente" id="corrente" />
-                      <Label htmlFor="corrente" className="cursor-pointer">
-                        Conta Corrente
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="poupanca" id="poupanca" />
-                      <Label htmlFor="poupanca" className="cursor-pointer">
-                        Conta Poupança
+                    {hasStripeConnect && (
+                      <div className="flex items-start space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/50 transition-colors cursor-pointer">
+                        <RadioGroupItem value="stripe_direct" id="create_stripe_direct" className="mt-1" />
+                        <Label htmlFor="create_stripe_direct" className="flex-1 cursor-pointer">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Zap className="h-4 w-4 text-blue-500" />
+                            <span className="font-medium">Transferência Imediata (Stripe)</span>
+                            <Badge variant="secondary" className="text-xs">Recomendado</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            O pagamento é transferido automaticamente para sua conta Stripe após cada venda.
+                            Mais rápido e sem necessidade de informar dados bancários.
+                          </p>
+                        </Label>
+                      </div>
+                    )}
+
+                    <div className="flex items-start space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/50 transition-colors cursor-pointer">
+                      <RadioGroupItem value="platform_transfer" id="create_platform_transfer" className="mt-1" />
+                      <Label htmlFor="create_platform_transfer" className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="h-4 w-4 text-amber-500" />
+                          <span className="font-medium">Repasse via Plataforma</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          A plataforma processa os pagamentos e realiza a transferência em até 3 dias úteis após o evento.
+                          Requer informação de dados bancários ou PIX.
+                        </p>
                       </Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="bankAgency">Agência</Label>
-                    <Input
-                      id="bankAgency"
-                      placeholder="0001"
-                      value={bankAgency}
-                      onChange={(e) => setBankAgency(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bankAccount">Conta</Label>
-                    <Input
-                      id="bankAccount"
-                      placeholder="12345-6"
-                      value={bankAccount}
-                      onChange={(e) => setBankAccount(e.target.value)}
-                    />
-                  </div>
-                </div>
+                {/* Bank/PIX data only if platform_transfer */}
+                {(!hasStripeConnect || paymentPreference === 'platform_transfer') && (
+                  <>
+                    <Separator />
 
-                <div>
-                  <Label htmlFor="bankAccountHolder">Titular da Conta</Label>
-                  <Input
-                    id="bankAccountHolder"
-                    placeholder="Nome completo do titular"
-                    value={bankAccountHolder}
-                    onChange={(e) => setBankAccountHolder(e.target.value)}
-                  />
-                </div>
+                    {hasFinancialData ? (
+                      <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <DollarSign className="h-5 w-5 text-green-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-green-400">Dados Financeiros Configurados</p>
+                            <p className="text-xs text-muted-foreground">
+                              O recebimento será feito nos dados cadastrados no seu perfil
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate('/organizer-financial')}
+                          className="w-full"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Ver/Editar Dados Financeiros
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Ou preencha os campos abaixo para usar dados diferentes neste evento
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-3">
+                        <p className="text-sm text-yellow-400 font-medium">
+                          ⚠️ Você ainda não configurou seus dados financeiros
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Configure uma vez no seu perfil e não precise preencher novamente
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate('/organizer-financial')}
+                          className="w-full"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Configurar Dados Financeiros
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Ou preencha os campos abaixo apenas para este evento
+                        </p>
+                      </div>
+                    )}
 
-                <div>
-                  <Label htmlFor="bankDocument">CPF/CNPJ do Titular</Label>
-                  <Input
-                    id="bankDocument"
-                    placeholder="000.000.000-00"
-                    value={bankDocument}
-                    onChange={(e) => setBankDocument(e.target.value)}
-                  />
-                </div>
+                    <Separator />
+
+                    <div>
+                      <Label htmlFor="pixKey">Chave PIX (Opcional)</Label>
+                      <Input
+                        id="pixKey"
+                        placeholder="Digite sua chave PIX (CPF, CNPJ, email, telefone ou chave aleatória)"
+                        value={pixKey}
+                        onChange={(e) => setPixKey(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Recomendado: mais rápido e prático
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <p className="text-sm font-medium">Ou informe seus dados bancários (Opcional)</p>
+
+                    <div>
+                      <Label htmlFor="bankName">Banco (Opcional)</Label>
+                      <Input
+                        id="bankName"
+                        placeholder="Ex: Banco do Brasil, Nubank, Itaú..."
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Tipo de Conta</Label>
+                      <RadioGroup
+                        value={bankAccountType}
+                        onValueChange={(value: "corrente" | "poupanca") => setBankAccountType(value)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="corrente" id="corrente" />
+                          <Label htmlFor="corrente" className="cursor-pointer">
+                            Conta Corrente
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="poupanca" id="poupanca" />
+                          <Label htmlFor="poupanca" className="cursor-pointer">
+                            Conta Poupança
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="bankAgency">Agência</Label>
+                        <Input
+                          id="bankAgency"
+                          placeholder="0001"
+                          value={bankAgency}
+                          onChange={(e) => setBankAgency(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="bankAccount">Conta</Label>
+                        <Input
+                          id="bankAccount"
+                          placeholder="12345-6"
+                          value={bankAccount}
+                          onChange={(e) => setBankAccount(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bankAccountHolder">Titular da Conta</Label>
+                      <Input
+                        id="bankAccountHolder"
+                        placeholder="Nome completo do titular"
+                        value={bankAccountHolder}
+                        onChange={(e) => setBankAccountHolder(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bankDocument">CPF/CNPJ do Titular</Label>
+                      <Input
+                        id="bankDocument"
+                        placeholder="000.000.000-00"
+                        value={bankDocument}
+                        onChange={(e) => setBankDocument(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}
