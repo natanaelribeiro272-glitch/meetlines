@@ -53,20 +53,27 @@ Deno.serve(async (req: Request) => {
 
     const { data: organizer, error: organizerError } = await supabaseClient
       .from("organizers")
-      .select("id, stripe_account_id, stripe_onboarding_completed, name, email, business_name")
+      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete, name, email, business_name")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (organizerError || !organizer) {
+    if (organizerError) {
+      logStep("Error fetching organizer", { error: organizerError });
+      throw new Error(`Error fetching organizer: ${organizerError.message}`);
+    }
+
+    if (!organizer) {
+      logStep("No organizer found for user", { userId: user.id });
       throw new Error("Organizer not found");
     }
+
     logStep("Organizer found", { organizerId: organizer.id });
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    let accountId = organizer.stripe_account_id;
+    let accountId = organizer.stripe_connect_account_id;
 
     if (!accountId) {
       const account = await stripe.accounts.create({
@@ -90,7 +97,7 @@ Deno.serve(async (req: Request) => {
       const { error: updateError } = await supabaseService
         .from("organizers")
         .update({
-          stripe_account_id: accountId,
+          stripe_connect_account_id: accountId,
           stripe_account_status: "pending",
           stripe_connected_at: new Date().toISOString(),
         })

@@ -52,15 +52,23 @@ Deno.serve(async (req: Request) => {
 
     const { data: organizer, error: organizerError } = await supabaseClient
       .from("organizers")
-      .select("id, stripe_account_id")
+      .select("id, stripe_connect_account_id")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (organizerError || !organizer) {
+    if (organizerError) {
+      logStep("Error fetching organizer", { error: organizerError });
+      throw new Error(`Error fetching organizer: ${organizerError.message}`);
+    }
+
+    if (!organizer) {
+      logStep("No organizer found for user", { userId: user.id });
       throw new Error("Organizer not found");
     }
 
-    if (!organizer.stripe_account_id) {
+    logStep("Organizer found", { organizerId: organizer.id, hasStripeAccount: !!organizer.stripe_connect_account_id });
+
+    if (!organizer.stripe_connect_account_id) {
       return new Response(
         JSON.stringify({
           connected: false,
