@@ -4,8 +4,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Clock, ExternalLink, Loader } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, ExternalLink, Loader, Zap, Calendar } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 interface StripeConnectStatus {
   connected: boolean;
@@ -28,12 +31,61 @@ export default function StripeConnectSetup({ organizerId }: StripeConnectSetupPr
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<StripeConnectStatus | null>(null);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [paymentPreference, setPaymentPreference] = useState<'stripe_direct' | 'platform_transfer'>('platform_transfer');
+  const [savingPreference, setSavingPreference] = useState(false);
 
   useEffect(() => {
     checkStripeStatus();
+    loadPaymentPreference();
     const interval = setInterval(checkStripeStatus, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadPaymentPreference = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizers')
+        .select('payment_preference')
+        .eq('id', organizerId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data?.payment_preference) {
+        setPaymentPreference(data.payment_preference as 'stripe_direct' | 'platform_transfer');
+      }
+    } catch (error) {
+      console.error("Error loading payment preference:", error);
+    }
+  };
+
+  const savePaymentPreference = async (preference: 'stripe_direct' | 'platform_transfer') => {
+    try {
+      setSavingPreference(true);
+      const { error } = await supabase
+        .from('organizers')
+        .update({ payment_preference: preference })
+        .eq('id', organizerId);
+
+      if (error) throw error;
+
+      setPaymentPreference(preference);
+      toast({
+        title: "Preferência salva!",
+        description: preference === 'stripe_direct'
+          ? "Pagamentos serão transferidos automaticamente para sua conta Stripe"
+          : "Pagamentos serão processados pela plataforma e transferidos em 3 dias úteis após o evento",
+      });
+    } catch (error: any) {
+      console.error("Error saving payment preference:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPreference(false);
+    }
+  };
 
   const checkStripeStatus = async () => {
     try {
@@ -208,6 +260,55 @@ export default function StripeConnectSetup({ organizerId }: StripeConnectSetupPr
                 </div>
               </div>
             </div>
+
+            {status.payouts_enabled && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium text-sm mb-1">Método de Recebimento</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Escolha como deseja receber o pagamento das vendas de ingressos
+                    </p>
+                  </div>
+                  <RadioGroup
+                    value={paymentPreference}
+                    onValueChange={(value) => savePaymentPreference(value as 'stripe_direct' | 'platform_transfer')}
+                    disabled={savingPreference}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-start space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/50 transition-colors cursor-pointer">
+                      <RadioGroupItem value="stripe_direct" id="stripe_direct" className="mt-1" />
+                      <Label htmlFor="stripe_direct" className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Zap className="h-4 w-4 text-blue-500" />
+                          <span className="font-medium">Transferência Imediata (Stripe)</span>
+                          <Badge variant="secondary" className="text-xs">Recomendado</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          O pagamento é transferido automaticamente para sua conta Stripe após cada venda.
+                          Taxas da plataforma são deduzidas automaticamente e você recebe o valor líquido conforme o cronograma do Stripe.
+                        </p>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-start space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/50 transition-colors cursor-pointer">
+                      <RadioGroupItem value="platform_transfer" id="platform_transfer" className="mt-1" />
+                      <Label htmlFor="platform_transfer" className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Calendar className="h-4 w-4 text-amber-500" />
+                          <span className="font-medium">Repasse via Plataforma</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          A plataforma processa os pagamentos e realiza a transferência em até 3 dias úteis após o evento.
+                          Você receberá um resumo detalhado de todas as transações antes da transferência.
+                        </p>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </>
+            )}
 
             {!status.onboarding_complete && (
               <Alert>

@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: organizer } = await supabaseService
       .from("organizers")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, stripe_connect_charges_enabled")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, stripe_connect_charges_enabled, payment_preference")
       .eq("id", event.organizer_id)
       .maybeSingle();
 
@@ -188,11 +188,14 @@ Deno.serve(async (req: Request) => {
                              organizer?.stripe_connect_onboarding_complete &&
                              organizer?.stripe_connect_charges_enabled;
 
+    const useDirectStripe = hasStripeConnect && organizer?.payment_preference === 'stripe_direct';
+
     console.log("[Checkout] Stripe Connect status:", {
       hasAccount: !!organizer?.stripe_connect_account_id,
       onboardingComplete: !!organizer?.stripe_connect_onboarding_complete,
       chargesEnabled: !!organizer?.stripe_connect_charges_enabled,
-      willUseDirect: hasStripeConnect
+      paymentPreference: organizer?.payment_preference,
+      willUseDirect: useDirectStripe
     });
 
     const sessionConfig: any = {
@@ -217,8 +220,8 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    if (hasStripeConnect) {
-      console.log("[Checkout] Using Stripe Connect account:", organizer.stripe_connect_account_id);
+    if (useDirectStripe) {
+      console.log("[Checkout] Using Stripe Connect direct transfer:", organizer.stripe_connect_account_id);
       sessionConfig.payment_intent_data = {
         application_fee_amount: Math.round((platformFee + processingFee) * 100),
         transfer_data: {
@@ -227,8 +230,8 @@ Deno.serve(async (req: Request) => {
       };
       sessionConfig.metadata.payment_type = "stripe_connect_direct";
     } else {
-      console.log("[Checkout] Using platform Stripe account (no Connect)");
-      sessionConfig.metadata.payment_type = "stripe_platform";
+      console.log("[Checkout] Using platform processing (will transfer in 3 business days after event)");
+      sessionConfig.metadata.payment_type = "platform_transfer";
     }
 
     console.log("[Checkout] Creating Stripe session for card payments");
