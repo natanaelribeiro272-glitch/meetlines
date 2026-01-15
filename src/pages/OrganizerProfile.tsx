@@ -231,6 +231,7 @@ export default function OrganizerProfile({
   const navigate = useNavigate();
   const location = useLocation();
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | undefined>(organizerId);
+  const [loadingOrganizerId, setLoadingOrganizerId] = useState(!organizerId);
 
   const {
     isFollowing,
@@ -261,6 +262,7 @@ export default function OrganizerProfile({
     const loadOrganizerIdFromUser = async () => {
       if (!organizerId && user) {
         try {
+          setLoadingOrganizerId(true);
           const { data, error } = await supabase
             .from('organizers')
             .select('id')
@@ -270,17 +272,31 @@ export default function OrganizerProfile({
           if (error) throw error;
           if (data) {
             setCurrentOrganizerId(data.id);
+          } else {
+            toast.error('Organizador não encontrado', {
+              description: 'Você precisa criar um perfil de organizador primeiro.',
+            });
+            navigate('/');
           }
         } catch (error) {
           console.error('Error loading organizer:', error);
+          toast.error('Erro ao carregar dados do organizador');
+          navigate('/');
+        } finally {
+          setLoadingOrganizerId(false);
         }
+      } else if (!organizerId && !user) {
+        setLoadingOrganizerId(false);
+        toast.error('Você precisa estar logado');
+        navigate('/auth');
       } else {
         setCurrentOrganizerId(organizerId);
+        setLoadingOrganizerId(false);
       }
     };
 
     loadOrganizerIdFromUser();
-  }, [organizerId, user]);
+  }, [organizerId, user, navigate]);
 
   // Buscar todos os eventos para a aba de fotos
   useEffect(() => {
@@ -439,7 +455,7 @@ export default function OrganizerProfile({
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${dayName}, ${hours}:${minutes}`;
   };
-  if (loading) {
+  if (loading || loadingOrganizerId) {
     return <div className="min-h-screen bg-background pb-20">
         <div className="flex items-center gap-4 p-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
