@@ -221,7 +221,7 @@ export default function OrganizerProfile({
     events,
     customLinks,
     loading
-  } = useOrganizerDetails(organizerId);
+  } = useOrganizerDetails(currentOrganizerId);
   const {
     updateOrganizerProfile
   } = useOrganizer();
@@ -230,19 +230,65 @@ export default function OrganizerProfile({
   } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [currentOrganizerId, setCurrentOrganizerId] = useState<string | undefined>(organizerId);
+
   const {
     isFollowing,
     loading: followLoading,
     toggleFollow
-  } = useFollowers(organizerId);
+  } = useFollowers(currentOrganizerId);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const stripeSuccess = searchParams.get('stripe_success');
+    const stripeRefresh = searchParams.get('stripe_refresh');
+
+    if (stripeSuccess === 'true') {
+      toast.success('Stripe Connect configurado!', {
+        description: 'Seu cadastro foi concluído com sucesso. Aguarde a ativação da conta.',
+      });
+      window.history.replaceState({}, '', '/organizer-profile');
+    }
+
+    if (stripeRefresh === 'true') {
+      toast.info('Continue a configuração', {
+        description: 'Por favor, complete o cadastro no Stripe Connect.',
+      });
+    }
+  }, [location]);
+
+  useEffect(() => {
+    const loadOrganizerIdFromUser = async () => {
+      if (!organizerId && user) {
+        try {
+          const { data, error } = await supabase
+            .from('organizers')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (error) throw error;
+          if (data) {
+            setCurrentOrganizerId(data.id);
+          }
+        } catch (error) {
+          console.error('Error loading organizer:', error);
+        }
+      } else {
+        setCurrentOrganizerId(organizerId);
+      }
+    };
+
+    loadOrganizerIdFromUser();
+  }, [organizerId, user]);
 
   // Buscar todos os eventos para a aba de fotos
   useEffect(() => {
     const fetchAllEvents = async () => {
-      if (!organizerId) return;
+      if (!currentOrganizerId) return;
       const {
         data: eventsData
-      } = await supabase.from('events').select('*').eq('organizer_id', organizerId).order('event_date', {
+      } = await supabase.from('events').select('*').eq('organizer_id', currentOrganizerId).order('event_date', {
         ascending: false
       });
       setAllEvents(eventsData || []);
@@ -250,7 +296,7 @@ export default function OrganizerProfile({
     if (activeTab === 'fotos') {
       fetchAllEvents();
     }
-  }, [organizerId, activeTab]);
+  }, [currentOrganizerId, activeTab]);
   const handleShare = () => {
     if (!organizer) return;
 
@@ -496,8 +542,8 @@ export default function OrganizerProfile({
         <Avatar 
           className="h-24 w-24 mx-auto mb-4 border-4 border-background shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => {
-            if (organizerId) {
-              const currentOrganizerStories = organizersWithStories.find(o => o.id === organizerId);
+            if (currentOrganizerId) {
+              const currentOrganizerStories = organizersWithStories.find(o => o.id === currentOrganizerId);
               if (currentOrganizerStories && currentOrganizerStories.stories.length > 0) {
                 setStoryViewerOpen(true);
               }
@@ -753,7 +799,7 @@ export default function OrganizerProfile({
                   Configure sua conta para receber pagamentos direto na sua conta bancária
                 </p>
               </div>
-              <StripeConnectSetup organizerId={organizer.id} />
+              <StripeConnectSetup organizerId={currentOrganizerId || organizer.id} />
             </div>
 
             <Separator className="my-8" />
@@ -765,7 +811,7 @@ export default function OrganizerProfile({
                   Gerencie suas informações bancárias e fiscais para receber repasses
                 </p>
               </div>
-              <OrganizerFinancial organizerId={organizer.id} />
+              <OrganizerFinancial organizerId={currentOrganizerId || organizer.id} />
             </div>
 
             <Separator className="my-8" />
@@ -777,18 +823,18 @@ export default function OrganizerProfile({
                   Acompanhe suas vendas e repasses
                 </p>
               </div>
-              <TicketSalesOverview organizerId={organizer.id} />
+              <TicketSalesOverview organizerId={currentOrganizerId || organizer.id} />
             </div>
           </div>
         )}
       </div>
 
       {/* Story Viewer */}
-      {storyViewerOpen && organizerId && organizersWithStories.find(o => o.id === organizerId) && (
+      {storyViewerOpen && currentOrganizerId && organizersWithStories.find(o => o.id === currentOrganizerId) && (
         <OrganizerStoryViewer
           open={storyViewerOpen}
           onClose={() => setStoryViewerOpen(false)}
-          organizer={organizersWithStories.find(o => o.id === organizerId)!}
+          organizer={organizersWithStories.find(o => o.id === currentOrganizerId)!}
           initialStoryIndex={0}
           onLike={toggleLike}
           onDelete={deleteStory}
