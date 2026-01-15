@@ -223,6 +223,15 @@ Deno.serve(async (req: Request) => {
                 transferScheduledDate = scheduledDate.toISOString();
               }
 
+              const paymentType = session.metadata?.payment_type;
+              const isStripeConnectDirect = paymentType === "stripe_connect_direct";
+
+              logStep("Creating transaction record", {
+                paymentType,
+                isStripeConnectDirect,
+                organizerId: fullSale.events.organizer_id
+              });
+
               const { error: transactionError } = await supabaseService
                 .from("ticket_sales_transactions")
                 .insert({
@@ -233,12 +242,13 @@ Deno.serve(async (req: Request) => {
                   platform_fee: platformFee,
                   payment_gateway_fee: paymentGatewayFee,
                   net_amount: netAmount,
-                  transaction_status: "pending",
+                  transaction_status: isStripeConnectDirect ? "completed" : "pending",
                   payment_date: new Date().toISOString(),
                   payment_id: typeof session.payment_intent === 'string'
                     ? session.payment_intent
                     : null,
-                  transfer_scheduled_date: transferScheduledDate
+                  transfer_scheduled_date: isStripeConnectDirect ? null : transferScheduledDate,
+                  transferred_at: isStripeConnectDirect ? new Date().toISOString() : null
                 });
 
               if (transactionError) {

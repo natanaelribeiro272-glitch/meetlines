@@ -71,6 +71,8 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
   const [saving, setSaving] = useState(false);
   const [hasData, setHasData] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [hasStripeConnect, setHasStripeConnect] = useState(false);
+  const [stripeConnectEnabled, setStripeConnectEnabled] = useState(false);
 
   const [formData, setFormData] = useState<FinancialData>({
     document_type: 'cpf',
@@ -105,6 +107,23 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
   const loadFinancialData = async () => {
     setLoading(true);
     try {
+      const { data: organizer } = await supabase
+        .from('organizers')
+        .select('stripe_connect_account_id, stripe_connect_onboarding_complete, stripe_connect_charges_enabled, stripe_connect_payouts_enabled')
+        .eq('id', organizerId)
+        .maybeSingle();
+
+      if (organizer) {
+        const hasConnect = !!organizer.stripe_connect_account_id;
+        const isEnabled = hasConnect &&
+                         organizer.stripe_connect_onboarding_complete &&
+                         organizer.stripe_connect_charges_enabled &&
+                         organizer.stripe_connect_payouts_enabled;
+
+        setHasStripeConnect(hasConnect);
+        setStripeConnectEnabled(isEnabled);
+      }
+
       const { data, error } = await supabase
         .from('organizer_financial_data')
         .select('*')
@@ -254,6 +273,22 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
   if (hasData && !isEditing) {
     return (
       <div className="space-y-6">
+        {stripeConnectEnabled && (
+          <Alert className="bg-blue-500/10 border-blue-500/20">
+            <CheckCircle2 className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-500">
+              <strong>Stripe Connect ativo!</strong> Seus pagamentos são processados diretamente via Stripe. As vendas de ingressos serão transferidas automaticamente para sua conta Stripe após dedução das taxas da plataforma.
+            </AlertDescription>
+          </Alert>
+        )}
+        {hasStripeConnect && !stripeConnectEnabled && (
+          <Alert className="bg-amber-500/10 border-amber-500/20">
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-amber-500">
+              <strong>Stripe Connect pendente.</strong> Complete o cadastro no Stripe para receber pagamentos diretos. Enquanto isso, os pagamentos serão processados pela plataforma.
+            </AlertDescription>
+          </Alert>
+        )}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -263,7 +298,9 @@ export default function OrganizerFinancial({ organizerId }: OrganizerFinancialPr
                   Dados Financeiros Configurados
                 </CardTitle>
                 <CardDescription>
-                  Suas informações de recebimento estão salvas
+                  {stripeConnectEnabled
+                    ? "Dados usados para repasses manuais (se necessário)"
+                    : "Suas informações de recebimento estão salvas"}
                 </CardDescription>
               </div>
               <Button

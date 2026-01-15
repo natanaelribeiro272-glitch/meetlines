@@ -98,6 +98,12 @@ Deno.serve(async (req: Request) => {
     console.log("[Checkout] Ticket type found:", ticketType.name);
     const event = ticketType.events;
 
+    const { data: organizer } = await supabaseService
+      .from("organizers")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, stripe_connect_charges_enabled")
+      .eq("id", event.organizer_id)
+      .maybeSingle();
+
     const { data: profile } = await supabaseService
       .from("profiles")
       .select("display_name, phone")
@@ -178,8 +184,18 @@ Deno.serve(async (req: Request) => {
 
     console.log("[Checkout] Line items:", JSON.stringify(lineItems));
 
-    console.log("[Checkout] Creating Stripe session for card payments");
-    const session = await stripe.checkout.sessions.create({
+    const hasStripeConnect = organizer?.stripe_connect_account_id &&
+                             organizer?.stripe_connect_onboarding_complete &&
+                             organizer?.stripe_connect_charges_enabled;
+
+    console.log("[Checkout] Stripe Connect status:", {
+      hasAccount: !!organizer?.stripe_connect_account_id,
+      onboardingComplete: !!organizer?.stripe_connect_onboarding_complete,
+      chargesEnabled: !!organizer?.stripe_connect_charges_enabled,
+      willUseDirect: hasStripeConnect
+    });
+
+    const sessionConfig: any = {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
@@ -197,8 +213,26 @@ Deno.serve(async (req: Request) => {
         processing_fee: processingFee.toFixed(2),
         subtotal: subtotal.toFixed(2),
         total_amount: totalAmount.toFixed(2),
+        organizer_id: event.organizer_id,
       },
-    });
+    };
+
+    if (hasStripeConnect) {
+      console.log("[Checkout] Using Stripe Connect account:", organizer.stripe_connect_account_id);
+      sessionConfig.payment_intent_data = {
+        application_fee_amount: Math.round((platformFee + processingFee) * 100),
+        transfer_data: {
+          destination: organizer.stripe_connect_account_id,
+        },
+      };
+      sessionConfig.metadata.payment_type = "stripe_connect_direct";
+    } else {
+      console.log("[Checkout] Using platform Stripe account (no Connect)");
+      sessionConfig.metadata.payment_type = "stripe_platform";
+    }
+
+    console.log("[Checkout] Creating Stripe session for card payments");
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log("[Checkout] Stripe session created:", session.id);
 

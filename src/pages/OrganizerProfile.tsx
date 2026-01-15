@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Users, ExternalLink, MessageCircle, Camera, Music, MapPin, Calendar, Heart, Instagram, Globe, Share2, Download, Upload, UserPlus, UserCheck, X, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
 import OrganizerFinancial from "@/components/OrganizerFinancial";
 import TicketSalesOverview from "@/components/TicketSalesOverview";
+import StripeConnectSetup from "@/components/StripeConnectSetup";
 import { useOrganizerStories } from "@/hooks/useOrganizerStories";
 import { OrganizerStoryViewer } from "@/components/OrganizerStoryViewer";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { AuthModal } from "@/components/AuthModal";
 import { useOrganizerDetails, OrganizerEvent } from "@/hooks/useOrganizerDetails";
 import { useOrganizer } from "@/hooks/useOrganizer";
@@ -744,6 +746,18 @@ export default function OrganizerProfile({
         {/* Financeiro Tab */}
         {activeTab === "financeiro" && isOwnProfile && (
           <div className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold">Stripe Connect</h2>
+                <p className="text-sm text-muted-foreground">
+                  Configure sua conta para receber pagamentos direto na sua conta bancária
+                </p>
+              </div>
+              <StripeConnectSetup organizerId={organizer.id} />
+            </div>
+
+            <Separator className="my-8" />
+
             <div className="space-y-4">
               <div>
                 <h2 className="text-xl font-semibold">Dados Financeiros</h2>
