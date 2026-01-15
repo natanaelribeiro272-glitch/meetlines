@@ -221,7 +221,8 @@ export default function OrganizerProfile({
   const { organizersWithStories, toggleLike, markAsViewed, deleteStory } = useOrganizerStories();
 
   const {
-    user
+    user,
+    loading: authLoading
   } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -265,6 +266,11 @@ export default function OrganizerProfile({
 
   useEffect(() => {
     const loadOrganizerIdFromUser = async () => {
+      // Aguarda o auth carregar antes de fazer qualquer validação
+      if (authLoading) {
+        return;
+      }
+
       if (!organizerId && user) {
         try {
           setLoadingOrganizerId(true);
@@ -301,7 +307,7 @@ export default function OrganizerProfile({
     };
 
     loadOrganizerIdFromUser();
-  }, [organizerId, user, navigate]);
+  }, [organizerId, user, authLoading, navigate]);
 
   // Buscar todos os eventos para a aba de fotos
   useEffect(() => {
@@ -460,7 +466,7 @@ export default function OrganizerProfile({
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${dayName}, ${hours}:${minutes}`;
   };
-  if (loading || loadingOrganizerId) {
+  if (loading || loadingOrganizerId || authLoading) {
     return <div className="min-h-screen bg-background pb-20">
         <div className="flex items-center gap-4 p-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
