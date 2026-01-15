@@ -66,7 +66,7 @@ export interface OrganizerLink {
   sort_order: number;
 }
 
-export function useOrganizerDetails(organizerId: string | null) {
+export function useOrganizerDetails(organizerId: string | null, isOwnProfile: boolean = false) {
   const [organizer, setOrganizer] = useState<OrganizerDetailsData | null>(null);
   const [events, setEvents] = useState<OrganizerEvent[]>([]);
   const [customLinks, setCustomLinks] = useState<OrganizerLink[]>([]);
@@ -74,17 +74,22 @@ export function useOrganizerDetails(organizerId: string | null) {
 
   const fetchOrganizerDetails = async () => {
     if (!organizerId) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Buscar organizador
-      const { data: organizerData, error: organizerError } = await supabase
+      let query = supabase
         .from('organizers')
         .select('*')
-        .eq('id', organizerId)
-        .eq('is_page_active', true)
-        .maybeSingle();
+        .eq('id', organizerId);
+
+      // Só filtra por is_page_active se não for o próprio perfil
+      if (!isOwnProfile) {
+        query = query.eq('is_page_active', true);
+      }
+
+      const { data: organizerData, error: organizerError } = await query.maybeSingle();
 
       if (organizerError) throw organizerError;
       if (!organizerData) return;

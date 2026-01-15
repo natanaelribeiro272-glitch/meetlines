@@ -214,17 +214,12 @@ export default function OrganizerProfile({
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
+  // Se organizerId não foi passado como prop, é o próprio perfil
+  const isOwnProfile = !organizerId;
+
   const { organizersWithStories, toggleLike, markAsViewed, deleteStory } = useOrganizerStories();
-  const {
-    organizer,
-    events,
-    customLinks,
-    loading
-  } = useOrganizerDetails(currentOrganizerId);
-  const {
-    updateOrganizerProfile
-  } = useOrganizer();
+
   const {
     user
   } = useAuth();
@@ -232,6 +227,16 @@ export default function OrganizerProfile({
   const location = useLocation();
   const [currentOrganizerId, setCurrentOrganizerId] = useState<string | undefined>(organizerId);
   const [loadingOrganizerId, setLoadingOrganizerId] = useState(!organizerId);
+
+  const {
+    organizer,
+    events,
+    customLinks,
+    loading
+  } = useOrganizerDetails(currentOrganizerId, isOwnProfile);
+  const {
+    updateOrganizerProfile
+  } = useOrganizer();
 
   const {
     isFollowing,
@@ -486,7 +491,9 @@ export default function OrganizerProfile({
         </div>
       </div>;
   }
-  const isOwnProfile = user && organizer.user_id === user.id;
+
+  // Verifica se é o próprio organizador baseado no user_id
+  const isOwner = user && organizer.user_id === user.id;
 
   const tabs = [{
     id: "eventos",
@@ -500,7 +507,7 @@ export default function OrganizerProfile({
     id: "fotos",
     label: "Fotos",
     icon: Camera
-  }, ...(isOwnProfile ? [{
+  }, ...(isOwner ? [{
     id: "financeiro",
     label: "Financeiro",
     icon: DollarSign
@@ -806,7 +813,7 @@ export default function OrganizerProfile({
           </div>}
 
         {/* Financeiro Tab */}
-        {activeTab === "financeiro" && isOwnProfile && (
+        {activeTab === "financeiro" && isOwner && (
           <div className="space-y-6">
             <div className="space-y-4">
               <div>
