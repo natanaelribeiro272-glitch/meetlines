@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: organizer, error: organizerError } = await supabaseClient
       .from("organizers")
-      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete, name, email, business_name")
+      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -79,7 +79,7 @@ Deno.serve(async (req: Request) => {
       const account = await stripe.accounts.create({
         type: "express",
         country: "BR",
-        email: organizer.email || user.email,
+        email: user.email,
         business_type: "individual",
         capabilities: {
           card_payments: { requested: true },
